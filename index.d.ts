@@ -15,3 +15,5 @@ export interface AudioTags {
 }
 
 export declare function readTags(filePath: string): AudioTags
+
+export declare function writeTags(filePath: string, tags: AudioTags): void

@@ -54,3 +54,4 @@ const {
 })
 export default __napiModule.exports
 export const readTags = __napiModule.exports.readTags
+export const writeTags = __napiModule.exports.writeTags

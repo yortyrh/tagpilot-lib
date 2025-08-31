@@ -1,6 +1,8 @@
 #![deny(clippy::all)]
 
+use lofty::file::AudioFile;
 use lofty::prelude::TaggedFileExt;
+use lofty::config::WriteOptions;
 use lofty::probe::Probe;
 use lofty::tag::Accessor;
 use napi::Result;
@@ -129,4 +131,86 @@ pub fn read_tags(file_path: String) -> Result<AudioTags> {
   };
 
   Ok(tags)
+}
+
+#[napi]
+pub fn write_tags(file_path: String, tags: AudioTags) -> Result<()> {
+  let path = Path::new(&file_path);
+
+  // Probe the file to determine its format
+  let tagged_file = match Probe::open(path) {
+    Ok(probe) => match probe.read() {
+      Ok(tagged_file) => tagged_file,
+      Err(e) => {
+        return Err(napi::Error::from_reason(format!(
+          "Failed to read file: {}",
+          e
+        )));
+      }
+    },
+    Err(e) => {
+      return Err(napi::Error::from_reason(format!(
+        "Failed to open file: {}",
+        e
+      )));
+    }
+  };
+
+  // Check if the format is supported
+  let has_tags = !tagged_file.tags().is_empty() || tagged_file.primary_tag().is_some();
+  if !has_tags {
+    return Err(napi::Error::from_reason(
+      "File format not supported by lofty",
+    ));
+  }
+
+  // Get the primary tag or create a new one
+  let mut primary_tag = tagged_file.primary_tag().cloned().unwrap_or_else(|| {
+    use lofty::tag::Tag;
+    Tag::new(lofty::tag::TagType::Id3v2)
+  });
+
+  // Update the tag with new values
+  if let Some(title) = tags.title {
+    primary_tag.set_title(title);
+  }
+  if let Some(artist) = tags.artist {
+    primary_tag.set_artist(artist);
+  }
+  if let Some(album) = tags.album {
+    primary_tag.set_album(album);
+  }
+  if let Some(year) = tags.year {
+    primary_tag.set_year(year);
+  }
+  if let Some(genre) = tags.genre {
+    primary_tag.set_genre(genre);
+  }
+  if let Some(track) = tags.track {
+    primary_tag.set_track(track);
+  }
+  if let Some(track_total) = tags.track_total {
+    primary_tag.set_track_total(track_total);
+  }
+  if let Some(album_artist) = tags.album_artist {
+    primary_tag.set_artist(album_artist);
+  }
+  if let Some(comment) = tags.comment {
+    primary_tag.set_comment(comment);
+  }
+  if let Some(disc) = tags.disc {
+    primary_tag.set_disk(disc);
+  }
+  if let Some(disc_total) = tags.disc_total {
+    primary_tag.set_disk_total(disc_total);
+  }
+
+  // Write the updated tag back to the file
+  match tagged_file.save_to_path(path, WriteOptions::default()) {
+    Ok(_) => Ok(()),
+    Err(e) => Err(napi::Error::from_reason(format!(
+      "Failed to write tags to file: {}",
+      e
+    ))),
+  }
 }
