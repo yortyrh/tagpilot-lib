@@ -26,15 +26,13 @@ async function main() {
 
     // Step 1: Read the original tags
     console.log('1. Reading original tags...')
-    const originalTagsArray = await readTags(filePath)
+    const originalTags = await readTags(filePath)
 
-    if (originalTagsArray.length === 0) {
+    if (!originalTags.title && !originalTags.artist && !originalTags.album) {
       console.log('No tags found in the file')
       return
     }
 
-    // Use the first tag as the base for modification
-    const originalTags = originalTagsArray[0]
     console.log('Original tags:')
     console.log(JSON.stringify(originalTags, null, 2))
     console.log()
@@ -63,14 +61,13 @@ async function main() {
 
     // Step 4: Verify the changes by reading the file again
     console.log('4. Verifying changes...')
-    const updatedTagsArray = await readTags(filePath)
+    const updatedTags = await readTags(filePath)
 
-    if (updatedTagsArray.length === 0) {
+    if (!updatedTags.title && !updatedTags.artist && !updatedTags.album) {
       console.log('No tags found after writing')
       return
     }
 
-    const updatedTags = updatedTagsArray[0]
     console.log('Updated tags:')
     console.log(JSON.stringify(updatedTags, null, 2))
     console.log()

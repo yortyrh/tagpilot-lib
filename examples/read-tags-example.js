@@ -4,8 +4,8 @@ const { readTags } = require('../index.js')
  * Example: Read audio file tags
  * Usage: node examples/read-tags-example.js <file-path>
  *
- * This example reads all available metadata tags from an audio file
- * and displays them as formatted JSON.
+ * This example reads the primary metadata tag from an audio file
+ * and displays it as formatted JSON.
  */
 
 async function main() {
@@ -21,20 +21,14 @@ async function main() {
   try {
     console.log(`Reading tags from: ${filePath}`)
 
-    // Read all tags from the audio file
-    const allTags = await readTags(filePath)
+    // Read the primary tag from the audio file
+    const tags = await readTags(filePath)
 
-    if (allTags.length === 0) {
-      console.log('No tags found in the audio file')
-    } else if (allTags.length === 1) {
-      console.log('Found 1 tag:')
-      console.log(JSON.stringify(allTags[0], null, 2))
+    if (tags.title || tags.artist || tags.album) {
+      console.log('Found tags:')
+      console.log(JSON.stringify(tags, null, 2))
     } else {
-      console.log(`Found ${allTags.length} tags:`)
-      allTags.forEach((tag, index) => {
-        console.log(`\n--- Tag ${index + 1} ---`)
-        console.log(JSON.stringify(tag, null, 2))
-      })
+      console.log('No tags found in the audio file')
     }
   } catch (error) {
     console.error('Error:', error.message)
