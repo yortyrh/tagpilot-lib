@@ -14,6 +14,8 @@ export interface AudioTags {
   discTotal?: number
 }
 
+export declare function clearTags(filePath: string): Promise<void>
+
 export declare function readTags(filePath: string): Promise<AudioTags>
 
 export declare function writeTags(filePath: string, tags: AudioTags): Promise<void>

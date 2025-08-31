@@ -10,9 +10,15 @@ This directory contains examples demonstrating how to use the `tagpilot-lib` lib
    node examples/read-tags-example.js ./music/01.mp3
    ```
 
-2. **Write/modify tags in an audio file:**
+2. **Write sample tags to an audio file:**
+
    ```bash
    node examples/write-tags-example.js ./music/01.mp3
+   ```
+
+3. **Clear all tags from an audio file:**
+   ```bash
+   node examples/clear-tags-example.js ./music/01.mp3
    ```
 
 ## Examples Overview
@@ -46,48 +52,120 @@ This directory contains examples demonstrating how to use the `tagpilot-lib` lib
 
 ### `write-tags-example.js`
 
-**What it does:** Demonstrates how to modify audio file metadata by reading, updating, and writing tags.
+**What it does:** Demonstrates how to write sample metadata tags to an audio file.
 
 **Features:**
 
-- Reads existing tags from an audio file
-- Modifies specific tag values (title, comment, year, genre)
-- Writes the updated tags back to the file
+- Reads existing tags from an audio file (if any)
+- Creates comprehensive sample tag data with all supported fields
+- Writes the sample tags to the file
 - Verifies changes by reading the file again
-- Shows a summary of what was changed
+- Shows a summary of what was written
 
-**Example modifications:**
+**Sample data written:**
 
-- Adds `[MODIFIED]` prefix to title
-- Appends modification note to comment
-- Increments year by 1
-- Sets a default genre if none exists
+- Title: "Sample Song Title"
+- Artist: "Sample Artist"
+- Album: "Sample Album"
+- Year: 2024
+- Genre: "Sample Genre"
+- Track: 1/12
+- Album Artist: "Sample Album Artist"
+- Comment: "This is a sample comment for demonstration purposes"
+- Disc: 1/1
 
 **Example output:**
 
 ```
-=== Writing tags to: ./music/01.mp3 ===
+=== Writing sample tags to: ./music/01.mp3 ===
 
 1. Reading original tags...
-Original tags: { ... }
+No tags found in the file
 
-2. Creating modified tags...
-Modified tags: { ... }
+2. Creating sample tags...
+Sample tags to write:
+{
+  "title": "Sample Song Title",
+  "artist": "Sample Artist",
+  "album": "Sample Album",
+  "year": 2024,
+  "genre": "Sample Genre",
+  "track": 1,
+  "trackTotal": 12,
+  "albumArtist": "Sample Album Artist",
+  "comment": "This is a sample comment for demonstration purposes",
+  "disc": 1,
+  "discTotal": 1
+}
 
-3. Writing modified tags to file...
-✅ Tags written successfully!
+3. Writing sample tags to file...
+✅ Sample tags written successfully!
 
 4. Verifying changes...
 Updated tags: { ... }
 
-5. Summary of changes:
-   Title: "Finnegan's Wake" → "[MODIFIED] Finnegan's Wake"
-   Comment: null → "Modified by writeTags example"
-   Year: 2002 → 2003
-   Genre: null → "Modified Genre"
+5. Summary of sample data written:
+   Title: "Sample Song Title"
+   Artist: "Sample Artist"
+   Album: "Sample Album"
+   Year: 2024
+   Genre: "Sample Genre"
+   Track: 1/12
+   Album Artist: "Sample Album Artist"
+   Comment: "This is a sample comment for demonstration purposes"
+   Disc: 1/1
 
-✅ Tag modification completed successfully!
+✅ Sample tags written successfully!
 ```
+
+**Use cases:**
+
+- Testing tag writing functionality
+- Creating demo files with sample metadata
+- Learning how to structure tag data
+- Preparing files for testing other functions
+- Demonstrating the library's capabilities
+
+### `clear-tags-example.js`
+
+**What it does:** Demonstrates how to completely clear all metadata tags from an audio file.
+
+**Features:**
+
+- Reads existing tags from an audio file to show what will be cleared
+- Clears all metadata tags (title, artist, album, year, genre, etc.)
+- Verifies that tags have been successfully cleared
+- Provides clear feedback on the operation status
+
+**Example output:**
+
+```
+=== Clearing tags from: ./music/01.mp3 ===
+
+1. Reading original tags...
+Original tags found:
+{
+  "title": "Finnegan's Wake",
+  "artist": "The Dubliners",
+  "album": "Celtic Moods"
+}
+
+2. Clearing all tags...
+Tags cleared successfully!
+
+3. Verifying tags have been cleared...
+✓ All tags have been successfully cleared!
+File now contains no metadata tags.
+
+=== Operation completed ===
+```
+
+**Use cases:**
+
+- Removing personal information from audio files before sharing
+- Cleaning up corrupted or unwanted metadata
+- Preparing files for distribution without metadata
+- Testing tag writing functionality with clean files
 
 ## Supported Audio Formats
 

@@ -1,14 +1,13 @@
 const { readTags, writeTags } = require('../index.js')
 
 /**
- * Example: Write audio file tags
+ * Example: Write sample audio file tags
  * Usage: node examples/write-tags-example.js <file-path>
  *
  * This example demonstrates how to:
- * 1. Read existing tags from an audio file
- * 2. Modify some tag values
- * 3. Write the updated tags back to the file
- * 4. Verify the changes by reading the file again
+ * 1. Read existing tags from an audio file (if any)
+ * 2. Write sample tag data to the file
+ * 3. Verify the changes by reading the file again
  */
 
 async function main() {
@@ -22,72 +21,67 @@ async function main() {
   }
 
   try {
-    console.log(`=== Writing tags to: ${filePath} ===\n`)
+    console.log(`=== Writing sample tags to: ${filePath} ===\n`)
 
-    // Step 1: Read the original tags
+    // Step 1: Read the original tags (if any)
     console.log('1. Reading original tags...')
     const originalTags = await readTags(filePath)
 
-    if (!originalTags.title && !originalTags.artist && !originalTags.album) {
+    if (originalTags.title || originalTags.artist || originalTags.album) {
+      console.log('Original tags found:')
+      console.log(JSON.stringify(originalTags, null, 2))
+    } else {
       console.log('No tags found in the file')
-      return
     }
-
-    console.log('Original tags:')
-    console.log(JSON.stringify(originalTags, null, 2))
     console.log()
 
-    // Step 2: Create modified tags
-    console.log('2. Creating modified tags...')
-    const modifiedTags = {
-      ...originalTags,
-      title: originalTags.title ? `[MODIFIED] ${originalTags.title}` : 'Modified Title',
-      comment: originalTags.comment
-        ? `${originalTags.comment} [Modified by writeTags example]`
-        : 'Modified by writeTags example',
-      year: (originalTags.year || 2000) + 1, // Increment year by 1
-      genre: originalTags.genre || 'Modified Genre',
+    // Step 2: Create sample tags
+    console.log('2. Creating sample tags...')
+    const sampleTags = {
+      title: 'Sample Song Title',
+      artist: 'Sample Artist',
+      album: 'Sample Album',
+      year: 2024,
+      genre: 'Sample Genre',
+      track: 1,
+      trackTotal: 12,
+      albumArtist: 'Sample Album Artist',
+      comment: 'This is a sample comment for demonstration purposes',
+      disc: 1,
+      discTotal: 1,
     }
 
-    console.log('Modified tags:')
-    console.log(JSON.stringify(modifiedTags, null, 2))
+    console.log('Sample tags to write:')
+    console.log(JSON.stringify(sampleTags, null, 2))
     console.log()
 
-    // Step 3: Write the modified tags back to the file
-    console.log('3. Writing modified tags to file...')
-    await writeTags(filePath, modifiedTags)
-    console.log('✅ Tags written successfully!')
+    // Step 3: Write the sample tags to the file
+    console.log('3. Writing sample tags to file...')
+    await writeTags(filePath, sampleTags)
+    console.log('✅ Sample tags written successfully!')
     console.log()
 
     // Step 4: Verify the changes by reading the file again
     console.log('4. Verifying changes...')
     const updatedTags = await readTags(filePath)
 
-    if (!updatedTags.title && !updatedTags.artist && !updatedTags.album) {
-      console.log('No tags found after writing')
-      return
-    }
-
     console.log('Updated tags:')
     console.log(JSON.stringify(updatedTags, null, 2))
     console.log()
 
-    // Step 5: Show what changed
-    console.log('5. Summary of changes:')
-    if (originalTags.title !== updatedTags.title) {
-      console.log(`   Title: "${originalTags.title}" → "${updatedTags.title}"`)
-    }
-    if (originalTags.comment !== updatedTags.comment) {
-      console.log(`   Comment: "${originalTags.comment}" → "${updatedTags.comment}"`)
-    }
-    if (originalTags.year !== updatedTags.year) {
-      console.log(`   Year: ${originalTags.year} → ${updatedTags.year}`)
-    }
-    if (originalTags.genre !== updatedTags.genre) {
-      console.log(`   Genre: "${originalTags.genre}" → "${updatedTags.genre}"`)
-    }
+    // Step 5: Show what was written
+    console.log('5. Summary of sample data written:')
+    console.log(`   Title: "${sampleTags.title}"`)
+    console.log(`   Artist: "${sampleTags.artist}"`)
+    console.log(`   Album: "${sampleTags.album}"`)
+    console.log(`   Year: ${sampleTags.year}`)
+    console.log(`   Genre: "${sampleTags.genre}"`)
+    console.log(`   Track: ${sampleTags.track}/${sampleTags.trackTotal}`)
+    console.log(`   Album Artist: "${sampleTags.albumArtist}"`)
+    console.log(`   Comment: "${sampleTags.comment}"`)
+    console.log(`   Disc: ${sampleTags.disc}/${sampleTags.discTotal}`)
 
-    console.log('\n✅ Tag modification completed successfully!')
+    console.log('\n✅ Sample tags written successfully!')
   } catch (error) {
     console.error('❌ Error:', error.message)
     process.exit(1)

@@ -1,21 +1,25 @@
 import { Bench } from 'tinybench'
+import { readTags } from '../index.js'
 
-import { plus100 } from '../index.js'
-
-function add(a: number) {
-  return a + 100
+async function readTagsSync(filePath: string) {
+  // Simulate synchronous operation for comparison
+  return await readTags(filePath)
 }
 
-const b = new Bench()
+async function runBenchmark() {
+  const b = new Bench()
 
-b.add('Native a + 100', () => {
-  plus100(10)
-})
+  b.add('Native readTags', async () => {
+    await readTags('./music/01.mp3')
+  })
 
-b.add('JavaScript a + 100', () => {
-  add(10)
-})
+  b.add('JavaScript wrapper', async () => {
+    await readTagsSync('./music/01.mp3')
+  })
 
-await b.run()
+  await b.run()
 
-console.table(b.table())
+  console.table(b.table())
+}
+
+runBenchmark().catch(console.error)

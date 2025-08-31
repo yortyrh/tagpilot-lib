@@ -108,5 +108,6 @@ const { instance: __napiInstance, module: __wasiModule, napiModule: __napiModule
   },
 })
 module.exports = __napiModule.exports
+module.exports.clearTags = __napiModule.exports.clearTags
 module.exports.readTags = __napiModule.exports.readTags
 module.exports.writeTags = __napiModule.exports.writeTags

@@ -137,3 +137,34 @@ pub async fn write_tags(file_path: String, tags: AudioTags) -> Result<()> {
     ))),
   }
 }
+
+#[napi]
+pub async fn clear_tags(file_path: String) -> Result<()> {
+  let path = Path::new(&file_path);
+  
+  // Read the existing file
+  let mut tagged_file = match read_from_path(path) {
+    Ok(tf) => tf,
+    Err(e) => {
+      return Err(napi::Error::from_reason(format!(
+        "Failed to read audio file: {}",
+        e
+      )))
+    }
+  };
+
+  // Create a new empty tag of the same type
+  let empty_tag = Tag::new(tagged_file.primary_tag_type());
+  
+  // Replace the existing primary tag with the empty one
+  tagged_file.insert_tag(empty_tag);
+
+  // Write the file back with the empty tag
+  match tagged_file.save_to_path(path, WriteOptions::default()) {
+    Ok(_) => Ok(()),
+    Err(e) => Err(napi::Error::from_reason(format!(
+      "Failed to write audio file: {}",
+      e
+    ))),
+  }
+}

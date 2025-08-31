@@ -508,5 +508,6 @@ if (!nativeBinding) {
 }
 
 module.exports = nativeBinding
+module.exports.clearTags = nativeBinding.clearTags
 module.exports.readTags = nativeBinding.readTags
 module.exports.writeTags = nativeBinding.writeTags
