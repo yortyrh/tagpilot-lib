@@ -62,8 +62,9 @@ pub fn read_tags(file_path: String) -> Result<AudioTags> {
 
 #[napi]
 pub fn write_tags(file_path: String, tags: AudioTags) -> Result<()> {
+  let path = Path::new(&file_path);
   // Read the existing file
-  let mut tagged_file = match read_from_path(Path::new(&file_path)) {
+  let mut tagged_file = match read_from_path(path) {
     Ok(tf) => tf,
     Err(e) => {
       return Err(napi::Error::from_reason(format!(
@@ -88,7 +89,7 @@ pub fn write_tags(file_path: String, tags: AudioTags) -> Result<()> {
     // Speex -> Vorbis Comments
     // WAV -> ID3v2
     // WavPack -> APE
-    let tagged_file2 = Probe::open(Path::new(&file_path)).unwrap().guess_file_type().unwrap().read().unwrap();
+    let tagged_file2 = Probe::open(path).unwrap().guess_file_type().unwrap().read().unwrap();
     let format = tagged_file2.file_type();
 
     let tag_type = match format {
@@ -156,10 +157,10 @@ pub fn write_tags(file_path: String, tags: AudioTags) -> Result<()> {
   }
 
   // Write the updated tag back to the file
-  match tagged_file.save_to_path(Path::new(&file_path), WriteOptions::default()) {
+  match tagged_file.save_to_path(path, WriteOptions::default()) {
     Ok(_) => Ok(()),
     Err(e) => Err(napi::Error::from_reason(format!(
-      "Failed to write tags to file: {}",
+      "Failed to write audio file: {}",
       e
     ))),
   }
