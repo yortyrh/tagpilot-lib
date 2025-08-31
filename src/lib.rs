@@ -27,7 +27,7 @@ pub struct AudioTags {
 }
 
 #[napi]
-pub fn read_tags(file_path: String) -> Result<AudioTags> {
+pub async fn read_tags(file_path: String) -> Result<AudioTags> {
   let path = Path::new(&file_path);
 
   match read_from_path(path) {
@@ -72,7 +72,7 @@ pub fn read_tags(file_path: String) -> Result<AudioTags> {
 }
 
 #[napi]
-pub fn write_tags(file_path: String, tags: AudioTags) -> Result<()> {
+pub async fn write_tags(file_path: String, tags: AudioTags) -> Result<()> {
   let path = Path::new(&file_path);
   // Read the existing file
   let mut tagged_file = match read_from_path(path) {
