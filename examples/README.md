@@ -1,6 +1,6 @@
 # Examples
 
-This directory contains examples demonstrating how to use the `tagpilot-lib` library.
+This directory contains examples demonstrating how to use the `@yortyrh/tagpilot-lib` library.
 
 ## Quick Start
 

@@ -1,4 +1,4 @@
-# tagpilot-lib
+# @yortyrh/tagpilot-lib
 
 A high-performance Node.js library for reading and writing audio metadata and cover art, built with Rust and NAPI-RS.
 
@@ -15,7 +15,7 @@ A high-performance Node.js library for reading and writing audio metadata and co
 ## Installation
 
 ```bash
-npm install tagpilot-lib
+npm install @yortyrh/tagpilot-lib
 ```
 
 ### Cross-Platform Support
@@ -34,7 +34,7 @@ Each platform gets an optimized binary, ensuring maximum performance on your sys
 ## Quick Start
 
 ```javascript
-const { readTags, writeTags, readCoverImage, writeCoverImage } = require('tagpilot-lib')
+const { readTags, writeTags, readCoverImage, writeCoverImage } = require('@yortyrh/tagpilot-lib')
 
 // Read audio metadata
 const tags = await readTags('./music/song.mp3')
@@ -250,7 +250,7 @@ interface AudioTags {
 ### Basic Usage
 
 ```javascript
-const { readTags, writeTags } = require('tagpilot-lib')
+const { readTags, writeTags } = require('@yortyrh/tagpilot-lib')
 
 async function updateSongMetadata() {
   // Read existing metadata
@@ -271,7 +271,7 @@ async function updateSongMetadata() {
 ### Cover Art Management
 
 ```javascript
-const { readCoverImage, writeCoverImage } = require('tagpilot-lib')
+const { readCoverImage, writeCoverImage } = require('@yortyrh/tagpilot-lib')
 const fs = require('fs')
 
 async function manageCoverArt() {
@@ -294,7 +294,7 @@ async function manageCoverArt() {
 ### Batch Processing
 
 ```javascript
-const { readTags, writeTags } = require('tagpilot-lib')
+const { readTags, writeTags } = require('@yortyrh/tagpilot-lib')
 const fs = require('fs')
 const path = require('path')
 
@@ -321,7 +321,7 @@ async function batchUpdateMetadata() {
 ### Data URL Generation
 
 ```javascript
-const { readCoverImage } = require('tagpilot-lib')
+const { readCoverImage } = require('@yortyrh/tagpilot-lib')
 const fs = require('fs')
 
 function bufferToDataURL(buffer, mimeType = 'image/jpeg') {
@@ -368,7 +368,7 @@ async function getCoverAsDataURL() {
 
 ## Performance
 
-tagpilot-lib is built with Rust and NAPI-RS for maximum performance:
+@yortyrh/tagpilot-lib is built with Rust and NAPI-RS for maximum performance:
 
 - **Fast**: Native implementation with minimal overhead
 - **Memory Efficient**: Direct buffer operations without temporary files

@@ -1,6 +1,6 @@
 # NPM Artifacts Setup
 
-This document describes the npm artifacts setup for the `tagpilot-lib` project, which enables cross-platform distribution of native binaries and WebAssembly modules.
+This document describes the npm artifacts setup for the `@yortyrh/tagpilot-lib` project, which enables cross-platform distribution of native binaries and WebAssembly modules.
 
 ## Overview
 
@@ -17,85 +17,85 @@ npm/
 │   ├── package.json
 │   ├── index.js
 │   ├── index.d.ts
-│   └── tagpilot-lib.android-arm-eabi.node
+│   └── tagpilot_lib.android-arm-eabi.node
 ├── android-arm64/
 │   ├── README.md
 │   ├── package.json
 │   ├── index.js
 │   ├── index.d.ts
-│   └── tagpilot-lib.android-arm64.node
+│   └── tagpilot_lib.android-arm64.node
 ├── darwin-arm64/
 │   ├── README.md
 │   ├── package.json
 │   ├── index.js
 │   ├── index.d.ts
-│   └── tagpilot-lib.darwin-arm64.node
+│   └── tagpilot_lib.darwin-arm64.node
 ├── darwin-x64/
 │   ├── README.md
 │   ├── package.json
 │   ├── index.js
 │   ├── index.d.ts
-│   └── tagpilot-lib.darwin-x64.node
+│   └── tagpilot_lib.darwin-x64.node
 ├── freebsd-x64/
 │   ├── README.md
 │   ├── package.json
 │   ├── index.js
 │   ├── index.d.ts
-│   └── tagpilot-lib.freebsd-x64.node
+│   └── tagpilot_lib.freebsd-x64.node
 ├── linux-arm-gnueabihf/
 │   ├── README.md
 │   ├── package.json
 │   ├── index.js
 │   ├── index.d.ts
-│   └── tagpilot-lib.linux-arm-gnueabihf.node
+│   └── tagpilot_lib.linux-arm-gnueabihf.node
 ├── linux-arm64-gnu/
 │   ├── README.md
 │   ├── package.json
 │   ├── index.js
 │   ├── index.d.ts
-│   └── tagpilot-lib.linux-arm64-gnu.node
+│   └── tagpilot_lib.linux-arm64-gnu.node
 ├── linux-arm64-musl/
 │   ├── README.md
 │   ├── package.json
 │   ├── index.js
 │   ├── index.d.ts
-│   └── tagpilot-lib.linux-arm64-musl.node
+│   └── tagpilot_lib.linux-arm64-musl.node
 ├── linux-x64-gnu/
 │   ├── README.md
 │   ├── package.json
 │   ├── index.js
 │   ├── index.d.ts
-│   └── tagpilot-lib.linux-x64-gnu.node
+│   └── tagpilot_lib.linux-x64-gnu.node
 ├── linux-x64-musl/
 │   ├── README.md
 │   ├── package.json
 │   ├── index.js
 │   ├── index.d.ts
-│   └── tagpilot-lib.linux-x64-musl.node
+│   └── tagpilot_lib.linux-x64-musl.node
 ├── win32-arm64-msvc/
 │   ├── README.md
 │   ├── package.json
 │   ├── index.js
 │   ├── index.d.ts
-│   └── tagpilot-lib.win32-arm64-msvc.node
+│   └── tagpilot_lib.win32-arm64-msvc.node
 ├── win32-ia32-msvc/
 │   ├── README.md
 │   ├── package.json
 │   ├── index.js
 │   ├── index.d.ts
-│   └── tagpilot-lib.win32-ia32-msvc.node
+│   └── tagpilot_lib.win32-ia32-msvc.node
 ├── win32-x64-msvc/
 │   ├── README.md
 │   ├── package.json
 │   ├── index.js
 │   ├── index.d.ts
-│   └── tagpilot-lib.win32-x64-msvc.node
+│   └── tagpilot_lib.win32-x64-msvc.node
 ├── wasm32-wasip1-threads/
 │   ├── README.md
 │   ├── package.json
 │   ├── index.js
 │   ├── index.d.ts
-│   └── tagpilot-lib.wasm32-wasip1-threads.wasm
+│   └── tagpilot_lib.wasm32-wasip1-threads.wasm
 └── wasm32-wasi/
     ├── README.md
     ├── package.json
@@ -163,8 +163,8 @@ Each platform-specific package includes:
 
 - **index.js**: Main JavaScript entry point
 - **index.d.ts**: TypeScript definitions
-- **tagpilot-lib.{platform}.node**: Native binary for the specific platform
-- **tagpilot-lib.{platform}.wasm**: WebAssembly module (for WASM platforms)
+- **tagpilot_lib.{platform}.node**: Native binary for the specific platform
+- **tagpilot_lib.{platform}.wasm**: WebAssembly module (for WASM platforms)
 - **tagpilot_lib.wasi-browser.js**: Browser-compatible WASI implementation
 
 ## Usage
@@ -206,13 +206,13 @@ The artifacts directory contains the native binaries and WebAssembly modules org
 ```
 artifacts/
 ├── bindings-x86_64-apple-darwin/
-│   └── tagpilot-lib.darwin-x64.node
+│   └── tagpilot_lib.darwin-x64.node
 ├── bindings-aarch64-apple-darwin/
-│   └── tagpilot-lib.darwin-arm64.node
+│   └── tagpilot_lib.darwin-arm64.node
 ├── bindings-x86_64-pc-windows-msvc/
-│   └── tagpilot-lib.win32-x64-msvc.node
+│   └── tagpilot_lib.win32-x64-msvc.node
 ├── bindings-wasm32-wasip1-threads/
-│   └── tagpilot-lib.wasm32-wasip1-threads.wasm
+│   └── tagpilot_lib.wasm32-wasip1-threads.wasm
 ├── bindings-wasm32-wasi/
 │   └── tagpilot_lib.wasi-browser.js
 └── ...
