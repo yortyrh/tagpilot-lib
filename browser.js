@@ -1,1 +1,1 @@
-export * from 'tagpilot-lib-wasm32-wasi'
+export * from '@yortyrh/tagpilot-lib-wasm32-wasi'

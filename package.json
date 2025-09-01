@@ -34,6 +34,7 @@
     "url": "https://github.com/yortyrh"
   },
   "license": "MIT",
+  "browser": "browser.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/yortyrh/tagpilot-lib.git"
@@ -50,6 +51,7 @@
     "access": "public"
   },
   "scripts": {
+    "preartifacts": "yarn generate-npm-packages",
     "artifacts": "napi artifacts",
     "bench": "node --import @oxc-node/core/register benchmark/bench.ts",
     "build": "napi build --platform --release",
@@ -117,7 +119,28 @@
     "arrowParens": "always"
   },
   "packageManager": "yarn@4.9.4",
+  "files": [
+    "index.d.ts",
+    "index.js",
+    "browser.js"
+  ],
   "napi": {
-    "binaryName": "tagpilot_lib"
+    "binaryName": "tagpilot_lib",
+    "targets": [
+      "x86_64-pc-windows-msvc",
+      "x86_64-apple-darwin",
+      "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-linux-musl",
+      "aarch64-unknown-linux-gnu",
+      "i686-pc-windows-msvc",
+      "armv7-unknown-linux-gnueabihf",
+      "aarch64-apple-darwin",
+      "aarch64-linux-android",
+      "x86_64-unknown-freebsd",
+      "aarch64-unknown-linux-musl",
+      "aarch64-pc-windows-msvc",
+      "armv7-linux-androideabi",
+      "wasm32-wasip1-threads"
+    ]
   }
 }

@@ -18,6 +18,19 @@ A high-performance Node.js library for reading and writing audio metadata and co
 npm install tagpilot-lib
 ```
 
+### Cross-Platform Support
+
+The package automatically provides the correct native binary for your platform:
+
+- **Windows**: x64, ARM64, IA32
+- **macOS**: x64 (Intel), ARM64 (Apple Silicon)
+- **Linux**: x64, ARM64, ARM (GNU and Musl variants)
+- **FreeBSD**: x64
+- **Android**: ARM, ARM64
+- **WebAssembly**: Browser and WASI environments
+
+Each platform gets an optimized binary, ensuring maximum performance on your system.
+
 ## Quick Start
 
 ```javascript
@@ -378,6 +391,26 @@ cd tagpilot-lib
 npm install
 npm run build
 ```
+
+### NPM Artifacts System
+
+The project includes a comprehensive npm artifacts system for cross-platform distribution:
+
+```bash
+# Create npm directory structure
+yarn create-npm-dirs
+
+# Generate platform-specific packages
+yarn generate-npm-packages
+
+# Copy artifacts to npm directories
+yarn artifacts
+
+# Prepare for publishing
+yarn prepublishOnly
+```
+
+This system automatically creates platform-specific packages with the correct native binaries for each target platform. See [NPM_ARTIFACTS_SETUP.md](NPM_ARTIFACTS_SETUP.md) for detailed documentation.
 
 ### Running Tests
 
