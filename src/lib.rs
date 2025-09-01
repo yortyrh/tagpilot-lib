@@ -37,36 +37,32 @@ pub async fn read_tags(file_path: String) -> Result<AudioTags> {
     Ok(tagged_file) => {
       let tag = tagged_file.primary_tag();
       match tag {
-        Some(tag) => {
-          Ok(AudioTags {
-            title: tag.title().map(|s| s.to_string()),
-            artist: tag.artist().map(|s| s.to_string()),
-            album: tag.album().map(|s| s.to_string()),
-            year: tag.year(),
-            genre: tag.genre().map(|s| s.to_string()),
-            track: tag.track(),
-            track_total: tag.track_total(),
-            album_artist: tag.artist().map(|s| s.to_string()),
-            comment: tag.comment().map(|s| s.to_string()),
-            disc: tag.disk(),
-            disc_total: tag.disk_total(),
-          })
-        }
-        None => {
-          Ok(AudioTags {
-            title: None,
-            artist: None,
-            album: None,
-            year: None,
-            genre: None,
-            track: None,
-            track_total: None,
-            album_artist: None,
-            comment: None,
-            disc: None,
-            disc_total: None,
-          })
-        }
+        Some(tag) => Ok(AudioTags {
+          title: tag.title().map(|s| s.to_string()),
+          artist: tag.artist().map(|s| s.to_string()),
+          album: tag.album().map(|s| s.to_string()),
+          year: tag.year(),
+          genre: tag.genre().map(|s| s.to_string()),
+          track: tag.track(),
+          track_total: tag.track_total(),
+          album_artist: tag.artist().map(|s| s.to_string()),
+          comment: tag.comment().map(|s| s.to_string()),
+          disc: tag.disk(),
+          disc_total: tag.disk_total(),
+        }),
+        None => Ok(AudioTags {
+          title: None,
+          artist: None,
+          album: None,
+          year: None,
+          genre: None,
+          track: None,
+          track_total: None,
+          album_artist: None,
+          comment: None,
+          disc: None,
+          disc_total: None,
+        }),
       }
     }
     Err(e) => Err(napi::Error::from_reason(format!(
@@ -85,36 +81,32 @@ pub async fn read_tags_from_buffer(buffer: napi::bindgen_prelude::Buffer) -> Res
     Ok(tagged_file) => {
       let tag = tagged_file.primary_tag();
       match tag {
-        Some(tag) => {
-          Ok(AudioTags {
-            title: tag.title().map(|s| s.to_string()),
-            artist: tag.artist().map(|s| s.to_string()),
-            album: tag.album().map(|s| s.to_string()),
-            year: tag.year(),
-            genre: tag.genre().map(|s| s.to_string()),
-            track: tag.track(),
-            track_total: tag.track_total(),
-            album_artist: tag.artist().map(|s| s.to_string()),
-            comment: tag.comment().map(|s| s.to_string()),
-            disc: tag.disk(),
-            disc_total: tag.disk_total(),
-          })
-        }
-        None => {
-          Ok(AudioTags {
-            title: None,
-            artist: None,
-            album: None,
-            year: None,
-            genre: None,
-            track: None,
-            track_total: None,
-            album_artist: None,
-            comment: None,
-            disc: None,
-            disc_total: None,
-          })
-        }
+        Some(tag) => Ok(AudioTags {
+          title: tag.title().map(|s| s.to_string()),
+          artist: tag.artist().map(|s| s.to_string()),
+          album: tag.album().map(|s| s.to_string()),
+          year: tag.year(),
+          genre: tag.genre().map(|s| s.to_string()),
+          track: tag.track(),
+          track_total: tag.track_total(),
+          album_artist: tag.artist().map(|s| s.to_string()),
+          comment: tag.comment().map(|s| s.to_string()),
+          disc: tag.disk(),
+          disc_total: tag.disk_total(),
+        }),
+        None => Ok(AudioTags {
+          title: None,
+          artist: None,
+          album: None,
+          year: None,
+          genre: None,
+          track: None,
+          track_total: None,
+          album_artist: None,
+          comment: None,
+          disc: None,
+          disc_total: None,
+        }),
       }
     }
     Err(e) => Err(napi::Error::from_reason(format!(
@@ -387,8 +379,7 @@ pub async fn write_cover_image(buffer: Buffer, image_data: Buffer) -> Result<Buf
   // TODO: Implement proper picture creation once the API is understood
 
   // Create a copy of the buffer for writing
-  let owned_vec: Buffer = buffer.into();
-  let owned_copy: Vec<u8> = owned_vec.to_vec();
+  let owned_copy: Vec<u8> = buffer.to_vec();
   let mut output_cursor = Cursor::new(owned_copy);
 
   // Write the updated tag back to the buffer
