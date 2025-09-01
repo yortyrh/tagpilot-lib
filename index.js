@@ -73,13 +73,13 @@ function requireNative() {
   } else if (process.platform === 'android') {
     if (process.arch === 'arm64') {
       try {
-        return require('./tagpilot-lib.android-arm64.node')
+        return require('./tagpilot_lib.android-arm64.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('tagpilot-lib-android-arm64')
-        const bindingPackageVersion = require('tagpilot-lib-android-arm64/package.json').version
+        const binding = require('@yortyrh/tagpilot-lib-android-arm64')
+        const bindingPackageVersion = require('@yortyrh/tagpilot-lib-android-arm64/package.json').version
         if (bindingPackageVersion !== '1.0.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 1.0.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -89,13 +89,13 @@ function requireNative() {
       }
     } else if (process.arch === 'arm') {
       try {
-        return require('./tagpilot-lib.android-arm-eabi.node')
+        return require('./tagpilot_lib.android-arm-eabi.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('tagpilot-lib-android-arm-eabi')
-        const bindingPackageVersion = require('tagpilot-lib-android-arm-eabi/package.json').version
+        const binding = require('@yortyrh/tagpilot-lib-android-arm-eabi')
+        const bindingPackageVersion = require('@yortyrh/tagpilot-lib-android-arm-eabi/package.json').version
         if (bindingPackageVersion !== '1.0.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 1.0.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -109,13 +109,13 @@ function requireNative() {
   } else if (process.platform === 'win32') {
     if (process.arch === 'x64') {
       try {
-        return require('./tagpilot-lib.win32-x64-msvc.node')
+        return require('./tagpilot_lib.win32-x64-msvc.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('tagpilot-lib-win32-x64-msvc')
-        const bindingPackageVersion = require('tagpilot-lib-win32-x64-msvc/package.json').version
+        const binding = require('@yortyrh/tagpilot-lib-win32-x64-msvc')
+        const bindingPackageVersion = require('@yortyrh/tagpilot-lib-win32-x64-msvc/package.json').version
         if (bindingPackageVersion !== '1.0.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 1.0.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -125,13 +125,13 @@ function requireNative() {
       }
     } else if (process.arch === 'ia32') {
       try {
-        return require('./tagpilot-lib.win32-ia32-msvc.node')
+        return require('./tagpilot_lib.win32-ia32-msvc.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('tagpilot-lib-win32-ia32-msvc')
-        const bindingPackageVersion = require('tagpilot-lib-win32-ia32-msvc/package.json').version
+        const binding = require('@yortyrh/tagpilot-lib-win32-ia32-msvc')
+        const bindingPackageVersion = require('@yortyrh/tagpilot-lib-win32-ia32-msvc/package.json').version
         if (bindingPackageVersion !== '1.0.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 1.0.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -141,13 +141,13 @@ function requireNative() {
       }
     } else if (process.arch === 'arm64') {
       try {
-        return require('./tagpilot-lib.win32-arm64-msvc.node')
+        return require('./tagpilot_lib.win32-arm64-msvc.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('tagpilot-lib-win32-arm64-msvc')
-        const bindingPackageVersion = require('tagpilot-lib-win32-arm64-msvc/package.json').version
+        const binding = require('@yortyrh/tagpilot-lib-win32-arm64-msvc')
+        const bindingPackageVersion = require('@yortyrh/tagpilot-lib-win32-arm64-msvc/package.json').version
         if (bindingPackageVersion !== '1.0.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 1.0.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -160,13 +160,13 @@ function requireNative() {
     }
   } else if (process.platform === 'darwin') {
     try {
-      return require('./tagpilot-lib.darwin-universal.node')
+      return require('./tagpilot_lib.darwin-universal.node')
     } catch (e) {
       loadErrors.push(e)
     }
     try {
-      const binding = require('tagpilot-lib-darwin-universal')
-      const bindingPackageVersion = require('tagpilot-lib-darwin-universal/package.json').version
+      const binding = require('@yortyrh/tagpilot-lib-darwin-universal')
+      const bindingPackageVersion = require('@yortyrh/tagpilot-lib-darwin-universal/package.json').version
       if (bindingPackageVersion !== '1.0.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
         throw new Error(`Native binding package version mismatch, expected 1.0.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
       }
@@ -176,13 +176,13 @@ function requireNative() {
     }
     if (process.arch === 'x64') {
       try {
-        return require('./tagpilot-lib.darwin-x64.node')
+        return require('./tagpilot_lib.darwin-x64.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('tagpilot-lib-darwin-x64')
-        const bindingPackageVersion = require('tagpilot-lib-darwin-x64/package.json').version
+        const binding = require('@yortyrh/tagpilot-lib-darwin-x64')
+        const bindingPackageVersion = require('@yortyrh/tagpilot-lib-darwin-x64/package.json').version
         if (bindingPackageVersion !== '1.0.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 1.0.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -192,13 +192,13 @@ function requireNative() {
       }
     } else if (process.arch === 'arm64') {
       try {
-        return require('./tagpilot-lib.darwin-arm64.node')
+        return require('./tagpilot_lib.darwin-arm64.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('tagpilot-lib-darwin-arm64')
-        const bindingPackageVersion = require('tagpilot-lib-darwin-arm64/package.json').version
+        const binding = require('@yortyrh/tagpilot-lib-darwin-arm64')
+        const bindingPackageVersion = require('@yortyrh/tagpilot-lib-darwin-arm64/package.json').version
         if (bindingPackageVersion !== '1.0.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 1.0.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -212,13 +212,13 @@ function requireNative() {
   } else if (process.platform === 'freebsd') {
     if (process.arch === 'x64') {
       try {
-        return require('./tagpilot-lib.freebsd-x64.node')
+        return require('./tagpilot_lib.freebsd-x64.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('tagpilot-lib-freebsd-x64')
-        const bindingPackageVersion = require('tagpilot-lib-freebsd-x64/package.json').version
+        const binding = require('@yortyrh/tagpilot-lib-freebsd-x64')
+        const bindingPackageVersion = require('@yortyrh/tagpilot-lib-freebsd-x64/package.json').version
         if (bindingPackageVersion !== '1.0.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 1.0.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -228,13 +228,13 @@ function requireNative() {
       }
     } else if (process.arch === 'arm64') {
       try {
-        return require('./tagpilot-lib.freebsd-arm64.node')
+        return require('./tagpilot_lib.freebsd-arm64.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('tagpilot-lib-freebsd-arm64')
-        const bindingPackageVersion = require('tagpilot-lib-freebsd-arm64/package.json').version
+        const binding = require('@yortyrh/tagpilot-lib-freebsd-arm64')
+        const bindingPackageVersion = require('@yortyrh/tagpilot-lib-freebsd-arm64/package.json').version
         if (bindingPackageVersion !== '1.0.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 1.0.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -249,13 +249,13 @@ function requireNative() {
     if (process.arch === 'x64') {
       if (isMusl()) {
         try {
-          return require('./tagpilot-lib.linux-x64-musl.node')
+          return require('./tagpilot_lib.linux-x64-musl.node')
         } catch (e) {
           loadErrors.push(e)
         }
         try {
-          const binding = require('tagpilot-lib-linux-x64-musl')
-          const bindingPackageVersion = require('tagpilot-lib-linux-x64-musl/package.json').version
+          const binding = require('@yortyrh/tagpilot-lib-linux-x64-musl')
+          const bindingPackageVersion = require('@yortyrh/tagpilot-lib-linux-x64-musl/package.json').version
           if (bindingPackageVersion !== '1.0.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
             throw new Error(`Native binding package version mismatch, expected 1.0.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
           }
@@ -265,13 +265,13 @@ function requireNative() {
         }
       } else {
         try {
-          return require('./tagpilot-lib.linux-x64-gnu.node')
+          return require('./tagpilot_lib.linux-x64-gnu.node')
         } catch (e) {
           loadErrors.push(e)
         }
         try {
-          const binding = require('tagpilot-lib-linux-x64-gnu')
-          const bindingPackageVersion = require('tagpilot-lib-linux-x64-gnu/package.json').version
+          const binding = require('@yortyrh/tagpilot-lib-linux-x64-gnu')
+          const bindingPackageVersion = require('@yortyrh/tagpilot-lib-linux-x64-gnu/package.json').version
           if (bindingPackageVersion !== '1.0.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
             throw new Error(`Native binding package version mismatch, expected 1.0.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
           }
@@ -283,13 +283,13 @@ function requireNative() {
     } else if (process.arch === 'arm64') {
       if (isMusl()) {
         try {
-          return require('./tagpilot-lib.linux-arm64-musl.node')
+          return require('./tagpilot_lib.linux-arm64-musl.node')
         } catch (e) {
           loadErrors.push(e)
         }
         try {
-          const binding = require('tagpilot-lib-linux-arm64-musl')
-          const bindingPackageVersion = require('tagpilot-lib-linux-arm64-musl/package.json').version
+          const binding = require('@yortyrh/tagpilot-lib-linux-arm64-musl')
+          const bindingPackageVersion = require('@yortyrh/tagpilot-lib-linux-arm64-musl/package.json').version
           if (bindingPackageVersion !== '1.0.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
             throw new Error(`Native binding package version mismatch, expected 1.0.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
           }
@@ -299,13 +299,13 @@ function requireNative() {
         }
       } else {
         try {
-          return require('./tagpilot-lib.linux-arm64-gnu.node')
+          return require('./tagpilot_lib.linux-arm64-gnu.node')
         } catch (e) {
           loadErrors.push(e)
         }
         try {
-          const binding = require('tagpilot-lib-linux-arm64-gnu')
-          const bindingPackageVersion = require('tagpilot-lib-linux-arm64-gnu/package.json').version
+          const binding = require('@yortyrh/tagpilot-lib-linux-arm64-gnu')
+          const bindingPackageVersion = require('@yortyrh/tagpilot-lib-linux-arm64-gnu/package.json').version
           if (bindingPackageVersion !== '1.0.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
             throw new Error(`Native binding package version mismatch, expected 1.0.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
           }
@@ -317,13 +317,13 @@ function requireNative() {
     } else if (process.arch === 'arm') {
       if (isMusl()) {
         try {
-          return require('./tagpilot-lib.linux-arm-musleabihf.node')
+          return require('./tagpilot_lib.linux-arm-musleabihf.node')
         } catch (e) {
           loadErrors.push(e)
         }
         try {
-          const binding = require('tagpilot-lib-linux-arm-musleabihf')
-          const bindingPackageVersion = require('tagpilot-lib-linux-arm-musleabihf/package.json').version
+          const binding = require('@yortyrh/tagpilot-lib-linux-arm-musleabihf')
+          const bindingPackageVersion = require('@yortyrh/tagpilot-lib-linux-arm-musleabihf/package.json').version
           if (bindingPackageVersion !== '1.0.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
             throw new Error(`Native binding package version mismatch, expected 1.0.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
           }
@@ -333,13 +333,13 @@ function requireNative() {
         }
       } else {
         try {
-          return require('./tagpilot-lib.linux-arm-gnueabihf.node')
+          return require('./tagpilot_lib.linux-arm-gnueabihf.node')
         } catch (e) {
           loadErrors.push(e)
         }
         try {
-          const binding = require('tagpilot-lib-linux-arm-gnueabihf')
-          const bindingPackageVersion = require('tagpilot-lib-linux-arm-gnueabihf/package.json').version
+          const binding = require('@yortyrh/tagpilot-lib-linux-arm-gnueabihf')
+          const bindingPackageVersion = require('@yortyrh/tagpilot-lib-linux-arm-gnueabihf/package.json').version
           if (bindingPackageVersion !== '1.0.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
             throw new Error(`Native binding package version mismatch, expected 1.0.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
           }
@@ -351,13 +351,13 @@ function requireNative() {
     } else if (process.arch === 'riscv64') {
       if (isMusl()) {
         try {
-          return require('./tagpilot-lib.linux-riscv64-musl.node')
+          return require('./tagpilot_lib.linux-riscv64-musl.node')
         } catch (e) {
           loadErrors.push(e)
         }
         try {
-          const binding = require('tagpilot-lib-linux-riscv64-musl')
-          const bindingPackageVersion = require('tagpilot-lib-linux-riscv64-musl/package.json').version
+          const binding = require('@yortyrh/tagpilot-lib-linux-riscv64-musl')
+          const bindingPackageVersion = require('@yortyrh/tagpilot-lib-linux-riscv64-musl/package.json').version
           if (bindingPackageVersion !== '1.0.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
             throw new Error(`Native binding package version mismatch, expected 1.0.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
           }
@@ -367,13 +367,13 @@ function requireNative() {
         }
       } else {
         try {
-          return require('./tagpilot-lib.linux-riscv64-gnu.node')
+          return require('./tagpilot_lib.linux-riscv64-gnu.node')
         } catch (e) {
           loadErrors.push(e)
         }
         try {
-          const binding = require('tagpilot-lib-linux-riscv64-gnu')
-          const bindingPackageVersion = require('tagpilot-lib-linux-riscv64-gnu/package.json').version
+          const binding = require('@yortyrh/tagpilot-lib-linux-riscv64-gnu')
+          const bindingPackageVersion = require('@yortyrh/tagpilot-lib-linux-riscv64-gnu/package.json').version
           if (bindingPackageVersion !== '1.0.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
             throw new Error(`Native binding package version mismatch, expected 1.0.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
           }
@@ -384,13 +384,13 @@ function requireNative() {
       }
     } else if (process.arch === 'ppc64') {
       try {
-        return require('./tagpilot-lib.linux-ppc64-gnu.node')
+        return require('./tagpilot_lib.linux-ppc64-gnu.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('tagpilot-lib-linux-ppc64-gnu')
-        const bindingPackageVersion = require('tagpilot-lib-linux-ppc64-gnu/package.json').version
+        const binding = require('@yortyrh/tagpilot-lib-linux-ppc64-gnu')
+        const bindingPackageVersion = require('@yortyrh/tagpilot-lib-linux-ppc64-gnu/package.json').version
         if (bindingPackageVersion !== '1.0.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 1.0.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -400,13 +400,13 @@ function requireNative() {
       }
     } else if (process.arch === 's390x') {
       try {
-        return require('./tagpilot-lib.linux-s390x-gnu.node')
+        return require('./tagpilot_lib.linux-s390x-gnu.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('tagpilot-lib-linux-s390x-gnu')
-        const bindingPackageVersion = require('tagpilot-lib-linux-s390x-gnu/package.json').version
+        const binding = require('@yortyrh/tagpilot-lib-linux-s390x-gnu')
+        const bindingPackageVersion = require('@yortyrh/tagpilot-lib-linux-s390x-gnu/package.json').version
         if (bindingPackageVersion !== '1.0.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 1.0.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -420,13 +420,13 @@ function requireNative() {
   } else if (process.platform === 'openharmony') {
     if (process.arch === 'arm64') {
       try {
-        return require('./tagpilot-lib.openharmony-arm64.node')
+        return require('./tagpilot_lib.openharmony-arm64.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('tagpilot-lib-openharmony-arm64')
-        const bindingPackageVersion = require('tagpilot-lib-openharmony-arm64/package.json').version
+        const binding = require('@yortyrh/tagpilot-lib-openharmony-arm64')
+        const bindingPackageVersion = require('@yortyrh/tagpilot-lib-openharmony-arm64/package.json').version
         if (bindingPackageVersion !== '1.0.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 1.0.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -436,13 +436,13 @@ function requireNative() {
       }
     } else if (process.arch === 'x64') {
       try {
-        return require('./tagpilot-lib.openharmony-x64.node')
+        return require('./tagpilot_lib.openharmony-x64.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('tagpilot-lib-openharmony-x64')
-        const bindingPackageVersion = require('tagpilot-lib-openharmony-x64/package.json').version
+        const binding = require('@yortyrh/tagpilot-lib-openharmony-x64')
+        const bindingPackageVersion = require('@yortyrh/tagpilot-lib-openharmony-x64/package.json').version
         if (bindingPackageVersion !== '1.0.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 1.0.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -452,13 +452,13 @@ function requireNative() {
       }
     } else if (process.arch === 'arm') {
       try {
-        return require('./tagpilot-lib.openharmony-arm.node')
+        return require('./tagpilot_lib.openharmony-arm.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('tagpilot-lib-openharmony-arm')
-        const bindingPackageVersion = require('tagpilot-lib-openharmony-arm/package.json').version
+        const binding = require('@yortyrh/tagpilot-lib-openharmony-arm')
+        const bindingPackageVersion = require('@yortyrh/tagpilot-lib-openharmony-arm/package.json').version
         if (bindingPackageVersion !== '1.0.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 1.0.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -478,7 +478,7 @@ nativeBinding = requireNative()
 
 if (!nativeBinding || process.env.NAPI_RS_FORCE_WASI) {
   try {
-    nativeBinding = require('./tagpilot-lib.wasi.cjs')
+    nativeBinding = require('./tagpilot_lib.wasi.cjs')
   } catch (err) {
     if (process.env.NAPI_RS_FORCE_WASI) {
       loadErrors.push(err)
@@ -486,7 +486,7 @@ if (!nativeBinding || process.env.NAPI_RS_FORCE_WASI) {
   }
   if (!nativeBinding) {
     try {
-      nativeBinding = require('tagpilot-lib-wasm32-wasi')
+      nativeBinding = require('@yortyrh/tagpilot-lib-wasm32-wasi')
     } catch (err) {
       if (process.env.NAPI_RS_FORCE_WASI) {
         loadErrors.push(err)

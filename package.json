@@ -1,5 +1,5 @@
 {
-  "name": "tagpilot-lib",
+  "name": "@yortyrh/tagpilot-lib",
   "version": "1.0.0",
   "description": "A high-performance Node.js library for reading and writing audio metadata and cover art, built with Rust and NAPI-RS",
   "main": "index.js",
@@ -116,5 +116,8 @@
     "singleQuote": true,
     "arrowParens": "always"
   },
-  "packageManager": "yarn@4.9.4"
+  "packageManager": "yarn@4.9.4",
+  "napi": {
+    "binaryName": "tagpilot_lib"
+  }
 }

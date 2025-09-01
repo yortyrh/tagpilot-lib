@@ -11,11 +11,20 @@ crate-type = ["cdylib"]
 [dependencies]
 infer       = "0.19.0"
 lofty       = "0.22.4"
-napi        = { version = "3", features = ["async"] }
 napi-derive = "3.0.0"
-serde       = { version = "1.0", features = ["derive"] }
 serde_json  = "1.0"
-tokio       = { version = "1.0", features = ["rt"] }
+
+  [dependencies.napi]
+  features = ["async"]
+  version  = "3"
+
+  [dependencies.serde]
+  features = ["derive"]
+  version  = "1.0"
+
+  [dependencies.tokio]
+  features = ["rt"]
+  version  = "1.0"
 
 [build-dependencies]
 napi-build = "2"
