@@ -32,12 +32,14 @@ test('writeTagsToBuffer returns a Promise', async (t) => {
 })
 
 test('readCoverImage returns a Promise', (t) => {
-  const result = readCoverImage('./music/03.mp3')
+  const audioBuffer = fs.readFileSync('./music/03.mp3')
+  const result = readCoverImage(audioBuffer)
   t.true(result instanceof Promise)
 })
 
 test('writeCoverImage returns a Promise', (t) => {
+  const audioBuffer = fs.readFileSync('./music/03.mp3')
   const sampleImageData = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]) // PNG header
-  const result = writeCoverImage('./music/03.mp3', sampleImageData)
+  const result = writeCoverImage(audioBuffer, sampleImageData)
   t.true(result instanceof Promise)
 })
