@@ -1,87 +1,438 @@
-# `@napi-rs/package-template`
+# tagpilot-lib
 
-![https://github.com/napi-rs/package-template/actions](https://github.com/napi-rs/package-template/workflows/CI/badge.svg)
+A high-performance Node.js library for reading and writing audio metadata and cover art, built with Rust and NAPI-RS.
 
-> Template project for writing node packages with napi-rs.
+## Features
 
-# Usage
+- 🚀 **High Performance**: Native Rust implementation for maximum speed
+- 🎵 **Audio Metadata**: Read and write ID3 tags, MP3 metadata, and more
+- 🖼️ **Cover Art**: Extract, embed, and manage album artwork
+- 📦 **Buffer Support**: Work with audio data directly in memory
+- 🔄 **Async/Await**: Promise-based API for modern JavaScript
+- 🛡️ **TypeScript**: Full TypeScript support with type definitions
+- 🌐 **Cross Platform**: Works on Windows, macOS, and Linux
 
-1. Click **Use this template**.
-2. **Clone** your project.
-3. Run `yarn install` to install dependencies.
-4. Run `yarn napi rename -n [@your-scope/package-name] -b [binary-name]` command under the project folder to rename your package.
-
-## Install this test package
-
-```bash
-yarn add @napi-rs/package-template
-```
-
-## Ability
-
-### Build
-
-After `yarn build/npm run build` command, you can see `package-template.[darwin|win32|linux].node` file in project root. This is the native addon built from [lib.rs](./src/lib.rs).
-
-### Test
-
-With [ava](https://github.com/avajs/ava), run `yarn test/npm run test` to testing native addon. You can also switch to another testing framework if you want.
-
-### CI
-
-With GitHub Actions, each commit and pull request will be built and tested automatically in [`node@20`, `@node22`] x [`macOS`, `Linux`, `Windows`] matrix. You will never be afraid of the native addon broken in these platforms.
-
-### Release
-
-Release native package is very difficult in old days. Native packages may ask developers who use it to install `build toolchain` like `gcc/llvm`, `node-gyp` or something more.
-
-With `GitHub actions`, we can easily prebuild a `binary` for major platforms. And with `N-API`, we should never be afraid of **ABI Compatible**.
-
-The other problem is how to deliver prebuild `binary` to users. Downloading it in `postinstall` script is a common way that most packages do it right now. The problem with this solution is it introduced many other packages to download binary that has not been used by `runtime codes`. The other problem is some users may not easily download the binary from `GitHub/CDN` if they are behind a private network (But in most cases, they have a private NPM mirror).
-
-In this package, we choose a better way to solve this problem. We release different `npm packages` for different platforms. And add it to `optionalDependencies` before releasing the `Major` package to npm.
-
-`NPM` will choose which native package should download from `registry` automatically. You can see [npm](./npm) dir for details. And you can also run `yarn add @napi-rs/package-template` to see how it works.
-
-## Develop requirements
-
-- Install the latest `Rust`
-- Install `Node.js@10+` which fully supported `Node-API`
-- Install `yarn@1.x`
-
-## Test in local
-
-- yarn
-- yarn build
-- yarn test
-
-And you will see:
+## Installation
 
 ```bash
-$ ava --verbose
-
-  ✔ sync function from native code
-  ✔ sleep function from native code (201ms)
-  ─
-
-  2 tests passed
-✨  Done in 1.12s.
+npm install tagpilot-lib
 ```
 
-## Release package
+## Quick Start
 
-Ensure you have set your **NPM_TOKEN** in the `GitHub` project setting.
+```javascript
+const { readTags, writeTags, readCoverImage, writeCoverImage } = require('tagpilot-lib')
 
-In `Settings -> Secrets`, add **NPM_TOKEN** into it.
+// Read audio metadata
+const tags = await readTags('./music/song.mp3')
+console.log(tags.title) // "Song Title"
+console.log(tags.artist) // "Artist Name"
 
-When you want to release the package:
+// Write audio metadata
+await writeTags('./music/song.mp3', {
+  title: 'New Title',
+  artist: 'New Artist',
+  album: 'Album Name',
+  year: 2024,
+  genre: 'Rock',
+  track: 1,
+  trackTotal: 12,
+})
+
+// Read cover image
+const coverImage = await readCoverImage(audioBuffer)
+if (coverImage) {
+  console.log('Cover image found:', coverImage.length, 'bytes')
+}
+
+// Write cover image
+const imageBuffer = fs.readFileSync('./cover.jpg')
+const modifiedAudio = await writeCoverImage(audioBuffer, imageBuffer)
+```
+
+## API Reference
+
+### Audio Tags
+
+#### `readTags(filePath: string): Promise<AudioTags>`
+
+Reads metadata from an audio file.
+
+**Parameters:**
+
+- `filePath` (string): Path to the audio file
+
+**Returns:** Promise<AudioTags>
+
+**Example:**
+
+```javascript
+const tags = await readTags('./music/song.mp3')
+console.log(tags)
+// {
+//   title: "Song Title",
+//   artist: "Artist Name",
+//   album: "Album Name",
+//   year: 2024,
+//   genre: "Rock",
+//   track: 1,
+//   trackTotal: 12,
+//   albumArtist: "Album Artist",
+//   comment: "Comment",
+//   disc: 1,
+//   discTotal: 2
+// }
+```
+
+#### `writeTags(filePath: string, tags: AudioTags): Promise<void>`
+
+Writes metadata to an audio file.
+
+**Parameters:**
+
+- `filePath` (string): Path to the audio file
+- `tags` (AudioTags): Metadata to write
+
+**Returns:** Promise<void>
+
+**Example:**
+
+```javascript
+await writeTags('./music/song.mp3', {
+  title: 'New Title',
+  artist: 'New Artist',
+  album: 'Album Name',
+  year: 2024,
+  genre: 'Rock',
+  track: 1,
+  trackTotal: 12,
+  albumArtist: 'Album Artist',
+  comment: 'My comment',
+  disc: 1,
+  discTotal: 2,
+})
+```
+
+#### `clearTags(filePath: string): Promise<void>`
+
+Clears all metadata from an audio file.
+
+**Parameters:**
+
+- `filePath` (string): Path to the audio file
+
+**Returns:** Promise<void>
+
+**Example:**
+
+```javascript
+await clearTags('./music/song.mp3')
+```
+
+### Buffer Operations
+
+#### `readTagsFromBuffer(buffer: Buffer): Promise<AudioTags>`
+
+Reads metadata from an audio buffer.
+
+**Parameters:**
+
+- `buffer` (Buffer): Audio data buffer
+
+**Returns:** Promise<AudioTags>
+
+**Example:**
+
+```javascript
+const audioBuffer = fs.readFileSync('./music/song.mp3')
+const tags = await readTagsFromBuffer(audioBuffer)
+```
+
+#### `writeTagsToBuffer(buffer: Buffer, tags: AudioTags): Promise<Buffer>`
+
+Writes metadata to an audio buffer and returns the modified buffer.
+
+**Parameters:**
+
+- `buffer` (Buffer): Audio data buffer
+- `tags` (AudioTags): Metadata to write
+
+**Returns:** Promise<Buffer>
+
+**Example:**
+
+```javascript
+const audioBuffer = fs.readFileSync('./music/song.mp3')
+const modifiedBuffer = await writeTagsToBuffer(audioBuffer, {
+  title: 'New Title',
+  artist: 'New Artist',
+})
+fs.writeFileSync('./music/modified-song.mp3', modifiedBuffer)
+```
+
+### Cover Art
+
+#### `readCoverImage(buffer: Buffer): Promise<Buffer | null>`
+
+Reads cover art from an audio buffer.
+
+**Parameters:**
+
+- `buffer` (Buffer): Audio data buffer
+
+**Returns:** Promise<Buffer | null>
+
+**Example:**
+
+```javascript
+const audioBuffer = fs.readFileSync('./music/song.mp3')
+const coverImage = await readCoverImage(audioBuffer)
+if (coverImage) {
+  fs.writeFileSync('./cover.jpg', coverImage)
+}
+```
+
+#### `writeCoverImage(buffer: Buffer, imageData: Buffer): Promise<Buffer>`
+
+Writes cover art to an audio buffer and returns the modified buffer.
+
+**Parameters:**
+
+- `buffer` (Buffer): Audio data buffer
+- `imageData` (Buffer): Image data (JPEG, PNG, GIF, BMP, TIFF)
+
+**Returns:** Promise<Buffer>
+
+**Example:**
+
+```javascript
+const audioBuffer = fs.readFileSync('./music/song.mp3')
+const imageBuffer = fs.readFileSync('./cover.jpg')
+const modifiedAudio = await writeCoverImage(audioBuffer, imageBuffer)
+fs.writeFileSync('./music/song-with-cover.mp3', modifiedAudio)
+```
+
+## Types
+
+### AudioTags
+
+```typescript
+interface AudioTags {
+  title?: string
+  artist?: string
+  album?: string
+  year?: number
+  genre?: string
+  track?: number
+  trackTotal?: number
+  albumArtist?: string
+  comment?: string
+  disc?: number
+  discTotal?: number
+}
+```
+
+## Examples
+
+### Basic Usage
+
+```javascript
+const { readTags, writeTags } = require('tagpilot-lib')
+
+async function updateSongMetadata() {
+  // Read existing metadata
+  const tags = await readTags('./music/song.mp3')
+  console.log('Current title:', tags.title)
+
+  // Update metadata
+  await writeTags('./music/song.mp3', {
+    ...tags,
+    title: 'Updated Title',
+    year: 2024,
+  })
+
+  console.log('Metadata updated successfully!')
+}
+```
+
+### Cover Art Management
+
+```javascript
+const { readCoverImage, writeCoverImage } = require('tagpilot-lib')
+const fs = require('fs')
+
+async function manageCoverArt() {
+  const audioBuffer = fs.readFileSync('./music/song.mp3')
+
+  // Read existing cover art
+  const existingCover = await readCoverImage(audioBuffer)
+  if (existingCover) {
+    console.log('Existing cover art found:', existingCover.length, 'bytes')
+    fs.writeFileSync('./existing-cover.jpg', existingCover)
+  }
+
+  // Add new cover art
+  const newCover = fs.readFileSync('./new-cover.jpg')
+  const modifiedAudio = await writeCoverImage(audioBuffer, newCover)
+  fs.writeFileSync('./music/song-with-new-cover.mp3', modifiedAudio)
+}
+```
+
+### Batch Processing
+
+```javascript
+const { readTags, writeTags } = require('tagpilot-lib')
+const fs = require('fs')
+const path = require('path')
+
+async function batchUpdateMetadata() {
+  const musicDir = './music'
+  const files = fs.readdirSync(musicDir).filter((f) => f.endsWith('.mp3'))
+
+  for (const file of files) {
+    const filePath = path.join(musicDir, file)
+    const tags = await readTags(filePath)
+
+    // Update all files with a common album name
+    await writeTags(filePath, {
+      ...tags,
+      album: 'My Greatest Hits',
+      year: 2024,
+    })
+
+    console.log(`Updated: ${file}`)
+  }
+}
+```
+
+### Data URL Generation
+
+```javascript
+const { readCoverImage } = require('tagpilot-lib')
+const fs = require('fs')
+
+function bufferToDataURL(buffer, mimeType = 'image/jpeg') {
+  const base64 = buffer.toString('base64')
+  return `data:${mimeType};base64,${base64}`
+}
+
+async function getCoverAsDataURL() {
+  const audioBuffer = fs.readFileSync('./music/song.mp3')
+  const coverImage = await readCoverImage(audioBuffer)
+
+  if (coverImage) {
+    const dataURL = bufferToDataURL(coverImage, 'image/jpeg')
+    console.log('Cover art data URL:', dataURL.substring(0, 100) + '...')
+    return dataURL
+  }
+
+  return null
+}
+```
+
+## Supported Formats
+
+### Audio Formats
+
+- MP3 (ID3v1, ID3v2)
+- FLAC
+- M4A (MPEG-4 Audio)
+- OGG (Vorbis)
+- WAV
+- WAVPACK
+- AAC
+- AIFF
+- OPUS
+- Speex
+
+### Image Formats
+
+- JPEG
+- PNG
+- GIF
+- BMP
+- TIFF
+
+## Performance
+
+tagpilot-lib is built with Rust and NAPI-RS for maximum performance:
+
+- **Fast**: Native implementation with minimal overhead
+- **Memory Efficient**: Direct buffer operations without temporary files
+- **Scalable**: Handles large audio files efficiently
+- **Concurrent**: Async operations for better throughput
+
+## Development
+
+### Prerequisites
+
+- Node.js 16+
+- Rust toolchain
+- npm or yarn
+
+### Building from Source
 
 ```bash
-npm version [<newversion> | major | minor | patch | premajor | preminor | prepatch | prerelease [--preid=<prerelease-id>] | from-git]
-
-git push
+git clone https://github.com/yortyrh/tagpilot-lib.git
+cd tagpilot-lib
+npm install
+npm run build
 ```
 
-GitHub actions will do the rest job for you.
+### Running Tests
 
-> WARN: Don't run `npm publish` manually.
+```bash
+npm test
+```
+
+### Running Examples
+
+```bash
+# Read tags example
+node examples/read-tags-example.js ./music/song.mp3
+
+# Write tags example
+node examples/write-tags-example.js ./music/song.mp3
+
+# Cover image example
+node examples/cover-image-buffer-example.js ./music/song.mp3 ./cover.jpg
+
+# Read cover image as data URL
+node examples/read-cover-image-example.js ./music/song.mp3
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests for new functionality
+5. Run the test suite
+6. Submit a pull request
+
+## License
+
+MIT License - see [LICENSE](LICENSE) file for details.
+
+## Changelog
+
+### v1.0.0
+
+- Initial release
+- Audio metadata reading and writing
+- Cover art extraction and embedding
+- Buffer-based operations
+- TypeScript support
+- Comprehensive examples
+
+## Support
+
+- **Issues**: [GitHub Issues](https://github.com/yortyrh/tagpilot-lib/issues)
+- **Documentation**: [GitHub Wiki](https://github.com/yortyrh/tagpilot-lib/wiki)
+- **Discussions**: [GitHub Discussions](https://github.com/yortyrh/tagpilot-lib/discussions)
+
+## Acknowledgments
+
+- Built with [NAPI-RS](https://napi.rs/) for Node.js native addons
+- Audio metadata handling powered by [lofty](https://github.com/Serial-ATA/lofty)
+- Image format detection using [infer](https://github.com/bojand/infer)

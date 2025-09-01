@@ -1,46 +1,47 @@
 {
   "name": "tagpilot-lib",
   "version": "1.0.0",
-  "description": "Template project for writing node package with napi-rs",
+  "description": "A high-performance Node.js library for reading and writing audio metadata and cover art, built with Rust and NAPI-RS",
   "main": "index.js",
-  "repository": {
-    "type": "git",
-    "url": "git+ssh://git@github.com/napi-rs/package-template.git"
+  "types": "index.d.ts",
+  "keywords": [
+    "audio",
+    "metadata",
+    "id3",
+    "mp3",
+    "flac",
+    "m4a",
+    "ogg",
+    "wav",
+    "cover-art",
+    "album-art",
+    "music",
+    "tags",
+    "rust",
+    "napi",
+    "native",
+    "performance",
+    "typescript",
+    "tagpilot",
+    "audio-processing",
+    "music-library",
+    "id3-tags",
+    "audio-metadata"
+  ],
+  "author": {
+    "name": "Yorty Ruiz",
+    "email": "yorty.ruiz@gmail.com",
+    "url": "https://github.com/yortyrh"
   },
   "license": "MIT",
-  "browser": "browser.js",
-  "keywords": [
-    "napi-rs",
-    "NAPI",
-    "N-API",
-    "Rust",
-    "node-addon",
-    "node-addon-api"
-  ],
-  "files": [
-    "index.d.ts",
-    "index.js",
-    "browser.js"
-  ],
-  "napi": {
-    "binaryName": "tagpilot-lib",
-    "targets": [
-      "x86_64-pc-windows-msvc",
-      "x86_64-apple-darwin",
-      "x86_64-unknown-linux-gnu",
-      "x86_64-unknown-linux-musl",
-      "aarch64-unknown-linux-gnu",
-      "i686-pc-windows-msvc",
-      "armv7-unknown-linux-gnueabihf",
-      "aarch64-apple-darwin",
-      "aarch64-linux-android",
-      "x86_64-unknown-freebsd",
-      "aarch64-unknown-linux-musl",
-      "aarch64-pc-windows-msvc",
-      "armv7-linux-androideabi",
-      "wasm32-wasip1-threads"
-    ]
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yortyrh/tagpilot-lib.git"
   },
+  "bugs": {
+    "url": "https://github.com/yortyrh/tagpilot-lib/issues"
+  },
+  "homepage": "https://github.com/yortyrh/tagpilot-lib#readme",
   "engines": {
     "node": ">= 6.14.2 < 7 || >= 8.11.2 < 9 || >= 9.11.0 < 10 || >= 10.0.0"
   },
