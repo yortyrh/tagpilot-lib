@@ -1,17 +1,17 @@
 #![deny(clippy::all)]
 
-use lofty::file::{AudioFile};
+use lofty::config::WriteOptions;
+use lofty::file::AudioFile;
 use lofty::picture::{MimeType, Picture};
 use lofty::prelude::TaggedFileExt;
-use lofty::config::WriteOptions;
 use lofty::probe::Probe;
 use lofty::tag::{Accessor, ItemKey, Tag};
 use napi::bindgen_prelude::Buffer;
 use napi::Result;
 use napi_derive::napi;
 use serde::Serialize;
-use std::path::Path;
 use std::io::{Cursor, Read};
+use std::path::Path;
 
 #[napi(object)]
 #[derive(Debug, Serialize)]
@@ -80,7 +80,7 @@ pub async fn read_tags(file_path: String) -> Result<AudioTags> {
 pub async fn read_tags_from_buffer(buffer: napi::bindgen_prelude::Buffer) -> Result<AudioTags> {
   let buffer_ref = buffer.as_ref();
   let mut cursor = Cursor::new(buffer_ref);
-  
+
   match Probe::new(&mut cursor).guess_file_type().unwrap().read() {
     Ok(tagged_file) => {
       let tag = tagged_file.primary_tag();
@@ -195,7 +195,7 @@ pub async fn write_tags(file_path: String, tags: AudioTags) -> Result<()> {
 #[napi]
 pub async fn clear_tags(file_path: String) -> Result<()> {
   let path = Path::new(&file_path);
-  
+
   // Read the existing file
   let mut tagged_file = match Probe::open(path).unwrap().guess_file_type().unwrap().read() {
     Ok(tf) => tf,
@@ -209,7 +209,7 @@ pub async fn clear_tags(file_path: String) -> Result<()> {
 
   // Create a new empty tag of the same type
   let empty_tag = Tag::new(tagged_file.primary_tag_type());
-  
+
   // Replace the existing primary tag with the empty one
   tagged_file.insert_tag(empty_tag);
 
@@ -224,16 +224,23 @@ pub async fn clear_tags(file_path: String) -> Result<()> {
 }
 
 #[napi]
-pub async fn write_tags_to_buffer(buffer: napi::bindgen_prelude::Buffer, tags: AudioTags) -> Result<napi::bindgen_prelude::Buffer> {
+pub async fn write_tags_to_buffer(
+  buffer: napi::bindgen_prelude::Buffer,
+  tags: AudioTags,
+) -> Result<napi::bindgen_prelude::Buffer> {
   let owned_vec: napi::bindgen_prelude::Buffer = buffer.into();
   // copy the buffer to a new vec
   let owned_copy: Vec<u8> = owned_vec.to_vec();
-  
+
   // Create a fresh cursor for reading
   let mut input_cursor = Cursor::new(&owned_copy);
-  
+
   // Read the existing file from buffer
-  let mut tagged_file = match Probe::new(input_cursor.by_ref()).guess_file_type().unwrap().read() {
+  let mut tagged_file = match Probe::new(input_cursor.by_ref())
+    .guess_file_type()
+    .unwrap()
+    .read()
+  {
     Ok(tf) => tf,
     Err(e) => {
       return Err(napi::Error::from_reason(format!(
@@ -292,7 +299,7 @@ pub async fn write_tags_to_buffer(buffer: napi::bindgen_prelude::Buffer, tags: A
     Ok(_) => {
       let owned_copy_buffer = Buffer::from(cursor.into_inner());
       Ok(owned_copy_buffer)
-    },
+    }
     Err(e) => Err(napi::Error::from_reason(format!(
       "Failed to write audio to buffer: {}",
       e
@@ -332,7 +339,7 @@ pub async fn read_cover_image(buffer: Buffer) -> Result<Option<Buffer>> {
 pub async fn write_cover_image(buffer: Buffer, image_data: Buffer) -> Result<Buffer> {
   let buffer_ref = buffer.as_ref();
   let mut cursor = Cursor::new(buffer_ref);
-  
+
   // Read the existing file from buffer
   let mut tagged_file = match Probe::new(&mut cursor).guess_file_type().unwrap().read() {
     Ok(tf) => tf,
@@ -368,24 +375,29 @@ pub async fn write_cover_image(buffer: Buffer, image_data: Buffer) -> Result<Buf
     "image/bmp" => MimeType::Bmp,
     _ => MimeType::Jpeg,
   };
-  let picture = Picture::new_unchecked(lofty::picture::PictureType::CoverFront, Some(mime_type), None, buf);
+  let picture = Picture::new_unchecked(
+    lofty::picture::PictureType::CoverFront,
+    Some(mime_type),
+    None,
+    buf,
+  );
   primary_tag.set_picture(0, picture);
-  
+
   // Clear existing pictures and add the filtered list
   // Note: This is a simplified implementation
   // TODO: Implement proper picture creation once the API is understood
-  
+
   // Create a copy of the buffer for writing
   let owned_vec: Buffer = buffer.into();
   let owned_copy: Vec<u8> = owned_vec.to_vec();
   let mut output_cursor = Cursor::new(owned_copy);
-  
+
   // Write the updated tag back to the buffer
   match tagged_file.save_to(&mut output_cursor, WriteOptions::default()) {
     Ok(_) => {
       let modified_buffer = Buffer::from(output_cursor.into_inner());
       Ok(modified_buffer)
-    },
+    }
     Err(e) => Err(napi::Error::from_reason(format!(
       "Failed to write audio to buffer: {}",
       e
