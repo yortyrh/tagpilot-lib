@@ -17,8 +17,14 @@ This directory contains examples demonstrating how to use the `tagpilot-lib` lib
    ```
 
 3. **Clear all tags from an audio file:**
+
    ```bash
    node examples/clear-tags-example.js ./music/01.mp3
+   ```
+
+4. **Read tags from a buffer:**
+   ```bash
+   node examples/read-tags-from-buffer-example.js ./music/01.mp3
    ```
 
 ## Examples Overview
@@ -166,6 +172,65 @@ File now contains no metadata tags.
 - Cleaning up corrupted or unwanted metadata
 - Preparing files for distribution without metadata
 - Testing tag writing functionality with clean files
+
+### `read-tags-from-buffer-example.js`
+
+**What it does:** Demonstrates how to read audio file tags from a buffer instead of a file path.
+
+**Features:**
+
+- Reads an audio file into a buffer
+- Extracts tags from the buffer using `readTagsFromBuffer`
+- Compares results with file-based reading
+- Shows the difference between buffer and file approaches
+- Demonstrates use cases for buffer-based processing
+
+**Example output:**
+
+```
+=== Reading tags from buffer: ./music/01.mp3 ===
+
+1. Reading file into buffer...
+   File size: 2417171 bytes
+   Buffer type: Buffer
+
+2. Reading tags from buffer...
+Tags found in buffer:
+{
+  "title": "Sample Song Title",
+  "artist": "Sample Artist",
+  "album": "Sample Album"
+}
+
+3. Reading tags directly from file for comparison...
+Tags found in file:
+{
+  "title": "Sample Song Title",
+  "artist": "Sample Artist",
+  "album": "Sample Album"
+}
+
+4. Comparing results...
+✅ Buffer and file reading produce the same result
+✅ Tags are identical between buffer and file reading
+
+=== Use Cases for Buffer Reading ===
+• Processing audio data from network requests
+• Working with audio data in memory
+• Processing audio streams
+• Avoiding file system I/O for better performance
+• Working with audio data from databases or cloud storage
+```
+
+**Use cases:**
+
+- Processing audio data from network requests
+- Working with audio data already in memory
+- Processing audio streams without saving to disk
+- Avoiding file system I/O for better performance
+- Working with audio data from databases or cloud storage
+- Processing audio data in web applications
+- Handling audio uploads in web services
 
 ## Supported Audio Formats
 

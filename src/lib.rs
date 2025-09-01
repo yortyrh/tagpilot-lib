@@ -9,6 +9,7 @@ use napi::Result;
 use napi_derive::napi;
 use serde::Serialize;
 use std::path::Path;
+use std::io::Cursor;
 
 #[napi(object)]
 #[derive(Debug, Serialize)]
@@ -68,6 +69,54 @@ pub async fn read_tags(file_path: String) -> Result<AudioTags> {
     }
     Err(e) => Err(napi::Error::from_reason(format!(
       "Failed to read audio file: {}",
+      e
+    ))),
+  }
+}
+
+#[napi]
+pub async fn read_tags_from_buffer(buffer: napi::bindgen_prelude::Buffer) -> Result<AudioTags> {
+  let buffer_ref = buffer.as_ref();
+  let mut cursor = Cursor::new(buffer_ref);
+  
+  match Probe::new(&mut cursor).guess_file_type().unwrap().read() {
+    Ok(tagged_file) => {
+      let tag = tagged_file.primary_tag();
+      match tag {
+        Some(tag) => {
+          return Ok(AudioTags {
+            title: tag.title().map(|s| s.to_string()),
+            artist: tag.artist().map(|s| s.to_string()),
+            album: tag.album().map(|s| s.to_string()),
+            year: tag.year(),
+            genre: tag.genre().map(|s| s.to_string()),
+            track: tag.track(),
+            track_total: tag.track_total(),
+            album_artist: tag.artist().map(|s| s.to_string()),
+            comment: tag.comment().map(|s| s.to_string()),
+            disc: tag.disk(),
+            disc_total: tag.disk_total(),
+          });
+        }
+        None => {
+          return Ok(AudioTags {
+            title: None,
+            artist: None,
+            album: None,
+            year: None,
+            genre: None,
+            track: None,
+            track_total: None,
+            album_artist: None,
+            comment: None,
+            disc: None,
+            disc_total: None,
+          });
+        }
+      }
+    }
+    Err(e) => Err(napi::Error::from_reason(format!(
+      "Failed to read audio from buffer: {}",
       e
     ))),
   }
