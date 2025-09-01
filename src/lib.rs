@@ -38,7 +38,7 @@ pub async fn read_tags(file_path: String) -> Result<AudioTags> {
       let tag = tagged_file.primary_tag();
       match tag {
         Some(tag) => {
-          return Ok(AudioTags {
+          Ok(AudioTags {
             title: tag.title().map(|s| s.to_string()),
             artist: tag.artist().map(|s| s.to_string()),
             album: tag.album().map(|s| s.to_string()),
@@ -50,10 +50,10 @@ pub async fn read_tags(file_path: String) -> Result<AudioTags> {
             comment: tag.comment().map(|s| s.to_string()),
             disc: tag.disk(),
             disc_total: tag.disk_total(),
-          });
+          })
         }
         None => {
-          return Ok(AudioTags {
+          Ok(AudioTags {
             title: None,
             artist: None,
             album: None,
@@ -65,7 +65,7 @@ pub async fn read_tags(file_path: String) -> Result<AudioTags> {
             comment: None,
             disc: None,
             disc_total: None,
-          });
+          })
         }
       }
     }
@@ -86,7 +86,7 @@ pub async fn read_tags_from_buffer(buffer: napi::bindgen_prelude::Buffer) -> Res
       let tag = tagged_file.primary_tag();
       match tag {
         Some(tag) => {
-          return Ok(AudioTags {
+          Ok(AudioTags {
             title: tag.title().map(|s| s.to_string()),
             artist: tag.artist().map(|s| s.to_string()),
             album: tag.album().map(|s| s.to_string()),
@@ -98,10 +98,10 @@ pub async fn read_tags_from_buffer(buffer: napi::bindgen_prelude::Buffer) -> Res
             comment: tag.comment().map(|s| s.to_string()),
             disc: tag.disk(),
             disc_total: tag.disk_total(),
-          });
+          })
         }
         None => {
-          return Ok(AudioTags {
+          Ok(AudioTags {
             title: None,
             artist: None,
             album: None,
@@ -113,7 +113,7 @@ pub async fn read_tags_from_buffer(buffer: napi::bindgen_prelude::Buffer) -> Res
             comment: None,
             disc: None,
             disc_total: None,
-          });
+          })
         }
       }
     }
@@ -228,9 +228,8 @@ pub async fn write_tags_to_buffer(
   buffer: napi::bindgen_prelude::Buffer,
   tags: AudioTags,
 ) -> Result<napi::bindgen_prelude::Buffer> {
-  let owned_vec: napi::bindgen_prelude::Buffer = buffer.into();
   // copy the buffer to a new vec
-  let owned_copy: Vec<u8> = owned_vec.to_vec();
+  let owned_copy: Vec<u8> = buffer.to_vec();
 
   // Create a fresh cursor for reading
   let mut input_cursor = Cursor::new(&owned_copy);
