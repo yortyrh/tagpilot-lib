@@ -434,5 +434,5 @@ MIT License - see [LICENSE](LICENSE) file for details.
 ## Acknowledgments
 
 - Built with [NAPI-RS](https://napi.rs/) for Node.js native addons
-- Audio metadata handling powered by [lofty](https://github.com/Serial-ATA/lofty)
+- Audio metadata handling powered by [lofty](https://github.com/Serial-ATA/lofty-rs)
 - Image format detection using [infer](https://github.com/bojand/infer)
