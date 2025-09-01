@@ -512,3 +512,4 @@ module.exports.clearTags = nativeBinding.clearTags
 module.exports.readTags = nativeBinding.readTags
 module.exports.readTagsFromBuffer = nativeBinding.readTagsFromBuffer
 module.exports.writeTags = nativeBinding.writeTags
+module.exports.writeTagsToBuffer = nativeBinding.writeTagsToBuffer

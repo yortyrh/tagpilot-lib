@@ -21,3 +21,5 @@ export declare function readTags(filePath: string): Promise<AudioTags>
 export declare function readTagsFromBuffer(buffer: Buffer): Promise<AudioTags>
 
 export declare function writeTags(filePath: string, tags: AudioTags): Promise<void>
+
+export declare function writeTagsToBuffer(buffer: Buffer, tags: AudioTags): Promise<Buffer>

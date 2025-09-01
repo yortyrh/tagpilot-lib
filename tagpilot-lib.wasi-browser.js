@@ -57,3 +57,4 @@ export const clearTags = __napiModule.exports.clearTags
 export const readTags = __napiModule.exports.readTags
 export const readTagsFromBuffer = __napiModule.exports.readTagsFromBuffer
 export const writeTags = __napiModule.exports.writeTags
+export const writeTagsToBuffer = __napiModule.exports.writeTagsToBuffer

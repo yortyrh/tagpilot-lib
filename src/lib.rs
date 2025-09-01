@@ -5,11 +5,12 @@ use lofty::prelude::TaggedFileExt;
 use lofty::config::WriteOptions;
 use lofty::probe::Probe;
 use lofty::tag::{Accessor, ItemKey, Tag};
+use napi::bindgen_prelude::Buffer;
 use napi::Result;
 use napi_derive::napi;
 use serde::Serialize;
 use std::path::Path;
-use std::io::Cursor;
+use std::io::{Cursor, Read};
 
 #[napi(object)]
 #[derive(Debug, Serialize)]
@@ -216,6 +217,83 @@ pub async fn clear_tags(file_path: String) -> Result<()> {
     Ok(_) => Ok(()),
     Err(e) => Err(napi::Error::from_reason(format!(
       "Failed to write audio file: {}",
+      e
+    ))),
+  }
+}
+
+#[napi]
+pub async fn write_tags_to_buffer(buffer: napi::bindgen_prelude::Buffer, tags: AudioTags) -> Result<napi::bindgen_prelude::Buffer> {
+  let owned_vec: napi::bindgen_prelude::Buffer = buffer.into();
+  // copy the buffer to a new vec
+  let owned_copy: Vec<u8> = owned_vec.to_vec();
+  
+  // Create a fresh cursor for reading
+  let mut input_cursor = Cursor::new(&owned_copy);
+  
+  // Read the existing file from buffer
+  let mut tagged_file = match Probe::new(input_cursor.by_ref()).guess_file_type().unwrap().read() {
+    Ok(tf) => tf,
+    Err(e) => {
+      return Err(napi::Error::from_reason(format!(
+        "Failed to read audio from buffer: {}",
+        e
+      )))
+    }
+  };
+
+  // Check if the file has tags
+  if tagged_file.primary_tag().is_none() {
+    // create the principal tag
+    let tag = Tag::new(tagged_file.primary_tag_type());
+    tagged_file.insert_tag(tag);
+  }
+  let primary_tag = tagged_file.primary_tag_mut().unwrap();
+
+  // Update the tag with new values
+  if let Some(title) = tags.title {
+    primary_tag.insert_text(ItemKey::TrackTitle, title);
+  }
+  if let Some(artist) = tags.artist {
+    primary_tag.insert_text(ItemKey::TrackArtist, artist);
+  }
+  if let Some(album) = tags.album {
+    primary_tag.insert_text(ItemKey::AlbumTitle, album);
+  }
+  if let Some(year) = tags.year {
+    primary_tag.insert_text(ItemKey::Year, year.to_string());
+  }
+  if let Some(genre) = tags.genre {
+    primary_tag.insert_text(ItemKey::Genre, genre);
+  }
+  if let Some(track) = tags.track {
+    primary_tag.insert_text(ItemKey::TrackNumber, track.to_string());
+  }
+  if let Some(track_total) = tags.track_total {
+    primary_tag.insert_text(ItemKey::TrackTotal, track_total.to_string());
+  }
+  if let Some(album_artist) = tags.album_artist {
+    primary_tag.insert_text(ItemKey::AlbumArtist, album_artist);
+  }
+  if let Some(comment) = tags.comment {
+    primary_tag.insert_text(ItemKey::Comment, comment);
+  }
+  if let Some(disc) = tags.disc {
+    primary_tag.insert_text(ItemKey::DiscNumber, disc.to_string());
+  }
+  if let Some(disc_total) = tags.disc_total {
+    primary_tag.insert_text(ItemKey::DiscTotal, disc_total.to_string());
+  }
+
+  // Write to a new buffer
+  let mut cursor = Cursor::new(owned_copy);
+  match tagged_file.save_to(&mut cursor, WriteOptions::default()) {
+    Ok(_) => {
+      let owned_copy_buffer = Buffer::from(cursor.into_inner());
+      Ok(owned_copy_buffer)
+    },
+    Err(e) => Err(napi::Error::from_reason(format!(
+      "Failed to write audio to buffer: {}",
       e
     ))),
   }

@@ -112,3 +112,4 @@ module.exports.clearTags = __napiModule.exports.clearTags
 module.exports.readTags = __napiModule.exports.readTags
 module.exports.readTagsFromBuffer = __napiModule.exports.readTagsFromBuffer
 module.exports.writeTags = __napiModule.exports.writeTags
+module.exports.writeTagsToBuffer = __napiModule.exports.writeTagsToBuffer
