@@ -354,6 +354,15 @@ jobs:
         uses: actions/download-artifact@v5
         with:
           path: artifacts
+      - name: Display structure of downloaded files
+        run: ls -R
+
+      - name: Extract any .zip files in artifacts
+        run: find . -name "*.zip" -exec unzip -o {} \;
+
+      - name: Display structure of extracted files
+        run: ls -R
+
       - name: Move artifacts
         run: yarn artifacts
       - name: List packages
