@@ -62,6 +62,7 @@
     "format:rs": "cargo fmt",
     "lint": "oxlint .",
     "prepublishOnly": "napi prepublish -t npm",
+    "prepare-test-files": "node convert-from-mp3.mjs music test-files",
     "test": "ava",
     "version": "napi version",
     "prepare": "husky"
@@ -78,6 +79,7 @@
     "@types/node": "^24.3.0",
     "ava": "^6.4.1",
     "chalk": "^5.4.1",
+    "execa": "^9.6.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.1.2",
     "npm-run-all2": "^8.0.4",
