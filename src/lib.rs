@@ -3,7 +3,7 @@
 use lofty::file::{AudioFile};
 use lofty::prelude::TaggedFileExt;
 use lofty::config::WriteOptions;
-use lofty::{read_from_path};
+use lofty::probe::Probe;
 use lofty::tag::{Accessor, ItemKey, Tag};
 use napi::Result;
 use napi_derive::napi;
@@ -30,39 +30,41 @@ pub struct AudioTags {
 pub async fn read_tags(file_path: String) -> Result<AudioTags> {
   let path = Path::new(&file_path);
 
-  match read_from_path(path) {
+  match Probe::open(path).unwrap().guess_file_type().unwrap().read() {
     Ok(tagged_file) => {
       let tag = tagged_file.primary_tag();
-      
-      if tag.is_none() {
-        return Ok(AudioTags {
-          title: None,
-          artist: None,
-          album: None,
-          year: None,
-          genre: None,
-          track: None,
-          track_total: None,
-          album_artist: None,
-          comment: None,
-          disc: None,
-          disc_total: None,
-        });
+      match tag {
+        Some(tag) => {
+          return Ok(AudioTags {
+            title: tag.title().map(|s| s.to_string()),
+            artist: tag.artist().map(|s| s.to_string()),
+            album: tag.album().map(|s| s.to_string()),
+            year: tag.year(),
+            genre: tag.genre().map(|s| s.to_string()),
+            track: tag.track(),
+            track_total: tag.track_total(),
+            album_artist: tag.artist().map(|s| s.to_string()),
+            comment: tag.comment().map(|s| s.to_string()),
+            disc: tag.disk(),
+            disc_total: tag.disk_total(),
+          });
+        }
+        None => {
+          return Ok(AudioTags {
+            title: None,
+            artist: None,
+            album: None,
+            year: None,
+            genre: None,
+            track: None,
+            track_total: None,
+            album_artist: None,
+            comment: None,
+            disc: None,
+            disc_total: None,
+          });
+        }
       }
-      
-      Ok(AudioTags {
-        title: tag.unwrap().title().map(|s| s.to_string()),
-        artist: tag.unwrap().artist().map(|s| s.to_string()),
-        album: tag.unwrap().album().map(|s| s.to_string()),
-        year: tag.unwrap().year(),
-        genre: tag.unwrap().genre().map(|s| s.to_string()),
-        track: tag.unwrap().track(),
-        track_total: tag.unwrap().track_total(),
-        album_artist: tag.unwrap().artist().map(|s| s.to_string()),
-        comment: tag.unwrap().comment().map(|s| s.to_string()),
-        disc: tag.unwrap().disk(),
-        disc_total: tag.unwrap().disk_total(),
-      })
     }
     Err(e) => Err(napi::Error::from_reason(format!(
       "Failed to read audio file: {}",
@@ -75,7 +77,7 @@ pub async fn read_tags(file_path: String) -> Result<AudioTags> {
 pub async fn write_tags(file_path: String, tags: AudioTags) -> Result<()> {
   let path = Path::new(&file_path);
   // Read the existing file
-  let mut tagged_file = match read_from_path(path) {
+  let mut tagged_file = match Probe::open(path).unwrap().guess_file_type().unwrap().read() {
     Ok(tf) => tf,
     Err(e) => {
       return Err(napi::Error::from_reason(format!(
@@ -91,6 +93,7 @@ pub async fn write_tags(file_path: String, tags: AudioTags) -> Result<()> {
     let tag = Tag::new(tagged_file.primary_tag_type());
     tagged_file.insert_tag(tag);
   }
+
   let primary_tag = tagged_file.primary_tag_mut().unwrap();
 
   // Update the tag with new values
@@ -143,7 +146,7 @@ pub async fn clear_tags(file_path: String) -> Result<()> {
   let path = Path::new(&file_path);
   
   // Read the existing file
-  let mut tagged_file = match read_from_path(path) {
+  let mut tagged_file = match Probe::open(path).unwrap().guess_file_type().unwrap().read() {
     Ok(tf) => tf,
     Err(e) => {
       return Err(napi::Error::from_reason(format!(

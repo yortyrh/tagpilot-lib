@@ -48,7 +48,7 @@ async function main() {
       albumArtist: 'Sample Album Artist',
       comment: 'This is a sample comment for demonstration purposes',
       disc: 1,
-      discTotal: 1,
+      discTotal: 3,
     }
 
     console.log('Sample tags to write:')
