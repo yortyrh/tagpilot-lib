@@ -509,7 +509,9 @@ if (!nativeBinding) {
 
 module.exports = nativeBinding
 module.exports.clearTags = nativeBinding.clearTags
+module.exports.readCoverImage = nativeBinding.readCoverImage
 module.exports.readTags = nativeBinding.readTags
 module.exports.readTagsFromBuffer = nativeBinding.readTagsFromBuffer
+module.exports.writeCoverImage = nativeBinding.writeCoverImage
 module.exports.writeTags = nativeBinding.writeTags
 module.exports.writeTagsToBuffer = nativeBinding.writeTagsToBuffer

@@ -16,9 +16,13 @@ export interface AudioTags {
 
 export declare function clearTags(filePath: string): Promise<void>
 
+export declare function readCoverImage(filePath: string): Promise<Buffer | null>
+
 export declare function readTags(filePath: string): Promise<AudioTags>
 
 export declare function readTagsFromBuffer(buffer: Buffer): Promise<AudioTags>
+
+export declare function writeCoverImage(filePath: string, imageData: Buffer): Promise<void>
 
 export declare function writeTags(filePath: string, tags: AudioTags): Promise<void>
 

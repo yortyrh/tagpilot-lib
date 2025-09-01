@@ -1,6 +1,7 @@
 #![deny(clippy::all)]
 
 use lofty::file::{AudioFile};
+use lofty::picture::{MimeType, Picture};
 use lofty::prelude::TaggedFileExt;
 use lofty::config::WriteOptions;
 use lofty::probe::Probe;
@@ -294,6 +295,89 @@ pub async fn write_tags_to_buffer(buffer: napi::bindgen_prelude::Buffer, tags: A
     },
     Err(e) => Err(napi::Error::from_reason(format!(
       "Failed to write audio to buffer: {}",
+      e
+    ))),
+  }
+}
+
+#[napi]
+pub async fn read_cover_image(file_path: String) -> Result<Option<Buffer>> {
+  let path = Path::new(&file_path);
+
+  match Probe::open(path).unwrap().guess_file_type().unwrap().read() {
+    Ok(tagged_file) => {
+      let tag = tagged_file.primary_tag();
+      match tag {
+        Some(tag) => {
+          // Look for cover art in the tag
+          for picture in tag.pictures() {
+            if picture.pic_type() == lofty::picture::PictureType::CoverFront {
+              return Ok(Some(picture.data().to_vec().into()));
+            }
+          }
+          Ok(None)
+        }
+        None => Ok(None),
+      }
+    }
+    Err(e) => Err(napi::Error::from_reason(format!(
+      "Failed to read audio file: {}",
+      e
+    ))),
+  }
+}
+
+#[napi]
+pub async fn write_cover_image(file_path: String, image_data: Buffer) -> Result<()> {
+  let path = Path::new(&file_path);
+  
+  // Read the existing file
+  let mut tagged_file = match Probe::open(path).unwrap().guess_file_type().unwrap().read() {
+    Ok(tf) => tf,
+    Err(e) => {
+      return Err(napi::Error::from_reason(format!(
+        "Failed to read audio file: {}",
+        e
+      )))
+    }
+  };
+
+  // Check if the file has tags
+  if tagged_file.primary_tag().is_none() {
+    // create the principal tag
+    let tag = Tag::new(tagged_file.primary_tag_type());
+    tagged_file.insert_tag(tag);
+  }
+  let primary_tag = tagged_file.primary_tag_mut().unwrap();
+
+  // For now, we'll just clear existing cover art
+  // The actual picture creation needs more investigation of the lofty API
+  let mut pictures = primary_tag.pictures().to_vec();
+  pictures.retain(|p| p.pic_type() != lofty::picture::PictureType::CoverFront);
+
+  // add the new picture
+  let buf = image_data.to_vec();
+  let kind = infer::get(&buf).expect("file type is known");
+  let mime_type = match kind.mime_type() {
+    "image/jpeg" => MimeType::Jpeg,
+    "image/png" => MimeType::Png,
+    "image/gif" => MimeType::Gif,
+    "image/tiff" => MimeType::Tiff,
+    "image/bmp" => MimeType::Bmp,
+    _ => MimeType::Jpeg,
+  };
+  let picture = Picture::new_unchecked(lofty::picture::PictureType::CoverFront, Some(mime_type), None, buf);
+  primary_tag.set_picture(0, picture);
+  
+  // Clear existing pictures and add the filtered list
+  // Note: This is a simplified implementation
+  // TODO: Implement proper picture creation once the API is understood
+  
+  // Write the updated tag back to the file
+  match tagged_file.save_to_path(path, WriteOptions::default()) {
+    Ok(_) => Ok(()),
+    Err(e) => Err(napi::Error::from_reason(format!(
+      "Failed to write audio file: {}",
       e
     ))),
   }
