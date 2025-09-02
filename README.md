@@ -319,7 +319,7 @@ async function updateSongMetadata() {
 
 ### Cover Art Management
 
-````javascript
+```javascript
 const { readCoverImageFromBuffer, writeCoverImageToBuffer } = require('@yortyrh/tagpilot-lib')
 const fs = require('fs')
 
@@ -338,6 +338,7 @@ async function manageCoverArt() {
   const modifiedAudio = await writeCoverImageToBuffer(audioBuffer, newCover)
   fs.writeFileSync('./music/song-with-new-cover.mp3', modifiedAudio)
 }
+```
 
 ### Working with Image Metadata
 
@@ -363,9 +364,7 @@ async function examineCoverArt() {
     console.log('No cover art found in this file')
   }
 }
-````
-
-````
+```
 
 ### Batch Processing
 
@@ -392,7 +391,7 @@ async function batchUpdateMetadata() {
     console.log(`Updated: ${file}`)
   }
 }
-````
+```
 
 ### Data URL Generation
 
