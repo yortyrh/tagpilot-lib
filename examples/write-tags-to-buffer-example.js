@@ -37,7 +37,7 @@ async function main() {
     console.log('2. Reading original tags from buffer...')
     const originalTags = await readTagsFromBuffer(buffer)
 
-    if (originalTags.title || originalTags.artist || originalTags.album) {
+    if (originalTags.title || originalTags.artists || originalTags.album) {
       console.log('Original tags found:')
       console.log(JSON.stringify(originalTags, null, 2))
     } else {
@@ -49,16 +49,14 @@ async function main() {
     console.log('3. Creating new tags to write...')
     const newTags = {
       title: 'Buffer Modified Title',
-      artist: 'Buffer Modified Artist',
+      artists: ['Buffer Modified Artist'],
       album: 'Buffer Modified Album',
       year: 2024,
       genre: 'Buffer Modified Genre',
-      track: 2,
-      trackTotal: 15,
-      albumArtist: 'Buffer Modified Album Artist',
+      track: { no: 2, of: 15 },
+      albumArtists: ['Buffer Modified Album Artist'],
       comment: 'This was modified using writeTagsToBuffer',
-      disc: 2,
-      discTotal: 2,
+      disc: { no: 2, of: 2 },
     }
 
     console.log('New tags to write:')

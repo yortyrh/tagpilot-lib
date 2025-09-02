@@ -84,13 +84,15 @@ const tags = await readTags('./music/song.mp3')
 console.log(tags)
 // {
 //   title: "Song Title",
-//   artist: "Artist Name",
+//   artists: ["Artist Name"],
 //   album: "Album Name",
 //   year: 2024,
 //   genre: "Rock",
-//   track: 1,
-//   trackTotal: 12,
-//   albumArtist: "Album Artist",
+//   track: {
+//     no: 1,
+//     of: 12
+//   },
+//   albumArtist: ["Album Artist"],
 //   comment: "Comment",
 //   disc: 1,
 //   discTotal: 2
@@ -113,13 +115,15 @@ Writes metadata to an audio file.
 ```javascript
 await writeTags('./music/song.mp3', {
   title: 'New Title',
-  artist: 'New Artist',
+  artists: ['New Artist'],
   album: 'Album Name',
   year: 2024,
   genre: 'Rock',
-  track: 1,
-  trackTotal: 12,
-  albumArtist: 'Album Artist',
+  track: {
+    no: 1,
+    of: 12,
+  },
+  albumArtist: ['Album Artist'],
   comment: 'My comment',
   disc: 1,
   discTotal: 2,
@@ -230,18 +234,21 @@ fs.writeFileSync('./music/song-with-cover.mp3', modifiedAudio)
 ### AudioTags
 
 ```typescript
+interface Position {
+  no?: number | null
+  of?: number | null
+}
+
 interface AudioTags {
   title?: string
-  artist?: string
+  artists?: string[]
   album?: string
   year?: number
   genre?: string
-  track?: number
-  trackTotal?: number
-  albumArtist?: string
+  track?: Position
+  albumArtist?: string[]
   comment?: string
-  disc?: number
-  discTotal?: number
+  disc?: Position
 }
 ```
 
@@ -256,12 +263,17 @@ async function updateSongMetadata() {
   // Read existing metadata
   const tags = await readTags('./music/song.mp3')
   console.log('Current title:', tags.title)
+  console.log('Track:', tags.track?.no, 'of', tags.track?.of)
 
   // Update metadata
   await writeTags('./music/song.mp3', {
     ...tags,
     title: 'Updated Title',
     year: 2024,
+    track: {
+      no: 5,
+      of: 12,
+    },
   })
 
   console.log('Metadata updated successfully!')

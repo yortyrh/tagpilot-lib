@@ -27,7 +27,7 @@ async function main() {
     console.log('1. Reading original tags...')
     const originalTags = await readTags(filePath)
 
-    if (originalTags.title || originalTags.artist || originalTags.album) {
+    if (originalTags.title || originalTags.artists || originalTags.album) {
       console.log('Original tags found:')
       console.log(JSON.stringify(originalTags, null, 2))
     } else {
@@ -39,16 +39,14 @@ async function main() {
     console.log('2. Creating sample tags...')
     const sampleTags = {
       title: 'Sample Song Title',
-      artist: 'Sample Artist',
+      artists: ['Sample Artist'],
       album: 'Sample Album',
       year: 2024,
       genre: 'Sample Genre',
-      track: 1,
-      trackTotal: 12,
-      albumArtist: 'Sample Album Artist',
+      track: { no: 1, of: 12 },
+      albumArtists: ['Sample Album Artist'],
       comment: 'This is a sample comment for demonstration purposes',
-      disc: 1,
-      discTotal: 3,
+      disc: { no: 1, of: 3 },
     }
 
     console.log('Sample tags to write:')
@@ -72,14 +70,14 @@ async function main() {
     // Step 5: Show what was written
     console.log('5. Summary of sample data written:')
     console.log(`   Title: "${sampleTags.title}"`)
-    console.log(`   Artist: "${sampleTags.artist}"`)
+    console.log(`   Artists: "${sampleTags.artists?.join(', ')}"`)
     console.log(`   Album: "${sampleTags.album}"`)
     console.log(`   Year: ${sampleTags.year}`)
     console.log(`   Genre: "${sampleTags.genre}"`)
-    console.log(`   Track: ${sampleTags.track}/${sampleTags.trackTotal}`)
-    console.log(`   Album Artist: "${sampleTags.albumArtist}"`)
+    console.log(`   Track: ${sampleTags.track?.no || 'N/A'} of ${sampleTags.track?.of || 'N/A'}`)
+    console.log(`   Album Artists: "${sampleTags.albumArtists?.join(', ')}"`)
     console.log(`   Comment: "${sampleTags.comment}"`)
-    console.log(`   Disc: ${sampleTags.disc}/${sampleTags.discTotal}`)
+    console.log(`   Disc: ${sampleTags.disc?.no || 'N/A'} of ${sampleTags.disc?.of || 'N/A'}`)
 
     console.log('\n✅ Sample tags written successfully!')
   } catch (error) {

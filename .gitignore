@@ -129,3 +129,6 @@ Cargo.lock
 !.yarn/versions
 /npm
 .DS_Store
+/.idea
+/.vscode
+/.test

@@ -24,7 +24,7 @@ async function main() {
     // Read the primary tag from the audio file
     const tags = await readTags(filePath)
 
-    if (tags.title || tags.artist || tags.album) {
+    if (tags.title || tags.artists || tags.album) {
       console.log('Found tags:')
       console.log(JSON.stringify(tags, null, 2))
     } else {

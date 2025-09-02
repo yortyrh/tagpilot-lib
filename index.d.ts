@@ -2,19 +2,22 @@
 /* eslint-disable */
 export interface AudioTags {
   title?: string
-  artist?: string
+  artists?: Array<string>
   album?: string
   year?: number
   genre?: string
-  track?: number
-  trackTotal?: number
-  albumArtist?: string
+  track?: Position
+  albumArtists?: Array<string>
   comment?: string
-  disc?: number
-  discTotal?: number
+  disc?: Position
 }
 
 export declare function clearTags(filePath: string): Promise<void>
+
+export interface Position {
+  no?: number
+  of?: number
+}
 
 export declare function readCoverImage(buffer: Buffer): Promise<Buffer | null>
 

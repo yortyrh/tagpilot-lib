@@ -15,18 +15,23 @@ use std::path::Path;
 
 #[napi(object)]
 #[derive(Debug, Serialize)]
+pub struct Position {
+  pub no: Option<u32>,
+  pub of: Option<u32>,
+}
+
+#[napi(object)]
+#[derive(Debug, Serialize)]
 pub struct AudioTags {
   pub title: Option<String>,
-  pub artist: Option<String>,
+  pub artists: Option<Vec<String>>,
   pub album: Option<String>,
   pub year: Option<u32>,
   pub genre: Option<String>,
-  pub track: Option<u32>,       // Changed back to u32 to use track() function
-  pub track_total: Option<u32>, // Total number of tracks
-  pub album_artist: Option<String>,
+  pub track: Option<Position>,
+  pub album_artists: Option<Vec<String>>,
   pub comment: Option<String>,
-  pub disc: Option<u32>,
-  pub disc_total: Option<u32>, // Total number of discs
+  pub disc: Option<Position>,
 }
 
 #[napi]
@@ -39,29 +44,37 @@ pub async fn read_tags(file_path: String) -> Result<AudioTags> {
       match tag {
         Some(tag) => Ok(AudioTags {
           title: tag.title().map(|s| s.to_string()),
-          artist: tag.artist().map(|s| s.to_string()),
+          artists: tag.artist().map(|s| vec![s.to_string()]),
           album: tag.album().map(|s| s.to_string()),
           year: tag.year(),
           genre: tag.genre().map(|s| s.to_string()),
-          track: tag.track(),
-          track_total: tag.track_total(),
-          album_artist: tag.artist().map(|s| s.to_string()),
+          track: match (tag.track(), tag.track_total()) {
+            (None, None) => None,
+            _ => Some(Position {
+              no: tag.track(),
+              of: tag.track_total(),
+            }),
+          },
+          album_artists: tag.artist().map(|s| vec![s.to_string()]),
           comment: tag.comment().map(|s| s.to_string()),
-          disc: tag.disk(),
-          disc_total: tag.disk_total(),
+          disc: match (tag.disk(), tag.disk_total()) {
+            (None, None) => None,
+            _ => Some(Position {
+              no: tag.disk(),
+              of: tag.disk_total(),
+            }),
+          },
         }),
         None => Ok(AudioTags {
           title: None,
-          artist: None,
+          artists: None,
           album: None,
           year: None,
           genre: None,
           track: None,
-          track_total: None,
-          album_artist: None,
+          album_artists: None,
           comment: None,
           disc: None,
-          disc_total: None,
         }),
       }
     }
@@ -83,29 +96,37 @@ pub async fn read_tags_from_buffer(buffer: napi::bindgen_prelude::Buffer) -> Res
       match tag {
         Some(tag) => Ok(AudioTags {
           title: tag.title().map(|s| s.to_string()),
-          artist: tag.artist().map(|s| s.to_string()),
+          artists: tag.artist().map(|s| vec![s.to_string()]),
           album: tag.album().map(|s| s.to_string()),
           year: tag.year(),
           genre: tag.genre().map(|s| s.to_string()),
-          track: tag.track(),
-          track_total: tag.track_total(),
-          album_artist: tag.artist().map(|s| s.to_string()),
+          track: match (tag.track(), tag.track_total()) {
+            (None, None) => None,
+            _ => Some(Position {
+              no: tag.track(),
+              of: tag.track_total(),
+            }),
+          },
+          album_artists: tag.artist().map(|s| vec![s.to_string()]),
           comment: tag.comment().map(|s| s.to_string()),
-          disc: tag.disk(),
-          disc_total: tag.disk_total(),
+          disc: match (tag.disk(), tag.disk_total()) {
+            (None, None) => None,
+            _ => Some(Position {
+              no: tag.disk(),
+              of: tag.disk_total(),
+            }),
+          },
         }),
         None => Ok(AudioTags {
           title: None,
-          artist: None,
+          artists: None,
           album: None,
           year: None,
           genre: None,
           track: None,
-          track_total: None,
-          album_artist: None,
+          album_artists: None,
           comment: None,
           disc: None,
-          disc_total: None,
         }),
       }
     }
@@ -143,8 +164,10 @@ pub async fn write_tags(file_path: String, tags: AudioTags) -> Result<()> {
   if let Some(title) = tags.title {
     primary_tag.insert_text(ItemKey::TrackTitle, title);
   }
-  if let Some(artist) = tags.artist {
-    primary_tag.insert_text(ItemKey::TrackArtist, artist);
+  if let Some(artists) = tags.artists {
+    if let Some(artist) = artists.first() {
+      primary_tag.insert_text(ItemKey::TrackArtist, artist.clone());
+    }
   }
   if let Some(album) = tags.album {
     primary_tag.insert_text(ItemKey::AlbumTitle, album);
@@ -155,23 +178,29 @@ pub async fn write_tags(file_path: String, tags: AudioTags) -> Result<()> {
   if let Some(genre) = tags.genre {
     primary_tag.insert_text(ItemKey::Genre, genre);
   }
-  if let Some(track) = tags.track {
-    primary_tag.insert_text(ItemKey::TrackNumber, track.to_string());
+  if let Some(track_info) = tags.track {
+    if let Some(track_no) = track_info.no {
+      primary_tag.insert_text(ItemKey::TrackNumber, track_no.to_string());
+    }
+    if let Some(track_total) = track_info.of {
+      primary_tag.insert_text(ItemKey::TrackTotal, track_total.to_string());
+    }
   }
-  if let Some(track_total) = tags.track_total {
-    primary_tag.insert_text(ItemKey::TrackTotal, track_total.to_string());
-  }
-  if let Some(album_artist) = tags.album_artist {
-    primary_tag.insert_text(ItemKey::AlbumArtist, album_artist);
+  if let Some(album_artists) = tags.album_artists {
+    if let Some(album_artist) = album_artists.first() {
+      primary_tag.insert_text(ItemKey::AlbumArtist, album_artist.clone());
+    }
   }
   if let Some(comment) = tags.comment {
     primary_tag.insert_text(ItemKey::Comment, comment);
   }
-  if let Some(disc) = tags.disc {
-    primary_tag.insert_text(ItemKey::DiscNumber, disc.to_string());
-  }
-  if let Some(disc_total) = tags.disc_total {
-    primary_tag.insert_text(ItemKey::DiscTotal, disc_total.to_string());
+  if let Some(disc_info) = tags.disc {
+    if let Some(disc_no) = disc_info.no {
+      primary_tag.insert_text(ItemKey::DiscNumber, disc_no.to_string());
+    }
+    if let Some(disc_total) = disc_info.of {
+      primary_tag.insert_text(ItemKey::DiscTotal, disc_total.to_string());
+    }
   }
 
   // Write the updated tag back to the file
@@ -253,8 +282,10 @@ pub async fn write_tags_to_buffer(
   if let Some(title) = tags.title {
     primary_tag.insert_text(ItemKey::TrackTitle, title);
   }
-  if let Some(artist) = tags.artist {
-    primary_tag.insert_text(ItemKey::TrackArtist, artist);
+  if let Some(artists) = tags.artists {
+    if let Some(artist) = artists.first() {
+      primary_tag.insert_text(ItemKey::TrackArtist, artist.clone());
+    }
   }
   if let Some(album) = tags.album {
     primary_tag.insert_text(ItemKey::AlbumTitle, album);
@@ -265,23 +296,29 @@ pub async fn write_tags_to_buffer(
   if let Some(genre) = tags.genre {
     primary_tag.insert_text(ItemKey::Genre, genre);
   }
-  if let Some(track) = tags.track {
-    primary_tag.insert_text(ItemKey::TrackNumber, track.to_string());
+  if let Some(track_info) = tags.track {
+    if let Some(track_no) = track_info.no {
+      primary_tag.insert_text(ItemKey::TrackNumber, track_no.to_string());
+    }
+    if let Some(track_total) = track_info.of {
+      primary_tag.insert_text(ItemKey::TrackTotal, track_total.to_string());
+    }
   }
-  if let Some(track_total) = tags.track_total {
-    primary_tag.insert_text(ItemKey::TrackTotal, track_total.to_string());
-  }
-  if let Some(album_artist) = tags.album_artist {
-    primary_tag.insert_text(ItemKey::AlbumArtist, album_artist);
+  if let Some(album_artists) = tags.album_artists {
+    if let Some(album_artist) = album_artists.first() {
+      primary_tag.insert_text(ItemKey::AlbumArtist, album_artist.clone());
+    }
   }
   if let Some(comment) = tags.comment {
     primary_tag.insert_text(ItemKey::Comment, comment);
   }
-  if let Some(disc) = tags.disc {
-    primary_tag.insert_text(ItemKey::DiscNumber, disc.to_string());
-  }
-  if let Some(disc_total) = tags.disc_total {
-    primary_tag.insert_text(ItemKey::DiscTotal, disc_total.to_string());
+  if let Some(disc_info) = tags.disc {
+    if let Some(disc_no) = disc_info.no {
+      primary_tag.insert_text(ItemKey::DiscNumber, disc_no.to_string());
+    }
+    if let Some(disc_total) = disc_info.of {
+      primary_tag.insert_text(ItemKey::DiscTotal, disc_total.to_string());
+    }
   }
 
   // Write to a new buffer

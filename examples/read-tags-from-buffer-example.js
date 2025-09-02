@@ -36,7 +36,7 @@ async function main() {
     console.log('2. Reading tags from buffer...')
     const bufferTags = await readTagsFromBuffer(buffer)
 
-    if (bufferTags.title || bufferTags.artist || bufferTags.album) {
+    if (bufferTags.title || bufferTags.artists || bufferTags.album) {
       console.log('Tags found in buffer:')
       console.log(JSON.stringify(bufferTags, null, 2))
     } else {
@@ -48,7 +48,7 @@ async function main() {
     console.log('3. Reading tags directly from file for comparison...')
     const fileTags = await readTags(filePath)
 
-    if (fileTags.title || fileTags.artist || fileTags.album) {
+    if (fileTags.title || fileTags.artists || fileTags.album) {
       console.log('Tags found in file:')
       console.log(JSON.stringify(fileTags, null, 2))
     } else {
@@ -58,8 +58,8 @@ async function main() {
 
     // Step 4: Compare results
     console.log('4. Comparing results...')
-    const bufferHasTags = !!(bufferTags.title || bufferTags.artist || bufferTags.album)
-    const fileHasTags = !!(fileTags.title || fileTags.artist || fileTags.album)
+    const bufferHasTags = !!(bufferTags.title || bufferTags.artists || bufferTags.album)
+    const fileHasTags = !!(fileTags.title || fileTags.artists || fileTags.album)
 
     if (bufferHasTags === fileHasTags) {
       console.log('✅ Buffer and file reading produce the same result')

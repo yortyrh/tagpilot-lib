@@ -26,7 +26,7 @@ async function main() {
     console.log('1. Reading original tags...')
     const originalTags = await readTags(filePath)
 
-    if (originalTags.title || originalTags.artist || originalTags.album) {
+    if (originalTags.title || originalTags.artists || originalTags.album) {
       console.log('Original tags found:')
       console.log(JSON.stringify(originalTags, null, 2))
     } else {
@@ -44,7 +44,7 @@ async function main() {
     console.log('3. Verifying tags have been cleared...')
     const clearedTags = await readTags(filePath)
 
-    if (clearedTags.title || clearedTags.artist || clearedTags.album) {
+    if (clearedTags.title || clearedTags.artists || clearedTags.album) {
       console.log('Warning: Some tags still remain:')
       console.log(JSON.stringify(clearedTags, null, 2))
     } else {

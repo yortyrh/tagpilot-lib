@@ -45,14 +45,18 @@ This directory contains examples demonstrating how to use the `@yortyrh/tagpilot
 ```json
 {
   "title": "Finnegan's Wake",
-  "artist": "The Dubliners",
+  "artists": ["The Dubliners"],
   "album": "Celtic Moods",
   "year": 2002,
-  "track": 3,
-  "trackTotal": 19,
-  "albumArtist": "The Dubliners",
-  "disc": 3,
-  "discTotal": 3
+  "track": {
+    "no": 3,
+    "of": 19
+  },
+  "albumArtists": ["The Dubliners"],
+  "disc": {
+    "no": 3,
+    "of": 3
+  }
 }
 ```
 
@@ -71,14 +75,14 @@ This directory contains examples demonstrating how to use the `@yortyrh/tagpilot
 **Sample data written:**
 
 - Title: "Sample Song Title"
-- Artist: "Sample Artist"
+- Artists: ["Sample Artist"]
 - Album: "Sample Album"
 - Year: 2024
 - Genre: "Sample Genre"
-- Track: 1/12
-- Album Artist: "Sample Album Artist"
+- Track: 1 of 12
+- Album Artists: ["Sample Album Artist"]
 - Comment: "This is a sample comment for demonstration purposes"
-- Disc: 1/1
+- Disc: 1 of 1
 
 **Example output:**
 
@@ -92,16 +96,20 @@ No tags found in the file
 Sample tags to write:
 {
   "title": "Sample Song Title",
-  "artist": "Sample Artist",
+  "artists": ["Sample Artist"],
   "album": "Sample Album",
   "year": 2024,
   "genre": "Sample Genre",
-  "track": 1,
-  "trackTotal": 12,
-  "albumArtist": "Sample Album Artist",
+  "track": {
+    "no": 1,
+    "of": 12
+  },
+  "albumArtists": ["Sample Album Artist"],
   "comment": "This is a sample comment for demonstration purposes",
-  "disc": 1,
-  "discTotal": 1
+  "disc": {
+    "no": 1,
+    "of": 1
+  }
 }
 
 3. Writing sample tags to file...
@@ -112,14 +120,14 @@ Updated tags: { ... }
 
 5. Summary of sample data written:
    Title: "Sample Song Title"
-   Artist: "Sample Artist"
+   Artists: ["Sample Artist"]
    Album: "Sample Album"
    Year: 2024
    Genre: "Sample Genre"
-   Track: 1/12
-   Album Artist: "Sample Album Artist"
+   Track: 1 of 12
+   Album Artists: ["Sample Album Artist"]
    Comment: "This is a sample comment for demonstration purposes"
-   Disc: 1/1
+   Disc: 1 of 1
 
 ✅ Sample tags written successfully!
 ```
@@ -152,7 +160,7 @@ Updated tags: { ... }
 Original tags found:
 {
   "title": "Finnegan's Wake",
-  "artist": "The Dubliners",
+  "artists": ["The Dubliners"],
   "album": "Celtic Moods"
 }
 
@@ -198,7 +206,7 @@ File now contains no metadata tags.
 Tags found in buffer:
 {
   "title": "Sample Song Title",
-  "artist": "Sample Artist",
+  "artists": ["Sample Artist"],
   "album": "Sample Album"
 }
 
@@ -206,7 +214,7 @@ Tags found in buffer:
 Tags found in file:
 {
   "title": "Sample Song Title",
-  "artist": "Sample Artist",
+  "artists": ["Sample Artist"],
   "album": "Sample Album"
 }
 
@@ -248,16 +256,14 @@ The library supports reading and writing tags for various audio formats includin
 Both examples work with the following metadata fields:
 
 - `title` - Song title
-- `artist` - Primary artist
+- `artists` - Array of primary artists
 - `album` - Album name
 - `year` - Release year
 - `genre` - Music genre
-- `track` - Track number
-- `trackTotal` - Total number of tracks
-- `albumArtist` - Album artist
+- `track` - Track position object with `no` (current) and `of` (total)
+- `albumArtists` - Array of album artists
 - `comment` - Additional comments
-- `disc` - Disc number
-- `discTotal` - Total number of discs
+- `disc` - Disc position object with `no` (current) and `of` (total)
 
 ## Error Handling
 
