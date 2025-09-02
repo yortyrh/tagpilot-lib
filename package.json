@@ -63,7 +63,7 @@
     "lint": "oxlint .",
     "prepublishOnly": "napi prepublish -t npm",
     "prepare-test-files": "node convert-from-mp3.mjs music test-files",
-    "test": "ava",
+    "test": "node convert-from-mp3.mjs music test-files && ava",
     "version": "napi version",
     "prepare": "husky"
   },
