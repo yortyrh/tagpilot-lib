@@ -48,9 +48,6 @@ jobs:
       fail-fast: false
       matrix:
         settings:
-          - host: windows-latest
-            build: yarn build --target aarch64-pc-windows-msvc
-            target: aarch64-pc-windows-msvc
           - host: macos-latest
             target: x86_64-apple-darwin
             build: yarn build --target x86_64-apple-darwin
