@@ -10,22 +10,33 @@ export interface AudioTags {
   albumArtists?: Array<string>
   comment?: string
   disc?: Position
+  image?: Image
 }
 
 export declare function clearTags(filePath: string): Promise<void>
+
+export interface Image {
+  data: Buffer
+  mimeType?: string
+  description?: string
+}
 
 export interface Position {
   no?: number
   of?: number
 }
 
-export declare function readCoverImage(buffer: Buffer): Promise<Buffer | null>
+export declare function readCoverImageFromBuffer(buffer: Buffer): Promise<Buffer | null>
+
+export declare function readCoverImageFromFile(filePath: string): Promise<Buffer | null>
 
 export declare function readTags(filePath: string): Promise<AudioTags>
 
 export declare function readTagsFromBuffer(buffer: Buffer): Promise<AudioTags>
 
-export declare function writeCoverImage(buffer: Buffer, imageData: Buffer): Promise<Buffer>
+export declare function writeCoverImageToBuffer(buffer: Buffer, imageData: Buffer): Promise<Buffer>
+
+export declare function writeCoverImageToFile(filePath: string, imageData: Buffer): Promise<void>
 
 export declare function writeTags(filePath: string, tags: AudioTags): Promise<void>
 

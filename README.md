@@ -34,7 +34,7 @@ Each platform gets an optimized binary, ensuring maximum performance on your sys
 ## Quick Start
 
 ```javascript
-const { readTags, writeTags, readCoverImage, writeCoverImage } = require('@yortyrh/tagpilot-lib')
+const { readTags, writeTags, readCoverImageFromBuffer, writeCoverImageToBuffer } = require('@yortyrh/tagpilot-lib')
 
 // Read audio metadata
 const tags = await readTags('./music/song.mp3')
@@ -53,14 +53,14 @@ await writeTags('./music/song.mp3', {
 })
 
 // Read cover image
-const coverImage = await readCoverImage(audioBuffer)
+const coverImage = await readCoverImageFromBuffer(audioBuffer)
 if (coverImage) {
   console.log('Cover image found:', coverImage.length, 'bytes')
 }
 
 // Write cover image
 const imageBuffer = fs.readFileSync('./cover.jpg')
-const modifiedAudio = await writeCoverImage(audioBuffer, imageBuffer)
+const modifiedAudio = await writeCoverImageToBuffer(audioBuffer, imageBuffer)
 ```
 
 ## API Reference
@@ -189,7 +189,7 @@ fs.writeFileSync('./music/modified-song.mp3', modifiedBuffer)
 
 ### Cover Art
 
-#### `readCoverImage(buffer: Buffer): Promise<Buffer | null>`
+#### `readCoverImageFromBuffer(buffer: Buffer): Promise<Buffer | null>`
 
 Reads cover art from an audio buffer.
 
@@ -203,13 +203,13 @@ Reads cover art from an audio buffer.
 
 ```javascript
 const audioBuffer = fs.readFileSync('./music/song.mp3')
-const coverImage = await readCoverImage(audioBuffer)
+const coverImage = await readCoverImageFromBuffer(audioBuffer)
 if (coverImage) {
   fs.writeFileSync('./cover.jpg', coverImage)
 }
 ```
 
-#### `writeCoverImage(buffer: Buffer, imageData: Buffer): Promise<Buffer>`
+#### `writeCoverImageToBuffer(buffer: Buffer, imageData: Buffer): Promise<Buffer>`
 
 Writes cover art to an audio buffer and returns the modified buffer.
 
@@ -225,7 +225,7 @@ Writes cover art to an audio buffer and returns the modified buffer.
 ```javascript
 const audioBuffer = fs.readFileSync('./music/song.mp3')
 const imageBuffer = fs.readFileSync('./cover.jpg')
-const modifiedAudio = await writeCoverImage(audioBuffer, imageBuffer)
+const modifiedAudio = await writeCoverImageToBuffer(audioBuffer, imageBuffer)
 fs.writeFileSync('./music/song-with-cover.mp3', modifiedAudio)
 ```
 
@@ -283,14 +283,14 @@ async function updateSongMetadata() {
 ### Cover Art Management
 
 ```javascript
-const { readCoverImage, writeCoverImage } = require('@yortyrh/tagpilot-lib')
+const { readCoverImageFromBuffer, writeCoverImageToBuffer } = require('@yortyrh/tagpilot-lib')
 const fs = require('fs')
 
 async function manageCoverArt() {
   const audioBuffer = fs.readFileSync('./music/song.mp3')
 
   // Read existing cover art
-  const existingCover = await readCoverImage(audioBuffer)
+  const existingCover = await readCoverImageFromBuffer(audioBuffer)
   if (existingCover) {
     console.log('Existing cover art found:', existingCover.length, 'bytes')
     fs.writeFileSync('./existing-cover.jpg', existingCover)
@@ -298,7 +298,7 @@ async function manageCoverArt() {
 
   // Add new cover art
   const newCover = fs.readFileSync('./new-cover.jpg')
-  const modifiedAudio = await writeCoverImage(audioBuffer, newCover)
+  const modifiedAudio = await writeCoverImageToBuffer(audioBuffer, newCover)
   fs.writeFileSync('./music/song-with-new-cover.mp3', modifiedAudio)
 }
 ```
@@ -333,7 +333,7 @@ async function batchUpdateMetadata() {
 ### Data URL Generation
 
 ```javascript
-const { readCoverImage } = require('@yortyrh/tagpilot-lib')
+const { readCoverImageFromBuffer } = require('@yortyrh/tagpilot-lib')
 const fs = require('fs')
 
 function bufferToDataURL(buffer, mimeType = 'image/jpeg') {
@@ -343,7 +343,7 @@ function bufferToDataURL(buffer, mimeType = 'image/jpeg') {
 
 async function getCoverAsDataURL() {
   const audioBuffer = fs.readFileSync('./music/song.mp3')
-  const coverImage = await readCoverImage(audioBuffer)
+  const coverImage = await readCoverImageFromBuffer(audioBuffer)
 
   if (coverImage) {
     const dataURL = bufferToDataURL(coverImage, 'image/jpeg')

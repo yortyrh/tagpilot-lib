@@ -1,5 +1,5 @@
 const fs = require('fs')
-const { readCoverImage } = require('../index.js')
+const { readCoverImageFromBuffer } = require('../index.js')
 
 /**
  * Example: Read cover image and return as data URL
@@ -70,7 +70,7 @@ async function main() {
 
     // Read cover image from buffer
     console.log('Reading cover image from buffer...')
-    const coverImageBuffer = await readCoverImage(audioBuffer)
+    const coverImageBuffer = await readCoverImageFromBuffer(audioBuffer)
 
     if (coverImageBuffer) {
       console.log(`   ✅ Cover image found: ${coverImageBuffer.length} bytes`)
@@ -91,15 +91,18 @@ async function main() {
 
       // Save data URL to file
       const outputPath = audioFilePath.replace(/\.[^/.]+$/, '-cover-dataurl.txt')
-      console.log('\nSaving data URL to file...')
+      console.log('\n💾 Saving data URL to file...')
       fs.writeFileSync(outputPath, dataURL)
       console.log(`   ✅ Data URL saved: ${outputPath}`)
+      console.log(`   📁 File size: ${(dataURL.length / 1024).toFixed(2)} KB`)
 
       // Save cover image as separate file
       const imageOutputPath = audioFilePath.replace(/\.[^/.]+$/, '-cover.' + mimeType.split('/')[1])
-      console.log('Saving cover image as separate file...')
+      console.log('💾 Saving cover image as separate file...')
       fs.writeFileSync(imageOutputPath, coverImageBuffer)
       console.log(`   ✅ Cover image saved: ${imageOutputPath}`)
+      console.log(`   📁 File size: ${(coverImageBuffer.length / 1024).toFixed(2)} KB`)
+      console.log(`   🖼️  Format: ${mimeType}`)
 
       console.log('\n=== Use Cases for Data URL ===')
       console.log('• Embedding in HTML: <img src="data:image/jpeg;base64,...">')
@@ -107,12 +110,17 @@ async function main() {
       console.log('• Web applications: Display cover art without separate files')
       console.log('• Email attachments: Embed images directly in HTML emails')
       console.log('• API responses: Return cover art as part of JSON payload')
+
+      console.log('\n=== Files Saved ===')
+      console.log(`📄 Data URL: ${outputPath}`)
+      console.log(`🖼️  Cover Image: ${imageOutputPath}`)
+      console.log(`📊 Total saved: 2 files`)
     } else {
       console.log('   ℹ️  No cover image found in audio file')
 
       console.log('\n=== No Cover Image Found ===')
       console.log('This audio file does not contain any cover art.')
-      console.log('You can add cover art using the writeCoverImage function.')
+      console.log('You can add cover art using the writeCoverImageToBuffer function.')
     }
 
     console.log('\n=== Operation completed ===')

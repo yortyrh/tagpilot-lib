@@ -1,5 +1,5 @@
 const fs = require('fs')
-const { readCoverImage, writeCoverImage } = require('../index.js')
+const { readCoverImageFromBuffer, writeCoverImageToBuffer } = require('../index.js')
 
 /**
  * Example: Cover image operations with buffers
@@ -51,7 +51,7 @@ async function main() {
     // Read existing cover image from buffer
     console.log('Reading existing cover image from buffer...')
     try {
-      const existingCover = await readCoverImage(audioBuffer)
+      const existingCover = await readCoverImageFromBuffer(audioBuffer)
       if (existingCover) {
         console.log(`   ✅ Existing cover image found: ${existingCover.length} bytes`)
       } else {
@@ -64,14 +64,14 @@ async function main() {
 
     // Write cover image to buffer
     console.log('Writing cover image to buffer...')
-    const modifiedAudioBuffer = await writeCoverImage(audioBuffer, imageBuffer)
+    const modifiedAudioBuffer = await writeCoverImageToBuffer(audioBuffer, imageBuffer)
     console.log(`   ✅ Cover image written to buffer`)
     console.log(`   Modified audio size: ${modifiedAudioBuffer.length} bytes`)
 
     // Read cover image from modified buffer to verify
     console.log('Verifying cover image was written...')
     try {
-      const newCover = await readCoverImage(modifiedAudioBuffer)
+      const newCover = await readCoverImageFromBuffer(modifiedAudioBuffer)
       if (newCover) {
         console.log(`   ✅ Cover image found in modified buffer: ${newCover.length} bytes`)
       } else {
@@ -84,9 +84,17 @@ async function main() {
 
     // Save the modified buffer to a new file
     const outputPath = audioFilePath.replace(/\.[^/.]+$/, '-with-cover$&')
-    console.log('Saving modified buffer to file...')
+    console.log('\n💾 Saving modified buffer to file...')
     fs.writeFileSync(outputPath, modifiedAudioBuffer)
     console.log(`   ✅ File saved: ${outputPath}`)
+    console.log(`   📁 File size: ${(modifiedAudioBuffer.length / 1024).toFixed(2)} KB`)
+    console.log(`   📊 Size change: ${((modifiedAudioBuffer.length - audioBuffer.length) / 1024).toFixed(2)} KB`)
+
+    console.log('\n=== Files Summary ===')
+    console.log(`🎵 Original audio: ${audioFilePath}`)
+    console.log(`🖼️  Cover image: ${imageFilePath}`)
+    console.log(`💾 Output audio: ${outputPath}`)
+    console.log(`📊 Total processed: 3 files`)
 
     console.log('\n=== Operation completed ===')
   } catch (error) {

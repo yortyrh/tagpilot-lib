@@ -240,6 +240,159 @@ Tags found in file:
 - Processing audio data in web applications
 - Handling audio uploads in web services
 
+### `read-cover-image-example.js`
+
+**What it does:** Demonstrates how to read cover images from audio files and save them in multiple formats.
+
+**Features:**
+
+- Reads cover image from an audio buffer using `readCoverImageFromBuffer`
+- Automatically detects image MIME type (JPEG, PNG, GIF, BMP, TIFF)
+- Converts cover image to data URL for web use
+- Saves both data URL and cover image file
+- Provides detailed file size and format information
+
+**Files Saved:**
+
+- **Data URL file**: `{audio-file}-cover-dataurl.txt` - Base64 encoded data URL
+- **Cover image file**: `{audio-file}-cover.{format}` - Original image format
+
+**Example output:**
+
+```
+=== Reading Cover Image as Data URL ===
+Audio file: ./test-files/01-with-cover.flac
+
+Reading audio file...
+   ✅ Audio loaded: 34036419 bytes
+Reading cover image from buffer...
+   ✅ Cover image found: 2976200 bytes
+   📋 Detected MIME type: image/jpeg
+Converting to data URL...
+   ✅ Data URL generated (3968291 characters)
+
+💾 Saving data URL to file...
+   ✅ Data URL saved: ./test-files/01-with-cover-cover-dataurl.txt
+   📁 File size: 3875.28 KB
+💾 Saving cover image as separate file...
+   ✅ Cover image saved: ./test-files/01-with-cover-cover.jpeg
+   📁 File size: 2906.45 KB
+   🖼️  Format: image/jpeg
+
+=== Files Saved ===
+📄 Data URL: ./test-files/01-with-cover-cover-dataurl.txt
+🖼️  Cover Image: ./test-files/01-with-cover-cover.jpeg
+📊 Total saved: 2 files
+```
+
+**Use cases:**
+
+- Extracting cover art for web applications
+- Creating data URLs for HTML/CSS embedding
+- Saving cover images as separate files
+- Processing audio files in batch operations
+- Web service APIs that need cover art
+- Using `readCoverImageFromBuffer` for buffer-based operations
+
+### `cover-image-example.js`
+
+**What it does:** Demonstrates how to add cover images to audio files and save the modified files.
+
+**Features:**
+
+- Reads audio and image files into buffers
+- Embeds cover image into audio file using `writeCoverImageToBuffer`
+- Saves modified audio file with new name
+- Shows file size changes and processing summary
+
+**Example output:**
+
+```
+=== Setting Cover Image ===
+Audio file: ./test-files/01.flac
+Image file: ./music/01.mp3
+Output file: ./test-files/01-with-cover.flac
+
+Reading audio file...
+   ✅ Audio loaded: 31110511 bytes
+Reading image file...
+   ✅ Image loaded: 2976200 bytes
+Setting cover image...
+   ✅ Cover image set successfully!
+   Modified audio size: 34036419 bytes
+
+💾 Saving modified audio file...
+   ✅ File saved: ./test-files/01-with-cover.flac
+   📁 File size: 33238.69 KB
+   📊 Size change: 2857.33 KB
+
+=== Files Summary ===
+🎵 Original audio: ./test-files/01.flac
+🖼️  Cover image: ./music/01.mp3
+💾 Output audio: ./test-files/01-with-cover.flac
+📊 Total processed: 3 files
+```
+
+**Use cases:**
+
+- Adding cover art to audio files
+- Batch processing audio files with cover images
+- Creating audio files with embedded artwork
+- Preparing files for distribution
+- Using `writeCoverImageToBuffer` for buffer-based operations
+
+### `cover-image-buffer-example.js`
+
+**What it does:** Demonstrates advanced cover image operations using buffer-based processing.
+
+**Features:**
+
+- Reads existing cover images from audio buffers using `readCoverImageFromBuffer`
+- Writes new cover images to audio buffers using `writeCoverImageToBuffer`
+- Verifies cover image operations
+- Compares file sizes before and after
+- Saves modified audio files
+
+**Example output:**
+
+```
+=== Cover Image Buffer Operations ===
+Audio file: ./test-files/02.flac
+Image file: ./music/02.mp3
+
+Reading audio file...
+   ✅ Audio loaded: 41045833 bytes
+Reading image file...
+   ✅ Image loaded: 7404054 bytes
+Reading existing cover image from buffer...
+   ℹ️  No existing cover image found
+
+Writing cover image to buffer...
+   ✅ Cover image written to buffer
+   Modified audio size: 48449933 bytes
+Verifying cover image was written...
+   ✅ Cover image found in modified buffer: 7404054 bytes
+
+💾 Saving modified buffer to file...
+   ✅ File saved: ./test-files/02-with-cover.flac
+   📁 File size: 47314.39 KB
+   📊 Size change: 7230.57 KB
+
+=== Files Summary ===
+🎵 Original audio: ./test-files/02.flac
+🖼️  Cover image: ./music/02.mp3
+💾 Output audio: ./test-files/02-with-cover.flac
+📊 Total processed: 3 files
+```
+
+**Use cases:**
+
+- Advanced cover image processing
+- Buffer-based audio manipulation
+- Verifying cover image operations
+- Processing audio streams in memory
+- Using both `readCoverImageFromBuffer` and `writeCoverImageToBuffer`
+
 ## Supported Audio Formats
 
 The library supports reading and writing tags for various audio formats including:

@@ -109,9 +109,11 @@ const { instance: __napiInstance, module: __wasiModule, napiModule: __napiModule
 })
 module.exports = __napiModule.exports
 module.exports.clearTags = __napiModule.exports.clearTags
-module.exports.readCoverImage = __napiModule.exports.readCoverImage
+module.exports.readCoverImageFromBuffer = __napiModule.exports.readCoverImageFromBuffer
+module.exports.readCoverImageFromFile = __napiModule.exports.readCoverImageFromFile
 module.exports.readTags = __napiModule.exports.readTags
 module.exports.readTagsFromBuffer = __napiModule.exports.readTagsFromBuffer
-module.exports.writeCoverImage = __napiModule.exports.writeCoverImage
+module.exports.writeCoverImageToBuffer = __napiModule.exports.writeCoverImageToBuffer
+module.exports.writeCoverImageToFile = __napiModule.exports.writeCoverImageToFile
 module.exports.writeTags = __napiModule.exports.writeTags
 module.exports.writeTagsToBuffer = __napiModule.exports.writeTagsToBuffer

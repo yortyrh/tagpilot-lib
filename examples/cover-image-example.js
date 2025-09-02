@@ -1,5 +1,5 @@
 const fs = require('fs')
-const { writeCoverImage } = require('../index.js')
+const { writeCoverImageToBuffer } = require('../index.js')
 
 /**
  * Example: Set cover image for audio file
@@ -52,14 +52,22 @@ async function main() {
 
     // Set the cover image
     console.log('Setting cover image...')
-    const modifiedAudioData = await writeCoverImage(audioData, imageData)
+    const modifiedAudioData = await writeCoverImageToBuffer(audioData, imageData)
     console.log(`   ✅ Cover image set successfully!`)
     console.log(`   Modified audio size: ${modifiedAudioData.length} bytes`)
 
     // Save the modified audio file
-    console.log('Saving modified audio file...')
+    console.log('\n💾 Saving modified audio file...')
     fs.writeFileSync(outputFilePath, modifiedAudioData)
     console.log(`   ✅ File saved: ${outputFilePath}`)
+    console.log(`   📁 File size: ${(modifiedAudioData.length / 1024).toFixed(2)} KB`)
+    console.log(`   📊 Size change: ${((modifiedAudioData.length - audioData.length) / 1024).toFixed(2)} KB`)
+
+    console.log('\n=== Files Summary ===')
+    console.log(`🎵 Original audio: ${audioFilePath}`)
+    console.log(`🖼️  Cover image: ${imageFilePath}`)
+    console.log(`💾 Output audio: ${outputFilePath}`)
+    console.log(`📊 Total processed: 3 files`)
 
     console.log('\n=== Operation completed ===')
   } catch (error) {

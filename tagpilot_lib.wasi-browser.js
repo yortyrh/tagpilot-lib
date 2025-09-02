@@ -5,15 +5,12 @@ import {
   WASI as __WASI,
 } from '@napi-rs/wasm-runtime'
 
-
-
 const __wasi = new __WASI({
   version: 'preview1',
 })
 
 const __wasmUrl = new URL('./tagpilot_lib.wasm32-wasi.wasm', import.meta.url).href
 const __emnapiContext = __emnapiGetDefaultContext()
-
 
 const __sharedMemory = new WebAssembly.Memory({
   initial: 4000,
@@ -57,9 +54,11 @@ const {
 })
 export default __napiModule.exports
 export const clearTags = __napiModule.exports.clearTags
-export const readCoverImage = __napiModule.exports.readCoverImage
+export const readCoverImageFromBuffer = __napiModule.exports.readCoverImageFromBuffer
+export const readCoverImageFromFile = __napiModule.exports.readCoverImageFromFile
 export const readTags = __napiModule.exports.readTags
 export const readTagsFromBuffer = __napiModule.exports.readTagsFromBuffer
-export const writeCoverImage = __napiModule.exports.writeCoverImage
+export const writeCoverImageToBuffer = __napiModule.exports.writeCoverImageToBuffer
+export const writeCoverImageToFile = __napiModule.exports.writeCoverImageToFile
 export const writeTags = __napiModule.exports.writeTags
 export const writeTagsToBuffer = __napiModule.exports.writeTagsToBuffer

@@ -2,26 +2,46 @@
 
 use lofty::config::WriteOptions;
 use lofty::file::AudioFile;
-use lofty::picture::{MimeType, Picture};
+use lofty::picture::{MimeType, Picture, PictureType};
 use lofty::prelude::TaggedFileExt;
 use lofty::probe::Probe;
 use lofty::tag::{Accessor, ItemKey, Tag};
 use napi::bindgen_prelude::Buffer;
 use napi::Result;
 use napi_derive::napi;
-use serde::Serialize;
+use std::fs;
 use std::io::{Cursor, Read};
 use std::path::Path;
 
 #[napi(object)]
-#[derive(Debug, Serialize)]
 pub struct Position {
   pub no: Option<u32>,
   pub of: Option<u32>,
 }
 
 #[napi(object)]
-#[derive(Debug, Serialize)]
+pub struct Image {
+  pub data: Buffer,
+  pub mime_type: Option<String>,
+  pub description: Option<String>,
+}
+
+/*
+ * Convert a MimeType to a string
+ */
+pub fn mime_type_to_string(mime_type: &MimeType) -> Option<String> {
+  match mime_type {
+    MimeType::Jpeg => Some(String::from("image/jpeg")),
+    MimeType::Png => Some(String::from("image/png")),
+    MimeType::Gif => Some(String::from("image/gif")),
+    MimeType::Tiff => Some(String::from("image/tiff")),
+    MimeType::Bmp => Some(String::from("image/bmp")),
+    MimeType::Unknown(_) => None,
+    _ => None,
+  }
+}
+
+#[napi(object)]
 pub struct AudioTags {
   pub title: Option<String>,
   pub artists: Option<Vec<String>>,
@@ -32,6 +52,138 @@ pub struct AudioTags {
   pub album_artists: Option<Vec<String>>,
   pub comment: Option<String>,
   pub disc: Option<Position>,
+  pub image: Option<Image>,
+}
+
+fn add_cover_image(primary_tag: &mut Tag, image_data: &Buffer, default_mime_type: MimeType) {
+  // add the new picture
+  let buf = image_data.to_vec();
+  let kind = infer::get(&buf).expect("file type is known");
+  let mime_type = match kind.mime_type() {
+    "image/jpeg" => MimeType::Jpeg,
+    "image/png" => MimeType::Png,
+    "image/gif" => MimeType::Gif,
+    "image/tiff" => MimeType::Tiff,
+    "image/bmp" => MimeType::Bmp,
+    _ => default_mime_type,
+  };
+  primary_tag.remove_picture_type(PictureType::CoverFront);
+  let picture = Picture::new_unchecked(
+    lofty::picture::PictureType::CoverFront,
+    Some(mime_type),
+    None,
+    buf,
+  );
+  primary_tag.push_picture(picture);
+}
+
+impl Default for AudioTags {
+  fn default() -> Self {
+    Self {
+      title: None,
+      artists: None,
+      album: None,
+      year: None,
+      genre: None,
+      track: None,
+      album_artists: None,
+      comment: None,
+      disc: None,
+      image: None,
+    }
+  }
+}
+
+// add method to AudioTags from &Tag
+impl AudioTags {
+  pub fn from_tag(tag: &Tag) -> Self {
+    Self {
+      title: tag.title().map(|s| s.to_string()),
+      artists: tag.artist().map(|s| vec![s.to_string()]),
+      album: tag.album().map(|s| s.to_string()),
+      year: tag.year(),
+      genre: tag.genre().map(|s| s.to_string()),
+      track: match (tag.track(), tag.track_total()) {
+        (None, None) => None,
+        _ => Some(Position {
+          no: tag.track(),
+          of: tag.track_total(),
+        }),
+      },
+      album_artists: tag.artist().map(|s| vec![s.to_string()]),
+      comment: tag.comment().map(|s| s.to_string()),
+      disc: match (tag.disk(), tag.disk_total()) {
+        (None, None) => None,
+        _ => Some(Position {
+          no: tag.disk(),
+          of: tag.disk_total(),
+        }),
+      },
+      image: {
+        let mut image = None;
+        for picture in tag.pictures() {
+          if picture.pic_type() == lofty::picture::PictureType::CoverFront {
+            image = Some(Image {
+              data: picture.data().to_vec().into(),
+              mime_type: mime_type_to_string(&picture.mime_type().unwrap()),
+              description: picture.description().map(|s| s.to_string()),
+            });
+            break;
+          }
+        }
+        image
+      },
+    }
+  }
+
+  pub fn to_tag(&self, primary_tag: &mut Tag) {
+    // Update the tag with new values
+    if let Some(title) = &self.title {
+      primary_tag.insert_text(ItemKey::TrackTitle, title.clone());
+    }
+    if let Some(artists) = &self.artists {
+      if let Some(artist) = artists.first() {
+        primary_tag.insert_text(ItemKey::TrackArtist, artist.clone());
+      }
+    }
+    if let Some(album) = &self.album {
+      primary_tag.insert_text(ItemKey::AlbumTitle, album.clone());
+    }
+    if let Some(year) = &self.year {
+      primary_tag.insert_text(ItemKey::Year, year.to_string());
+    }
+    if let Some(genre) = &self.genre {
+      primary_tag.insert_text(ItemKey::Genre, genre.clone());
+    }
+    if let Some(track_info) = &self.track {
+      if let Some(track_no) = track_info.no {
+        primary_tag.insert_text(ItemKey::TrackNumber, track_no.to_string());
+      }
+      if let Some(track_total) = track_info.of {
+        primary_tag.insert_text(ItemKey::TrackTotal, track_total.to_string());
+      }
+    }
+    if let Some(album_artists) = &self.album_artists {
+      if let Some(album_artist) = album_artists.first() {
+        primary_tag.insert_text(ItemKey::AlbumArtist, album_artist.clone());
+      }
+    }
+    if let Some(comment) = &self.comment {
+      primary_tag.insert_text(ItemKey::Comment, comment.clone());
+    }
+    if let Some(disc_info) = &self.disc {
+      if let Some(disc_no) = disc_info.no {
+        primary_tag.insert_text(ItemKey::DiscNumber, disc_no.to_string());
+      }
+      if let Some(disc_total) = disc_info.of {
+        primary_tag.insert_text(ItemKey::DiscTotal, disc_total.to_string());
+      }
+    }
+
+    if let Some(image) = &self.image {
+      add_cover_image(primary_tag, &image.data, image.mime_type.as_ref().map(|s| MimeType::from_str(&s)).unwrap_or(MimeType::Jpeg));
+    }
+  }
 }
 
 #[napi]
@@ -42,40 +194,8 @@ pub async fn read_tags(file_path: String) -> Result<AudioTags> {
     Ok(tagged_file) => {
       let tag = tagged_file.primary_tag();
       match tag {
-        Some(tag) => Ok(AudioTags {
-          title: tag.title().map(|s| s.to_string()),
-          artists: tag.artist().map(|s| vec![s.to_string()]),
-          album: tag.album().map(|s| s.to_string()),
-          year: tag.year(),
-          genre: tag.genre().map(|s| s.to_string()),
-          track: match (tag.track(), tag.track_total()) {
-            (None, None) => None,
-            _ => Some(Position {
-              no: tag.track(),
-              of: tag.track_total(),
-            }),
-          },
-          album_artists: tag.artist().map(|s| vec![s.to_string()]),
-          comment: tag.comment().map(|s| s.to_string()),
-          disc: match (tag.disk(), tag.disk_total()) {
-            (None, None) => None,
-            _ => Some(Position {
-              no: tag.disk(),
-              of: tag.disk_total(),
-            }),
-          },
-        }),
-        None => Ok(AudioTags {
-          title: None,
-          artists: None,
-          album: None,
-          year: None,
-          genre: None,
-          track: None,
-          album_artists: None,
-          comment: None,
-          disc: None,
-        }),
+        Some(tag) => Ok(AudioTags::from_tag(tag)),
+        None => Ok(AudioTags::default()),
       }
     }
     Err(e) => Err(napi::Error::from_reason(format!(
@@ -94,40 +214,8 @@ pub async fn read_tags_from_buffer(buffer: napi::bindgen_prelude::Buffer) -> Res
     Ok(tagged_file) => {
       let tag = tagged_file.primary_tag();
       match tag {
-        Some(tag) => Ok(AudioTags {
-          title: tag.title().map(|s| s.to_string()),
-          artists: tag.artist().map(|s| vec![s.to_string()]),
-          album: tag.album().map(|s| s.to_string()),
-          year: tag.year(),
-          genre: tag.genre().map(|s| s.to_string()),
-          track: match (tag.track(), tag.track_total()) {
-            (None, None) => None,
-            _ => Some(Position {
-              no: tag.track(),
-              of: tag.track_total(),
-            }),
-          },
-          album_artists: tag.artist().map(|s| vec![s.to_string()]),
-          comment: tag.comment().map(|s| s.to_string()),
-          disc: match (tag.disk(), tag.disk_total()) {
-            (None, None) => None,
-            _ => Some(Position {
-              no: tag.disk(),
-              of: tag.disk_total(),
-            }),
-          },
-        }),
-        None => Ok(AudioTags {
-          title: None,
-          artists: None,
-          album: None,
-          year: None,
-          genre: None,
-          track: None,
-          album_artists: None,
-          comment: None,
-          disc: None,
-        }),
+        Some(tag) => Ok(AudioTags::from_tag(tag)),
+        None => Ok(AudioTags::default()),
       }
     }
     Err(e) => Err(napi::Error::from_reason(format!(
@@ -161,47 +249,7 @@ pub async fn write_tags(file_path: String, tags: AudioTags) -> Result<()> {
   let primary_tag = tagged_file.primary_tag_mut().unwrap();
 
   // Update the tag with new values
-  if let Some(title) = tags.title {
-    primary_tag.insert_text(ItemKey::TrackTitle, title);
-  }
-  if let Some(artists) = tags.artists {
-    if let Some(artist) = artists.first() {
-      primary_tag.insert_text(ItemKey::TrackArtist, artist.clone());
-    }
-  }
-  if let Some(album) = tags.album {
-    primary_tag.insert_text(ItemKey::AlbumTitle, album);
-  }
-  if let Some(year) = tags.year {
-    primary_tag.insert_text(ItemKey::Year, year.to_string());
-  }
-  if let Some(genre) = tags.genre {
-    primary_tag.insert_text(ItemKey::Genre, genre);
-  }
-  if let Some(track_info) = tags.track {
-    if let Some(track_no) = track_info.no {
-      primary_tag.insert_text(ItemKey::TrackNumber, track_no.to_string());
-    }
-    if let Some(track_total) = track_info.of {
-      primary_tag.insert_text(ItemKey::TrackTotal, track_total.to_string());
-    }
-  }
-  if let Some(album_artists) = tags.album_artists {
-    if let Some(album_artist) = album_artists.first() {
-      primary_tag.insert_text(ItemKey::AlbumArtist, album_artist.clone());
-    }
-  }
-  if let Some(comment) = tags.comment {
-    primary_tag.insert_text(ItemKey::Comment, comment);
-  }
-  if let Some(disc_info) = tags.disc {
-    if let Some(disc_no) = disc_info.no {
-      primary_tag.insert_text(ItemKey::DiscNumber, disc_no.to_string());
-    }
-    if let Some(disc_total) = disc_info.of {
-      primary_tag.insert_text(ItemKey::DiscTotal, disc_total.to_string());
-    }
-  }
+  tags.to_tag(primary_tag);
 
   // Write the updated tag back to the file
   match tagged_file.save_to_path(path, WriteOptions::default()) {
@@ -278,48 +326,7 @@ pub async fn write_tags_to_buffer(
   }
   let primary_tag = tagged_file.primary_tag_mut().unwrap();
 
-  // Update the tag with new values
-  if let Some(title) = tags.title {
-    primary_tag.insert_text(ItemKey::TrackTitle, title);
-  }
-  if let Some(artists) = tags.artists {
-    if let Some(artist) = artists.first() {
-      primary_tag.insert_text(ItemKey::TrackArtist, artist.clone());
-    }
-  }
-  if let Some(album) = tags.album {
-    primary_tag.insert_text(ItemKey::AlbumTitle, album);
-  }
-  if let Some(year) = tags.year {
-    primary_tag.insert_text(ItemKey::Year, year.to_string());
-  }
-  if let Some(genre) = tags.genre {
-    primary_tag.insert_text(ItemKey::Genre, genre);
-  }
-  if let Some(track_info) = tags.track {
-    if let Some(track_no) = track_info.no {
-      primary_tag.insert_text(ItemKey::TrackNumber, track_no.to_string());
-    }
-    if let Some(track_total) = track_info.of {
-      primary_tag.insert_text(ItemKey::TrackTotal, track_total.to_string());
-    }
-  }
-  if let Some(album_artists) = tags.album_artists {
-    if let Some(album_artist) = album_artists.first() {
-      primary_tag.insert_text(ItemKey::AlbumArtist, album_artist.clone());
-    }
-  }
-  if let Some(comment) = tags.comment {
-    primary_tag.insert_text(ItemKey::Comment, comment);
-  }
-  if let Some(disc_info) = tags.disc {
-    if let Some(disc_no) = disc_info.no {
-      primary_tag.insert_text(ItemKey::DiscNumber, disc_no.to_string());
-    }
-    if let Some(disc_total) = disc_info.of {
-      primary_tag.insert_text(ItemKey::DiscTotal, disc_total.to_string());
-    }
-  }
+  tags.to_tag(primary_tag);
 
   // Write to a new buffer
   let mut cursor = Cursor::new(owned_copy);
@@ -336,7 +343,7 @@ pub async fn write_tags_to_buffer(
 }
 
 #[napi]
-pub async fn read_cover_image(buffer: Buffer) -> Result<Option<Buffer>> {
+pub async fn read_cover_image_from_buffer(buffer: Buffer) -> Result<Option<Buffer>> {
   let buffer_ref = buffer.as_ref();
   let mut cursor = Cursor::new(buffer_ref);
 
@@ -364,7 +371,7 @@ pub async fn read_cover_image(buffer: Buffer) -> Result<Option<Buffer>> {
 }
 
 #[napi]
-pub async fn write_cover_image(buffer: Buffer, image_data: Buffer) -> Result<Buffer> {
+pub async fn write_cover_image_to_buffer(buffer: Buffer, image_data: Buffer) -> Result<Buffer> {
   let buffer_ref = buffer.as_ref();
   let mut cursor = Cursor::new(buffer_ref);
 
@@ -387,33 +394,7 @@ pub async fn write_cover_image(buffer: Buffer, image_data: Buffer) -> Result<Buf
   }
   let primary_tag = tagged_file.primary_tag_mut().unwrap();
 
-  // For now, we'll just clear existing cover art
-  // The actual picture creation needs more investigation of the lofty API
-  let mut pictures = primary_tag.pictures().to_vec();
-  pictures.retain(|p| p.pic_type() != lofty::picture::PictureType::CoverFront);
-
-  // add the new picture
-  let buf = image_data.to_vec();
-  let kind = infer::get(&buf).expect("file type is known");
-  let mime_type = match kind.mime_type() {
-    "image/jpeg" => MimeType::Jpeg,
-    "image/png" => MimeType::Png,
-    "image/gif" => MimeType::Gif,
-    "image/tiff" => MimeType::Tiff,
-    "image/bmp" => MimeType::Bmp,
-    _ => MimeType::Jpeg,
-  };
-  let picture = Picture::new_unchecked(
-    lofty::picture::PictureType::CoverFront,
-    Some(mime_type),
-    None,
-    buf,
-  );
-  primary_tag.set_picture(0, picture);
-
-  // Clear existing pictures and add the filtered list
-  // Note: This is a simplified implementation
-  // TODO: Implement proper picture creation once the API is understood
+  add_cover_image(primary_tag, &image_data, MimeType::Jpeg);
 
   // Create a copy of the buffer for writing
   let owned_copy: Vec<u8> = buffer.to_vec();
@@ -430,4 +411,20 @@ pub async fn write_cover_image(buffer: Buffer, image_data: Buffer) -> Result<Buf
       e
     ))),
   }
+}
+
+#[napi]
+pub async fn read_cover_image_from_file(file_path: String) -> Result<Option<Buffer>> {
+  let path = Path::new(&file_path);
+  let buffer = fs::read(path).unwrap();
+  read_cover_image_from_buffer(buffer.into()).await
+}
+
+#[napi]
+pub async fn write_cover_image_to_file(file_path: String, image_data: Buffer) -> Result<()> {
+  let path = Path::new(&file_path);
+  let buffer = fs::read(path).unwrap();
+  let buffer = write_cover_image_to_buffer(buffer.into(), image_data).await?;
+  fs::write(path, buffer).unwrap();
+  Ok(())
 }
