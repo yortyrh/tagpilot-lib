@@ -181,7 +181,15 @@ impl AudioTags {
     }
 
     if let Some(image) = &self.image {
-      add_cover_image(primary_tag, &image.data, image.mime_type.as_ref().map(|s| MimeType::from_str(&s)).unwrap_or(MimeType::Jpeg));
+      add_cover_image(
+        primary_tag,
+        &image.data,
+        image
+          .mime_type
+          .as_ref()
+          .map(|s| MimeType::from_str(&s))
+          .unwrap_or(MimeType::Jpeg),
+      );
     }
   }
 }
