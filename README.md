@@ -44,12 +44,14 @@ console.log(tags.artist) // "Artist Name"
 // Write audio metadata
 await writeTags('./music/song.mp3', {
   title: 'New Title',
-  artist: 'New Artist',
+  artists: ['New Artist'],
   album: 'Album Name',
   year: 2024,
   genre: 'Rock',
-  track: 1,
-  trackTotal: 12,
+  track: {
+    no: 1,
+    of: 12,
+  },
 })
 
 // Read cover image
@@ -191,7 +193,7 @@ Writes metadata to an audio buffer and returns the modified buffer.
 const audioBuffer = fs.readFileSync('./music/song.mp3')
 const modifiedBuffer = await writeTagsToBuffer(audioBuffer, {
   title: 'New Title',
-  artist: 'New Artist',
+  artists: ['New Artist'],
 })
 fs.writeFileSync('./music/modified-song.mp3', modifiedBuffer)
 ```

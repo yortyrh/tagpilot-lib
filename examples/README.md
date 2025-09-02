@@ -56,6 +56,11 @@ This directory contains examples demonstrating how to use the `@yortyrh/tagpilot
   "disc": {
     "no": 3,
     "of": 3
+  },
+  "image": {
+    "data": "<Buffer>",
+    "mimeType": "image/jpeg",
+    "description": "Cover Art"
   }
 }
 ```
@@ -83,6 +88,7 @@ This directory contains examples demonstrating how to use the `@yortyrh/tagpilot
 - Album Artists: ["Sample Album Artist"]
 - Comment: "This is a sample comment for demonstration purposes"
 - Disc: 1 of 1
+- Image: Cover art data (if present)
 
 **Example output:**
 
@@ -109,6 +115,11 @@ Sample tags to write:
   "disc": {
     "no": 1,
     "of": 1
+  },
+  "image": {
+    "data": "<Buffer>",
+    "mimeType": "image/jpeg",
+    "description": "Cover Art"
   }
 }
 
@@ -128,6 +139,7 @@ Updated tags: { ... }
    Album Artists: ["Sample Album Artist"]
    Comment: "This is a sample comment for demonstration purposes"
    Disc: 1 of 1
+   Image: Cover art data (if present)
 
 ✅ Sample tags written successfully!
 ```
@@ -161,7 +173,12 @@ Original tags found:
 {
   "title": "Finnegan's Wake",
   "artists": ["The Dubliners"],
-  "album": "Celtic Moods"
+  "album": "Celtic Moods",
+  "image": {
+    "data": "<Buffer>",
+    "mimeType": "image/jpeg",
+    "description": "Cover Art"
+  }
 }
 
 2. Clearing all tags...
@@ -207,7 +224,12 @@ Tags found in buffer:
 {
   "title": "Sample Song Title",
   "artists": ["Sample Artist"],
-  "album": "Sample Album"
+  "album": "Sample Album",
+  "image": {
+    "data": "<Buffer>",
+    "mimeType": "image/jpeg",
+    "description": "Cover Art"
+  }
 }
 
 3. Reading tags directly from file for comparison...
@@ -215,7 +237,12 @@ Tags found in file:
 {
   "title": "Sample Song Title",
   "artists": ["Sample Artist"],
-  "album": "Sample Album"
+  "album": "Sample Album",
+  "image": {
+    "data": "<Buffer>",
+    "mimeType": "image/jpeg",
+    "description": "Cover Art"
+  }
 }
 
 4. Comparing results...
@@ -239,6 +266,90 @@ Tags found in file:
 - Working with audio data from databases or cloud storage
 - Processing audio data in web applications
 - Handling audio uploads in web services
+
+### `write-tags-to-buffer-example.js`
+
+**What it does:** Demonstrates how to write audio file tags to a buffer instead of directly to a file.
+
+**Features:**
+
+- Reads an audio file into a buffer
+- Reads existing tags from the buffer
+- Creates new tags with the updated structure
+- Writes new tags to the buffer using `writeTagsToBuffer`
+- Compares results with file-based writing
+- Shows the difference between buffer and file approaches
+
+**Example output:**
+
+```
+=== Writing tags to buffer: ./music/01.mp3 ===
+
+1. Reading file into buffer...
+   File size: 2417171 bytes
+   Buffer type: Buffer
+
+2. Reading original tags from buffer...
+No tags found in buffer
+
+3. Creating new tags to write...
+New tags to write:
+{
+  "title": "Buffer Modified Title",
+  "artists": ["Buffer Modified Artist"],
+  "album": "Buffer Modified Album",
+  "year": 2024,
+  "genre": "Buffer Modified Genre",
+  "track": {
+    "no": 2,
+    "of": 15
+  },
+  "albumArtists": ["Buffer Modified Album Artist"],
+  "comment": "This was modified using writeTagsToBuffer",
+  "disc": {
+    "no": 2,
+    "of": 2
+  }
+}
+
+4. Writing tags to buffer...
+✅ Tags written to buffer successfully!
+   Original buffer size: 2417171 bytes
+   Modified buffer size: 2417171 bytes
+
+5. Reading tags from modified buffer...
+Tags from modified buffer:
+{
+  "title": "Buffer Modified Title",
+  "artists": ["Buffer Modified Artist"],
+  "album": "Buffer Modified Album",
+  "year": 2024,
+  "genre": "Buffer Modified Genre",
+  "track": {
+    "no": 2,
+    "of": 15
+  },
+  "albumArtists": ["Buffer Modified Artist"],
+  "comment": "This was modified using writeTagsToBuffer",
+  "disc": {
+    "no": 2,
+    "of": 2
+  }
+}
+
+6. Comparing with file-based approach...
+✅ Buffer and file approaches produce identical results
+```
+
+**Use cases:**
+
+- Processing audio data in memory without file I/O
+- Working with audio streams and buffers
+- Batch processing of audio data
+- Web applications that handle audio uploads
+- Processing audio data from network requests
+- Working with audio data in cloud functions
+- Avoiding file system operations for better performance
 
 ### `read-cover-image-example.js`
 

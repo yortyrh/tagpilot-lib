@@ -75,7 +75,7 @@ fn add_cover_image(primary_tag: &mut Tag, image_data: &Buffer, default_mime_type
     None,
     buf,
   );
-  primary_tag.push_picture(picture);
+  primary_tag.set_picture(0, picture);
 }
 
 // add method to AudioTags from &Tag
