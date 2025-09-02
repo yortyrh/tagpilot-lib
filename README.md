@@ -92,10 +92,17 @@ console.log(tags)
 //     no: 1,
 //     of: 12
 //   },
-//   albumArtist: ["Album Artist"],
+//   albumArtists: ["Album Artist"],
 //   comment: "Comment",
-//   disc: 1,
-//   discTotal: 2
+//   disc: {
+//     no: 1,
+//     of: 2
+//   },
+//   image: {
+//     data: <Buffer>,
+//     mimeType: "image/jpeg",
+//     description: "Cover Art"
+//   }
 // }
 ```
 
@@ -123,10 +130,12 @@ await writeTags('./music/song.mp3', {
     no: 1,
     of: 12,
   },
-  albumArtist: ['Album Artist'],
+  albumArtists: ['Album Artist'],
   comment: 'My comment',
-  disc: 1,
-  discTotal: 2,
+  disc: {
+    no: 1,
+    of: 2,
+  },
 })
 ```
 
@@ -233,22 +242,43 @@ fs.writeFileSync('./music/song-with-cover.mp3', modifiedAudio)
 
 ### AudioTags
 
+The main interface for audio file metadata, including cover art information.
+
+```typescript
+interface AudioTags {
+  title?: string // Song title
+  artists?: Array<string> // Array of primary artists
+  album?: string // Album name
+  year?: number // Release year
+  genre?: string // Music genre
+  track?: Position // Track position information
+  albumArtists?: Array<string> // Array of album artists
+  comment?: string // Additional comments
+  disc?: Position // Disc position information
+  image?: Image // Cover art information
+}
+```
+
+### Position
+
+Represents position information for tracks and discs.
+
 ```typescript
 interface Position {
-  no?: number | null
-  of?: number | null
+  no?: number | null // Current position (track/disc number)
+  of?: number | null // Total count (total tracks/discs)
 }
+```
 
-interface AudioTags {
-  title?: string
-  artists?: string[]
-  album?: string
-  year?: number
-  genre?: string
-  track?: Position
-  albumArtist?: string[]
-  comment?: string
-  disc?: Position
+### Image
+
+Represents cover art information with image data and metadata.
+
+```typescript
+interface Image {
+  data: Buffer // Raw image data
+  mimeType?: string // MIME type (e.g., "image/jpeg")
+  description?: string // Optional description of the image
 }
 ```
 
@@ -264,6 +294,11 @@ async function updateSongMetadata() {
   const tags = await readTags('./music/song.mp3')
   console.log('Current title:', tags.title)
   console.log('Track:', tags.track?.no, 'of', tags.track?.of)
+  console.log('Disc:', tags.disc?.no, 'of', tags.disc?.of)
+
+  if (tags.image) {
+    console.log('Cover image:', tags.image.mimeType, tags.image.description)
+  }
 
   // Update metadata
   await writeTags('./music/song.mp3', {
@@ -282,7 +317,7 @@ async function updateSongMetadata() {
 
 ### Cover Art Management
 
-```javascript
+````javascript
 const { readCoverImageFromBuffer, writeCoverImageToBuffer } = require('@yortyrh/tagpilot-lib')
 const fs = require('fs')
 
@@ -301,7 +336,34 @@ async function manageCoverArt() {
   const modifiedAudio = await writeCoverImageToBuffer(audioBuffer, newCover)
   fs.writeFileSync('./music/song-with-new-cover.mp3', modifiedAudio)
 }
-```
+
+### Working with Image Metadata
+
+```javascript
+const { readTags } = require('@yortyrh/tagpilot-lib')
+const fs = require('fs')
+
+async function examineCoverArt() {
+  const tags = await readTags('./music/song.mp3')
+
+  if (tags.image) {
+    console.log('Cover art found!')
+    console.log('MIME type:', tags.image.mimeType)
+    console.log('Description:', tags.image.description || 'No description')
+    console.log('Data size:', tags.image.data.length, 'bytes')
+
+    // Save the cover art to a file
+    const extension = tags.image.mimeType?.split('/')[1] || 'jpg'
+    const filename = `cover.${extension}`
+    fs.writeFileSync(filename, tags.image.data)
+    console.log(`Cover art saved as: ${filename}`)
+  } else {
+    console.log('No cover art found in this file')
+  }
+}
+````
+
+````
 
 ### Batch Processing
 
@@ -328,7 +390,7 @@ async function batchUpdateMetadata() {
     console.log(`Updated: ${file}`)
   }
 }
-```
+````
 
 ### Data URL Generation
 

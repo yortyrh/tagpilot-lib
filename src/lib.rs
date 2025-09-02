@@ -42,6 +42,7 @@ pub fn mime_type_to_string(mime_type: &MimeType) -> Option<String> {
 }
 
 #[napi(object)]
+#[derive(Default)]
 pub struct AudioTags {
   pub title: Option<String>,
   pub artists: Option<Vec<String>>,
@@ -77,23 +78,6 @@ fn add_cover_image(primary_tag: &mut Tag, image_data: &Buffer, default_mime_type
   primary_tag.push_picture(picture);
 }
 
-impl Default for AudioTags {
-  fn default() -> Self {
-    Self {
-      title: None,
-      artists: None,
-      album: None,
-      year: None,
-      genre: None,
-      track: None,
-      album_artists: None,
-      comment: None,
-      disc: None,
-      image: None,
-    }
-  }
-}
-
 // add method to AudioTags from &Tag
 impl AudioTags {
   pub fn from_tag(tag: &Tag) -> Self {
@@ -125,7 +109,7 @@ impl AudioTags {
           if picture.pic_type() == lofty::picture::PictureType::CoverFront {
             image = Some(Image {
               data: picture.data().to_vec().into(),
-              mime_type: mime_type_to_string(&picture.mime_type().unwrap()),
+              mime_type: mime_type_to_string(picture.mime_type().unwrap()),
               description: picture.description().map(|s| s.to_string()),
             });
             break;
@@ -187,7 +171,7 @@ impl AudioTags {
         image
           .mime_type
           .as_ref()
-          .map(|s| MimeType::from_str(&s))
+          .map(|s| MimeType::from_str(s))
           .unwrap_or(MimeType::Jpeg),
       );
     }

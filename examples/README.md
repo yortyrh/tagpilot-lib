@@ -408,15 +408,27 @@ The library supports reading and writing tags for various audio formats includin
 
 Both examples work with the following metadata fields:
 
+### Basic Information
+
 - `title` - Song title
 - `artists` - Array of primary artists
 - `album` - Album name
 - `year` - Release year
 - `genre` - Music genre
-- `track` - Track position object with `no` (current) and `of` (total)
-- `albumArtists` - Array of album artists
 - `comment` - Additional comments
+
+### Position Information
+
+- `track` - Track position object with `no` (current) and `of` (total)
 - `disc` - Disc position object with `no` (current) and `of` (total)
+
+### Artist Information
+
+- `albumArtists` - Array of album artists
+
+### Cover Art
+
+- `image` - Cover image object with data, MIME type, and description
 
 ## Error Handling
 
