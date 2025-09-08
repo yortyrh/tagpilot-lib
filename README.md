@@ -1,5 +1,7 @@
 # @yortyrh/tagpilot-lib
 
+[![CI](https://github.com/yortyrh/tagpilot-lib/actions/workflows/CI.yml/badge.svg)](https://github.com/yortyrh/tagpilot-lib/actions/workflows/CI.yml)
+
 A high-performance Node.js library for reading and writing audio metadata and cover art, built with Rust and NAPI-RS.
 
 ## Features
