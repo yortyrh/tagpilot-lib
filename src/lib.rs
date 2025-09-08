@@ -925,10 +925,7 @@ mod tests {
     assert_eq!(pos_of_only.of, Some(15));
 
     // Test with neither
-    let pos_empty = TestPosition {
-      no: None,
-      of: None,
-    };
+    let pos_empty = TestPosition { no: None, of: None };
     assert_eq!(pos_empty.no, None);
     assert_eq!(pos_empty.of, None);
 
@@ -989,7 +986,10 @@ mod tests {
       description: Some("Description only".to_string()),
     };
     assert_eq!(image_desc_only.mime_type, None);
-    assert_eq!(image_desc_only.description, Some("Description only".to_string()));
+    assert_eq!(
+      image_desc_only.description,
+      Some("Description only".to_string())
+    );
 
     // Test with empty data
     let image_empty = TestImage {
@@ -1053,7 +1053,10 @@ mod tests {
     assert_eq!(tags_long_strings.artists, Some(vec![long_string.clone()]));
     assert_eq!(tags_long_strings.album, Some(long_string.clone()));
     assert_eq!(tags_long_strings.genre, Some(long_string.clone()));
-    assert_eq!(tags_long_strings.album_artists, Some(vec![long_string.clone()]));
+    assert_eq!(
+      tags_long_strings.album_artists,
+      Some(vec![long_string.clone()])
+    );
     assert_eq!(tags_long_strings.comment, Some(long_string));
 
     // Test with special characters
@@ -1075,7 +1078,10 @@ mod tests {
     assert_eq!(tags_special.artists, Some(vec![special_chars.to_string()]));
     assert_eq!(tags_special.album, Some(special_chars.to_string()));
     assert_eq!(tags_special.genre, Some(special_chars.to_string()));
-    assert_eq!(tags_special.album_artists, Some(vec![special_chars.to_string()]));
+    assert_eq!(
+      tags_special.album_artists,
+      Some(vec![special_chars.to_string()])
+    );
     assert_eq!(tags_special.comment, Some(special_chars.to_string()));
 
     // Test with unicode characters
@@ -1097,7 +1103,10 @@ mod tests {
     assert_eq!(tags_unicode.artists, Some(vec![unicode_string.to_string()]));
     assert_eq!(tags_unicode.album, Some(unicode_string.to_string()));
     assert_eq!(tags_unicode.genre, Some(unicode_string.to_string()));
-    assert_eq!(tags_unicode.album_artists, Some(vec![unicode_string.to_string()]));
+    assert_eq!(
+      tags_unicode.album_artists,
+      Some(vec![unicode_string.to_string()])
+    );
     assert_eq!(tags_unicode.comment, Some(unicode_string.to_string()));
   }
 
@@ -1105,7 +1114,7 @@ mod tests {
   fn test_audio_tags_year_edge_cases() {
     // Test with various years
     let years = vec![1900, 1950, 2000, 2024, 2030, 9999];
-    
+
     for year in years {
       let tags = TestAudioTags {
         title: Some("Test Song".to_string()),
@@ -1156,9 +1165,7 @@ mod tests {
     assert_eq!(tags_single.artists, Some(vec!["Single Artist".to_string()]));
 
     // Test with many artists
-    let many_artists: Vec<String> = (1..=50)
-      .map(|i| format!("Artist {}", i))
-      .collect();
+    let many_artists: Vec<String> = (1..=50).map(|i| format!("Artist {}", i)).collect();
     let tags_many = TestAudioTags {
       title: Some("Test Song".to_string()),
       artists: Some(many_artists.clone()),
@@ -1388,36 +1395,42 @@ mod tests {
       }),
     };
 
-    assert_eq!(compilation_tags.title, Some("Bohemian Rhapsody".to_string()));
+    assert_eq!(
+      compilation_tags.title,
+      Some("Bohemian Rhapsody".to_string())
+    );
     assert_eq!(compilation_tags.artists, Some(vec!["Queen".to_string()]));
-    assert_eq!(compilation_tags.album_artists, Some(vec!["Various Artists".to_string()]));
+    assert_eq!(
+      compilation_tags.album_artists,
+      Some(vec!["Various Artists".to_string()])
+    );
     assert_eq!(compilation_tags.year, Some(1975));
   }
 
   #[test]
   fn test_create_test_image_data() {
     let image_data = create_test_image_data();
-    
+
     // Test that the image data is not empty
     assert!(!image_data.is_empty());
-    
+
     // Test JPEG header structure
     assert_eq!(image_data[0], 0xFF); // JPEG SOI marker
     assert_eq!(image_data[1], 0xD8); // JPEG SOI marker
     assert_eq!(image_data[2], 0xFF); // APP0 marker
     assert_eq!(image_data[3], 0xE0); // APP0 marker
-    
+
     // Test JFIF identifier
     assert_eq!(image_data[6], 0x4A); // 'J'
     assert_eq!(image_data[7], 0x46); // 'F'
     assert_eq!(image_data[8], 0x49); // 'I'
     assert_eq!(image_data[9], 0x46); // 'F'
-    
+
     // Test JPEG EOI marker
     let last_two = &image_data[image_data.len() - 2..];
     assert_eq!(last_two[0], 0xFF); // JPEG EOI marker
     assert_eq!(last_two[1], 0xD9); // JPEG EOI marker
-    
+
     // Test that multiple calls return the same data
     let image_data2 = create_test_image_data();
     assert_eq!(image_data, image_data2);
@@ -1430,7 +1443,7 @@ mod tests {
     // Test that data can be moved and cloned properly
     let original_data = create_test_image_data();
     let original_title = "Original Title".to_string();
-    
+
     let tags1 = TestAudioTags {
       title: Some(original_title.clone()),
       artists: Some(vec!["Artist 1".to_string(), "Artist 2".to_string()]),
@@ -1489,9 +1502,14 @@ mod tests {
   fn test_audio_tags_large_scale_data() {
     // Test with very large amounts of data
     let large_artists: Vec<String> = (1..=1000)
-      .map(|i| format!("Artist Number {} with a very long name that might cause issues", i))
+      .map(|i| {
+        format!(
+          "Artist Number {} with a very long name that might cause issues",
+          i
+        )
+      })
       .collect();
-    
+
     let large_album_artists: Vec<String> = (1..=500)
       .map(|i| format!("Album Artist {} with extended name", i))
       .collect();
@@ -1531,14 +1549,20 @@ mod tests {
     assert_eq!(large_tags.genre, Some(large_genre));
     assert_eq!(large_tags.album_artists, Some(large_album_artists));
     assert_eq!(large_tags.comment, Some(large_comment));
-    assert_eq!(large_tags.track, Some(TestPosition {
-      no: Some(1),
-      of: Some(1000),
-    }));
-    assert_eq!(large_tags.disc, Some(TestPosition {
-      no: Some(1),
-      of: Some(100),
-    }));
+    assert_eq!(
+      large_tags.track,
+      Some(TestPosition {
+        no: Some(1),
+        of: Some(1000),
+      })
+    );
+    assert_eq!(
+      large_tags.disc,
+      Some(TestPosition {
+        no: Some(1),
+        of: Some(100),
+      })
+    );
   }
 
   #[test]
@@ -1554,10 +1578,16 @@ mod tests {
         Some("Album".to_string()),
         Some(2024),
         Some("Genre".to_string()),
-        Some(TestPosition { no: Some(1), of: Some(10) }),
+        Some(TestPosition {
+          no: Some(1),
+          of: Some(10),
+        }),
         Some(vec!["Album Artist".to_string()]),
         Some("Comment".to_string()),
-        Some(TestPosition { no: Some(1), of: Some(2) }),
+        Some(TestPosition {
+          no: Some(1),
+          of: Some(2),
+        }),
         Some(TestImage {
           data: create_test_image_data(),
           mime_type: Some("image/jpeg".to_string()),
@@ -1574,7 +1604,10 @@ mod tests {
         None,
         Some(vec!["Album Artist".to_string()]),
         None,
-        Some(TestPosition { no: Some(1), of: Some(2) }),
+        Some(TestPosition {
+          no: Some(1),
+          of: Some(2),
+        }),
         None,
       ),
       (
@@ -1583,7 +1616,10 @@ mod tests {
         None,
         Some(2024),
         None,
-        Some(TestPosition { no: Some(1), of: Some(10) }),
+        Some(TestPosition {
+          no: Some(1),
+          of: Some(10),
+        }),
         None,
         Some("Comment".to_string()),
         None,
@@ -1595,7 +1631,9 @@ mod tests {
       ),
     ];
 
-    for (i, (title, artists, album, year, genre, track, album_artists, comment, disc, image)) in combinations.iter().enumerate() {
+    for (i, (title, artists, album, year, genre, track, album_artists, comment, disc, image)) in
+      combinations.iter().enumerate()
+    {
       let tags = TestAudioTags {
         title: title.clone(),
         artists: artists.clone(),
@@ -1611,13 +1649,25 @@ mod tests {
 
       // Verify each field matches the expected value
       assert_eq!(tags.title, *title, "Title mismatch in combination {}", i);
-      assert_eq!(tags.artists, *artists, "Artists mismatch in combination {}", i);
+      assert_eq!(
+        tags.artists, *artists,
+        "Artists mismatch in combination {}",
+        i
+      );
       assert_eq!(tags.album, *album, "Album mismatch in combination {}", i);
       assert_eq!(tags.year, *year, "Year mismatch in combination {}", i);
       assert_eq!(tags.genre, *genre, "Genre mismatch in combination {}", i);
       assert_eq!(tags.track, *track, "Track mismatch in combination {}", i);
-      assert_eq!(tags.album_artists, *album_artists, "Album artists mismatch in combination {}", i);
-      assert_eq!(tags.comment, *comment, "Comment mismatch in combination {}", i);
+      assert_eq!(
+        tags.album_artists, *album_artists,
+        "Album artists mismatch in combination {}",
+        i
+      );
+      assert_eq!(
+        tags.comment, *comment,
+        "Comment mismatch in combination {}",
+        i
+      );
       assert_eq!(tags.disc, *disc, "Disc mismatch in combination {}", i);
       assert_eq!(tags.image, *image, "Image mismatch in combination {}", i);
     }
@@ -1686,7 +1736,7 @@ mod tests {
   fn test_audio_tags_boundary_conditions() {
     // Test boundary conditions for all numeric fields
     let boundary_years = vec![0, 1, 1900, 2000, 2024, 9999, u32::MAX];
-    
+
     for year in boundary_years {
       let tags = TestAudioTags {
         title: Some("Boundary Test".to_string()),
@@ -1705,7 +1755,7 @@ mod tests {
 
     // Test boundary conditions for track/disc numbers
     let boundary_numbers = vec![0, 1, 10, 100, 1000, u32::MAX];
-    
+
     for no in &boundary_numbers {
       for of in &boundary_numbers {
         let tags = TestAudioTags {
@@ -1726,14 +1776,20 @@ mod tests {
           }),
           image: None,
         };
-        assert_eq!(tags.track, Some(TestPosition {
-          no: Some(*no),
-          of: Some(*of),
-        }));
-        assert_eq!(tags.disc, Some(TestPosition {
-          no: Some(*no),
-          of: Some(*of),
-        }));
+        assert_eq!(
+          tags.track,
+          Some(TestPosition {
+            no: Some(*no),
+            of: Some(*of),
+          })
+        );
+        assert_eq!(
+          tags.disc,
+          Some(TestPosition {
+            no: Some(*no),
+            of: Some(*of),
+          })
+        );
       }
     }
   }
@@ -1744,7 +1800,7 @@ mod tests {
     let empty_string = "".to_string();
     let single_char = "a".to_string();
     let max_reasonable_length = "a".repeat(10000);
-    
+
     let boundary_strings = vec![
       empty_string.clone(),
       single_char.clone(),
@@ -1777,7 +1833,10 @@ mod tests {
       assert_eq!(tags.album_artists, Some(vec![string.clone()]));
       assert_eq!(tags.comment, Some(string.clone()));
       assert_eq!(tags.image.as_ref().unwrap().mime_type, Some(string.clone()));
-      assert_eq!(tags.image.as_ref().unwrap().description, Some(string.clone()));
+      assert_eq!(
+        tags.image.as_ref().unwrap().description,
+        Some(string.clone())
+      );
     }
   }
 
@@ -1787,7 +1846,7 @@ mod tests {
     let empty_vector: Vec<String> = vec![];
     let single_item = vec!["Single Item".to_string()];
     let large_vector: Vec<String> = (1..=1000).map(|i| format!("Item {}", i)).collect();
-    
+
     let boundary_vectors = vec![
       empty_vector.clone(),
       single_item.clone(),
@@ -1949,7 +2008,7 @@ mod tests {
         assert_eq!(artists.len(), 2);
         assert_eq!(artists[0], "Artist 1");
         assert_eq!(artists[1], "Artist 2");
-      },
+      }
       None => panic!("Artists should be Some"),
     }
 
@@ -1964,7 +2023,7 @@ mod tests {
       Some(track) => {
         assert_eq!(track.no, Some(3));
         assert_eq!(track.of, Some(15));
-      },
+      }
       None => panic!("Track should be Some"),
     }
 
@@ -1974,7 +2033,7 @@ mod tests {
         assert_eq!(image.mime_type, Some("image/jpeg".to_string()));
         assert_eq!(image.description, Some("Pattern Description".to_string()));
         assert!(!image.data.is_empty());
-      },
+      }
       None => panic!("Image should be Some"),
     }
   }
@@ -1984,7 +2043,11 @@ mod tests {
     // Test that we can iterate over and collect data from the struct
     let tags = TestAudioTags {
       title: Some("Iteration Test".to_string()),
-      artists: Some(vec!["Artist A".to_string(), "Artist B".to_string(), "Artist C".to_string()]),
+      artists: Some(vec![
+        "Artist A".to_string(),
+        "Artist B".to_string(),
+        "Artist C".to_string(),
+      ]),
       album: Some("Iteration Album".to_string()),
       year: Some(2024),
       genre: Some("Iteration Genre".to_string()),
@@ -1992,7 +2055,10 @@ mod tests {
         no: Some(1),
         of: Some(3),
       }),
-      album_artists: Some(vec!["Album Artist A".to_string(), "Album Artist B".to_string()]),
+      album_artists: Some(vec![
+        "Album Artist A".to_string(),
+        "Album Artist B".to_string(),
+      ]),
       comment: Some("Iteration Comment".to_string()),
       disc: Some(TestPosition {
         no: Some(1),
@@ -2009,7 +2075,7 @@ mod tests {
     if let Some(artists) = &tags.artists {
       let artist_count = artists.len();
       assert_eq!(artist_count, 3);
-      
+
       let collected_artists: Vec<&String> = artists.iter().collect();
       assert_eq!(collected_artists.len(), 3);
       assert_eq!(collected_artists[0], "Artist A");
@@ -2021,7 +2087,7 @@ mod tests {
     if let Some(album_artists) = &tags.album_artists {
       let album_artist_count = album_artists.len();
       assert_eq!(album_artist_count, 2);
-      
+
       let collected_album_artists: Vec<&String> = album_artists.iter().collect();
       assert_eq!(collected_album_artists.len(), 2);
       assert_eq!(collected_album_artists[0], "Album Artist A");
@@ -2032,7 +2098,7 @@ mod tests {
     if let Some(image) = &tags.image {
       let image_data_len = image.data.len();
       assert!(image_data_len > 0);
-      
+
       let collected_data: Vec<&u8> = image.data.iter().collect();
       assert_eq!(collected_data.len(), image_data_len);
     }
