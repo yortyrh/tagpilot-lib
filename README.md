@@ -4,6 +4,7 @@
 [![NPM version](https://img.shields.io/npm/v/@yortyrh/tagpilot-lib.svg)](https://npmjs.org/package/@yortyrh/tagpilot-lib)
 [![npm downloads](http://img.shields.io/npm/dm/@yortyrh/tagpilot-lib.svg)](https://npmcharts.com/compare/@yortyrh/tagpilot-lib?start=600&interval=30)
 [![Coverage Status](https://coveralls.io/repos/github/yortyrh/tagpilot-lib/badge.svg?branch=main)](https://coveralls.io/github/yortyrh/tagpilot-lib?branch=main)
+[![Known Vulnerabilities](https://snyk.io/test/github/Borewit/yortyrh/tagpilot-lib/badge.svg?targetFile=package.json)](https://snyk.io/test/github/yortyrh/tagpilot-lib?targetFile=package.json)
 
 A high-performance Node.js library for reading and writing audio metadata and cover art, built with Rust and NAPI-RS.
 
