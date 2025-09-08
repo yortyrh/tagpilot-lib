@@ -50,24 +50,30 @@ test('readTagsFromBuffer - should return empty tags for Speex files without meta
 
 // Test helper function for empty tags testing
 async function testEmptyTags(t: any, files: any[], format: string) {
-  if (files.length > 0) {
-    const file = files[0]
-    const tags = await readTagsFromBuffer(file.data)
+  for (const file of files || []) {
+    try {
+      const tags = await readTagsFromBuffer(file.data)
 
-    // Should return empty or minimal tags
-    t.true(typeof tags === 'object')
-    t.true(tags !== null)
+      // Should return empty or minimal tags
+      t.true(typeof tags === 'object')
+      t.true(tags !== null)
 
-    // Most fields should be undefined or empty
-    t.true(tags.title === undefined || tags.title === '')
-    t.true(tags.artists === undefined || tags.artists.length === 0)
-    t.true(tags.album === undefined || tags.album === '')
-    t.true(tags.genre === undefined || tags.genre === '')
-    t.true(tags.comment === undefined || tags.comment === '')
-    t.true(tags.image === undefined)
+      // Most fields should be undefined or empty
+      t.true(tags.title === undefined || tags.title === '')
+      t.true(tags.artists === undefined || tags.artists.length === 0)
+      t.true(tags.album === undefined || tags.album === '')
+      t.true(tags.genre === undefined || tags.genre === '')
+      t.true(tags.comment === undefined || tags.comment === '')
+      t.true(tags.image === undefined)
 
-    console.log(`✓ ${file.fileName} (${format}): Empty tags as expected`)
-  } else {
+      console.log(`✓ ${file.fileName} (${format}): Empty tags as expected`)
+    } catch (error) {
+      console.error(`Error reading tags from ${file.fileName}: ${error}`)
+      throw new Error(`Error reading tags from ${file.fileName}: ${error}`)
+    }
+  }
+
+  if (files.length === 0) {
     t.pass(`No ${format} files available for testing`)
   }
 }
@@ -93,7 +99,7 @@ test('writeTagsToBuffer - should write tags with cover image', async (t) => {
     disc: { no: 1, of: 2 },
     image: {
       data: coverImageFile!.data,
-      mimeType: 'image/jpeg',
+      mimeType: coverImageFile!.mimeType,
       description: 'Test cover image',
     },
   }
@@ -190,61 +196,66 @@ test('writeTagsToBuffer - should handle partial tags', async (t) => {
 // Test helper function for format testing
 async function testAudioFormatFullTags(t: any, files: any[], format: string) {
   const img = getFileByName('cover.jpg')
-  if (files.length > 0) {
-    const testFile = files[0]
-    const testTags: AudioTags = {
-      title: `${format} Test Song`,
-      artists: [`${format} Artist`],
-      album: `${format} Album`,
-      year: 2024,
-      genre: `${format} Genre`,
-      track: { no: 1, of: 10 },
-      comment: `Test comment for ${format} format`,
-      albumArtists: [`${format} Album Artist`],
-      disc: { no: 1, of: 10 },
-      image: {
-        data: img!.data,
-        mimeType: img!.mimeType,
-        description: `Test cover image for ${format} format`,
-      },
+  for (const testFile of files) {
+    try {
+      const testTags: AudioTags = {
+        title: `${format} Test Song`,
+        artists: [`${format} Artist`],
+        album: `${format} Album`,
+        year: 2024,
+        genre: `${format} Genre`,
+        track: { no: 1, of: 10 },
+        comment: `Test comment for ${format} format`,
+        albumArtists: [`${format} Album Artist`],
+        disc: { no: 1, of: 10 },
+        image: {
+          data: img!.data,
+          mimeType: img!.mimeType,
+          description: `Test cover image for ${format} format`,
+        },
+      }
+
+      const modifiedBuffer = await writeTagsToBuffer(testFile.data, testTags)
+      const readTags = await readTagsFromBuffer(modifiedBuffer)
+
+      t.true(
+        readTags.artists?.[0] === `${format} Artist`,
+        `Expected ${format} Artist, got ${readTags.artists?.[0]} for ${format}`,
+      )
+      t.true(
+        readTags.albumArtists?.[0] === `${format} Artist`,
+        `Expected ${format} Album Artist, got ${readTags.albumArtists?.[0]} for ${format}`,
+      )
+      t.true(readTags.album === `${format} Album`, `Expected ${format} Album, got ${readTags.album} for ${format}`)
+      t.true(readTags.genre === `${format} Genre`, `Expected ${format} Genre, got ${readTags.genre} for ${format}`)
+      t.true(readTags.year === 2024, `Expected 2024, got ${readTags.year} for ${format}`)
+      t.true(readTags.track?.no === 1, `Expected track no 1, got ${readTags.track?.no} for ${format}`)
+      t.true(readTags.track?.of === 10, `Expected track of 10, got ${readTags.track?.of} for ${format}`)
+      t.true(
+        readTags.comment === `Test comment for ${format} format`,
+        `Expected Test comment for ${format} format, got ${readTags.comment}`,
+      )
+      t.true(readTags.disc?.no === 1, `Expected disc no 1, got ${readTags.disc?.no} for ${format}`)
+      t.true(readTags.disc?.of === 10, `Expected disc of 10, got ${readTags.disc?.of} for ${format}`)
+      t.true(
+        readTags.title === `${format} Test Song`,
+        `Expected ${format} Test Song, got ${readTags.title} for ${format}`,
+      )
+      t.true(readTags.image?.data !== undefined, `Expected data, got ${readTags.image?.data} for ${format}`)
+      t.true(
+        readTags.image?.mimeType === img!.mimeType,
+        `Expected image/png, got ${readTags.image?.mimeType} for ${format}`,
+      )
+      t.true(
+        readTags.image?.description === `Test cover image for ${format} format`,
+        `Expected Test cover image for ${format} format, got ${readTags.image?.description}`,
+      )
+    } catch (error) {
+      console.error(`Error writing tags to ${testFile.fileName}: ${error}`)
+      throw new Error(`Error writing tags to ${testFile.fileName}: ${error}`)
     }
-
-    const modifiedBuffer = await writeTagsToBuffer(testFile.data, testTags)
-    const readTags = await readTagsFromBuffer(modifiedBuffer)
-
-    t.true(
-      readTags.artists?.[0] === `${format} Artist`,
-      `Expected ${format} Artist, got ${readTags.artists?.[0]} for ${format}`,
-    )
-    t.true(
-      readTags.albumArtists?.[0] === `${format} Artist`,
-      `Expected ${format} Album Artist, got ${readTags.albumArtists?.[0]} for ${format}`,
-    )
-    t.true(readTags.album === `${format} Album`, `Expected ${format} Album, got ${readTags.album} for ${format}`)
-    t.true(readTags.genre === `${format} Genre`, `Expected ${format} Genre, got ${readTags.genre} for ${format}`)
-    t.true(readTags.year === 2024, `Expected 2024, got ${readTags.year} for ${format}`)
-    t.true(readTags.track?.no === 1, `Expected track no 1, got ${readTags.track?.no} for ${format}`)
-    t.true(readTags.track?.of === 10, `Expected track of 10, got ${readTags.track?.of} for ${format}`)
-    t.true(
-      readTags.comment === `Test comment for ${format} format`,
-      `Expected Test comment for ${format} format, got ${readTags.comment}`,
-    )
-    t.true(readTags.disc?.no === 1, `Expected disc no 1, got ${readTags.disc?.no} for ${format}`)
-    t.true(readTags.disc?.of === 10, `Expected disc of 10, got ${readTags.disc?.of} for ${format}`)
-    t.true(
-      readTags.title === `${format} Test Song`,
-      `Expected ${format} Test Song, got ${readTags.title} for ${format}`,
-    )
-    t.true(readTags.image?.data !== undefined, `Expected data, got ${readTags.image?.data} for ${format}`)
-    t.true(
-      readTags.image?.mimeType === img!.mimeType,
-      `Expected image/png, got ${readTags.image?.mimeType} for ${format}`,
-    )
-    t.true(
-      readTags.image?.description === `Test cover image for ${format} format`,
-      `Expected Test cover image for ${format} format, got ${readTags.image?.description}`,
-    )
-  } else {
+  }
+  if (files.length === 0) {
     t.pass(`No ${format} files available for testing`)
   }
 }
