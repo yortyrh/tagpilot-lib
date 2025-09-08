@@ -126,72 +126,70 @@ impl AudioTags {
       primary_tag.insert_text(ItemKey::TrackTitle, title.clone())
     });
 
-    self.artists.as_ref().map(|artists| {
-      if artists.is_empty() {
-        return;
-      }
-      primary_tag.remove_key(&ItemKey::TrackArtist);
-      primary_tag.remove_key(&ItemKey::TrackArtists);
+    if let Some(artists) = self.artists.as_ref() {
+      if !artists.is_empty() {
+        primary_tag.remove_key(&ItemKey::TrackArtist);
+        primary_tag.remove_key(&ItemKey::TrackArtists);
 
-      primary_tag.insert_text(ItemKey::TrackArtist, artists.first().unwrap().clone());
-      if artists.len() > 1 {
-        primary_tag.insert_text(ItemKey::TrackArtists, artists.join(", "));
+        primary_tag.insert_text(ItemKey::TrackArtist, artists.first().unwrap().clone());
+        if artists.len() > 1 {
+          primary_tag.insert_text(ItemKey::TrackArtists, artists.join(", "));
+        }
       }
-    });
+    }
 
-    self.album.as_ref().map(|album| {
+    if let Some(album) = self.album.as_ref() {
       primary_tag.remove_key(&ItemKey::AlbumTitle);
       primary_tag.insert_text(ItemKey::AlbumTitle, album.clone());
-    });
+    }
 
-    self.year.as_ref().map(|year| {
+    if let Some(year) = self.year.as_ref() {
       primary_tag.remove_key(&ItemKey::Year);
       primary_tag.remove_key(&ItemKey::RecordingDate);
       primary_tag.insert_text(ItemKey::Year, year.to_string());
       primary_tag.insert_text(ItemKey::RecordingDate, year.to_string());
-    });
+    }
 
-    self.genre.as_ref().map(|genre| {
+    if let Some(genre) = self.genre.as_ref() {
       primary_tag.remove_key(&ItemKey::Genre);
       primary_tag.insert_text(ItemKey::Genre, genre.clone());
-    });
+    }
 
-    self.track.as_ref().map(|track| {
-      track.no.map(|no| {
+    if let Some(track) = self.track.as_ref() {
+      if let Some(no) = track.no {
         primary_tag.remove_key(&ItemKey::TrackNumber);
         primary_tag.insert_text(ItemKey::TrackNumber, no.to_string());
-      });
-      track.of.map(|of| {
+      }
+      if let Some(of) = track.of {
         primary_tag.remove_key(&ItemKey::TrackTotal);
         primary_tag.insert_text(ItemKey::TrackTotal, of.to_string());
-      });
-    });
+      }
+    }
 
-    self.disc.as_ref().map(|disc| {
-      disc.no.map(|no| {
+    if let Some(disc) = self.disc.as_ref() {
+      if let Some(no) = disc.no {
         primary_tag.remove_key(&ItemKey::DiscNumber);
         primary_tag.insert_text(ItemKey::DiscNumber, no.to_string());
-      });
-      disc.of.map(|of| {
+      }
+      if let Some(of) = disc.of {
         primary_tag.remove_key(&ItemKey::DiscTotal);
         primary_tag.insert_text(ItemKey::DiscTotal, of.to_string());
-      });
-    });
-
-    self.album_artists.as_ref().map(|album_artists| {
-      if album_artists.is_empty() {
-        return;
       }
-      primary_tag.remove_key(&ItemKey::AlbumArtist);
-      primary_tag.insert_text(ItemKey::AlbumArtist, album_artists.first().unwrap().clone());
-    });
+    }
 
-    self.comment.as_ref().map(|comment| {
+    if let Some(album_artists) = self.album_artists.as_ref() {
+      if !album_artists.is_empty() {
+        primary_tag.remove_key(&ItemKey::AlbumArtist);
+        primary_tag.insert_text(ItemKey::AlbumArtist, album_artists.first().unwrap().clone());
+      }
+    }
+
+    if let Some(comment) = self.comment.as_ref() {
       primary_tag.remove_key(&ItemKey::Comment);
       primary_tag.insert_text(ItemKey::Comment, comment.clone());
-    });
+    }
 
-    self.image.as_ref().map(|image| {
+    if let Some(image) = self.image.as_ref() {
       add_cover_image(
         primary_tag,
         &image.data,
@@ -202,7 +200,7 @@ impl AudioTags {
           .map(|s| MimeType::from_str(s))
           .unwrap_or(MimeType::Jpeg),
       );
-    });
+    }
   }
 }
 
@@ -300,12 +298,11 @@ pub async fn write_tags(file_path: String, tags: AudioTags) -> Result<()> {
     tagged_file.insert_tag(tag);
   }
 
-  let primary_tag = tagged_file.primary_tag_mut().map_or(
-    Err(napi::Error::from_reason(
+  let primary_tag = tagged_file
+    .primary_tag_mut()
+    .ok_or(napi::Error::from_reason(
       "Failed to get primary tag after been added".to_string(),
-    )),
-    |tag| Ok(tag),
-  )?;
+    ))?;
 
   // Update the tag with new values
   tags.to_tag(primary_tag);
@@ -394,12 +391,11 @@ pub async fn write_tags_to_buffer(
     let tag = Tag::new(tagged_file.primary_tag_type());
     tagged_file.insert_tag(tag);
   }
-  let primary_tag = tagged_file.primary_tag_mut().map_or(
-    Err(napi::Error::from_reason(
+  let primary_tag = tagged_file
+    .primary_tag_mut()
+    .ok_or(napi::Error::from_reason(
       "Failed to get primary tag after been added".to_string(),
-    )),
-    |tag| Ok(tag),
-  )?;
+    ))?;
 
   tags.to_tag(primary_tag);
 
@@ -471,12 +467,11 @@ pub async fn write_cover_image_to_buffer(buffer: Buffer, image_data: Buffer) -> 
     tagged_file.insert_tag(tag);
   }
 
-  let primary_tag = tagged_file.primary_tag_mut().map_or(
-    Err(napi::Error::from_reason(
+  let primary_tag = tagged_file
+    .primary_tag_mut()
+    .ok_or(napi::Error::from_reason(
       "Failed to get primary tag after been added".to_string(),
-    )),
-    |tag| Ok(tag),
-  )?;
+    ))?;
 
   add_cover_image(primary_tag, &image_data, None, MimeType::Jpeg);
 
