@@ -10,7 +10,7 @@ use napi::bindgen_prelude::Buffer;
 use napi::Result;
 use napi_derive::napi;
 use std::fs;
-use std::io::{Cursor, Read};
+use std::io::Cursor;
 use std::path::Path;
 
 #[napi(object)]
@@ -56,7 +56,12 @@ pub struct AudioTags {
   pub image: Option<Image>,
 }
 
-fn add_cover_image(primary_tag: &mut Tag, image_data: &Buffer, default_mime_type: MimeType) {
+fn add_cover_image(
+  primary_tag: &mut Tag,
+  image_data: &Buffer,
+  image_description: Option<String>,
+  default_mime_type: MimeType,
+) {
   // add the new picture
   let buf = image_data.to_vec();
   let kind = infer::get(&buf).expect("file type is known");
@@ -69,13 +74,13 @@ fn add_cover_image(primary_tag: &mut Tag, image_data: &Buffer, default_mime_type
     _ => default_mime_type,
   };
   primary_tag.remove_picture_type(PictureType::CoverFront);
-  let picture = Picture::new_unchecked(
+  let cover_front_picture = Picture::new_unchecked(
     lofty::picture::PictureType::CoverFront,
     Some(mime_type),
-    None,
+    image_description,
     buf,
   );
-  primary_tag.set_picture(0, picture);
+  primary_tag.set_picture(0, cover_front_picture);
 }
 
 // add method to AudioTags from &Tag
@@ -89,19 +94,13 @@ impl AudioTags {
       genre: tag.genre().map(|s| s.to_string()),
       track: match (tag.track(), tag.track_total()) {
         (None, None) => None,
-        _ => Some(Position {
-          no: tag.track(),
-          of: tag.track_total(),
-        }),
+        (no, of) => Some(Position { no, of }),
       },
       album_artists: tag.artist().map(|s| vec![s.to_string()]),
       comment: tag.comment().map(|s| s.to_string()),
       disc: match (tag.disk(), tag.disk_total()) {
         (None, None) => None,
-        _ => Some(Position {
-          no: tag.disk(),
-          of: tag.disk_total(),
-        }),
+        (no, of) => Some(Position { no, of }),
       },
       image: {
         let mut image = None;
@@ -122,52 +121,79 @@ impl AudioTags {
 
   pub fn to_tag(&self, primary_tag: &mut Tag) {
     // Update the tag with new values
-    if let Some(title) = &self.title {
-      primary_tag.insert_text(ItemKey::TrackTitle, title.clone());
-    }
-    if let Some(artists) = &self.artists {
-      if let Some(artist) = artists.first() {
-        primary_tag.insert_text(ItemKey::TrackArtist, artist.clone());
-      }
-    }
-    if let Some(album) = &self.album {
-      primary_tag.insert_text(ItemKey::AlbumTitle, album.clone());
-    }
-    if let Some(year) = &self.year {
-      primary_tag.insert_text(ItemKey::Year, year.to_string());
-    }
-    if let Some(genre) = &self.genre {
-      primary_tag.insert_text(ItemKey::Genre, genre.clone());
-    }
-    if let Some(track_info) = &self.track {
-      if let Some(track_no) = track_info.no {
-        primary_tag.insert_text(ItemKey::TrackNumber, track_no.to_string());
-      }
-      if let Some(track_total) = track_info.of {
-        primary_tag.insert_text(ItemKey::TrackTotal, track_total.to_string());
-      }
-    }
-    if let Some(album_artists) = &self.album_artists {
-      if let Some(album_artist) = album_artists.first() {
-        primary_tag.insert_text(ItemKey::AlbumArtist, album_artist.clone());
-      }
-    }
-    if let Some(comment) = &self.comment {
-      primary_tag.insert_text(ItemKey::Comment, comment.clone());
-    }
-    if let Some(disc_info) = &self.disc {
-      if let Some(disc_no) = disc_info.no {
-        primary_tag.insert_text(ItemKey::DiscNumber, disc_no.to_string());
-      }
-      if let Some(disc_total) = disc_info.of {
-        primary_tag.insert_text(ItemKey::DiscTotal, disc_total.to_string());
+    self.title.as_ref().map(|title| {
+      primary_tag.remove_key(&ItemKey::TrackTitle);
+      primary_tag.insert_text(ItemKey::TrackTitle, title.clone())
+    });
+
+    if let Some(artists) = self.artists.as_ref() {
+      if !artists.is_empty() {
+        primary_tag.remove_key(&ItemKey::TrackArtist);
+        primary_tag.remove_key(&ItemKey::TrackArtists);
+
+        primary_tag.insert_text(ItemKey::TrackArtist, artists.first().unwrap().clone());
+        if artists.len() > 1 {
+          primary_tag.insert_text(ItemKey::TrackArtists, artists.join(", "));
+        }
       }
     }
 
-    if let Some(image) = &self.image {
+    if let Some(album) = self.album.as_ref() {
+      primary_tag.remove_key(&ItemKey::AlbumTitle);
+      primary_tag.insert_text(ItemKey::AlbumTitle, album.clone());
+    }
+
+    if let Some(year) = self.year.as_ref() {
+      primary_tag.remove_key(&ItemKey::Year);
+      primary_tag.remove_key(&ItemKey::RecordingDate);
+      primary_tag.insert_text(ItemKey::Year, year.to_string());
+      primary_tag.insert_text(ItemKey::RecordingDate, year.to_string());
+    }
+
+    if let Some(genre) = self.genre.as_ref() {
+      primary_tag.remove_key(&ItemKey::Genre);
+      primary_tag.insert_text(ItemKey::Genre, genre.clone());
+    }
+
+    if let Some(track) = self.track.as_ref() {
+      if let Some(no) = track.no {
+        primary_tag.remove_key(&ItemKey::TrackNumber);
+        primary_tag.insert_text(ItemKey::TrackNumber, no.to_string());
+      }
+      if let Some(of) = track.of {
+        primary_tag.remove_key(&ItemKey::TrackTotal);
+        primary_tag.insert_text(ItemKey::TrackTotal, of.to_string());
+      }
+    }
+
+    if let Some(disc) = self.disc.as_ref() {
+      if let Some(no) = disc.no {
+        primary_tag.remove_key(&ItemKey::DiscNumber);
+        primary_tag.insert_text(ItemKey::DiscNumber, no.to_string());
+      }
+      if let Some(of) = disc.of {
+        primary_tag.remove_key(&ItemKey::DiscTotal);
+        primary_tag.insert_text(ItemKey::DiscTotal, of.to_string());
+      }
+    }
+
+    if let Some(album_artists) = self.album_artists.as_ref() {
+      if !album_artists.is_empty() {
+        primary_tag.remove_key(&ItemKey::AlbumArtist);
+        primary_tag.insert_text(ItemKey::AlbumArtist, album_artists.first().unwrap().clone());
+      }
+    }
+
+    if let Some(comment) = self.comment.as_ref() {
+      primary_tag.remove_key(&ItemKey::Comment);
+      primary_tag.insert_text(ItemKey::Comment, comment.clone());
+    }
+
+    if let Some(image) = self.image.as_ref() {
       add_cover_image(
         primary_tag,
         &image.data,
+        image.description.as_ref().map(|s| s.to_string()),
         image
           .mime_type
           .as_ref()
@@ -181,20 +207,35 @@ impl AudioTags {
 #[napi]
 pub async fn read_tags(file_path: String) -> Result<AudioTags> {
   let path = Path::new(&file_path);
-
-  match Probe::open(path).unwrap().guess_file_type().unwrap().read() {
-    Ok(tagged_file) => {
-      let tag = tagged_file.primary_tag();
-      match tag {
-        Some(tag) => Ok(AudioTags::from_tag(tag)),
-        None => Ok(AudioTags::default()),
-      }
-    }
-    Err(e) => Err(napi::Error::from_reason(format!(
-      "Failed to read audio file: {}",
-      e
-    ))),
+  if !path.exists() {
+    return Err(napi::Error::from_reason(format!(
+      "File does not exist: {}",
+      file_path
+    )));
   }
+
+  let Ok(probe) = Probe::open(path) else {
+    return Err(napi::Error::from_reason(format!(
+      "Failed to open file: {}",
+      file_path
+    )));
+  };
+  let Ok(probe) = probe.guess_file_type() else {
+    return Err(napi::Error::from_reason(format!(
+      "Failed to guess file type: {}",
+      file_path
+    )));
+  };
+  let Ok(tagged_file) = probe.read() else {
+    return Err(napi::Error::from_reason(format!(
+      "Failed to read audio file: {}",
+      file_path
+    )));
+  };
+
+  tagged_file
+    .primary_tag()
+    .map_or(Ok(AudioTags::default()), |tag| Ok(AudioTags::from_tag(tag)))
 }
 
 #[napi]
@@ -202,33 +243,52 @@ pub async fn read_tags_from_buffer(buffer: napi::bindgen_prelude::Buffer) -> Res
   let buffer_ref = buffer.as_ref();
   let mut cursor = Cursor::new(buffer_ref);
 
-  match Probe::new(&mut cursor).guess_file_type().unwrap().read() {
-    Ok(tagged_file) => {
-      let tag = tagged_file.primary_tag();
-      match tag {
-        Some(tag) => Ok(AudioTags::from_tag(tag)),
-        None => Ok(AudioTags::default()),
-      }
-    }
-    Err(e) => Err(napi::Error::from_reason(format!(
-      "Failed to read audio from buffer: {}",
-      e
-    ))),
-  }
+  let probe = Probe::new(&mut cursor);
+
+  let Ok(probe) = probe.guess_file_type() else {
+    return Err(napi::Error::from_reason(
+      "Failed to guess file type".to_string(),
+    ));
+  };
+
+  let Ok(tagged_file) = probe.read() else {
+    return Err(napi::Error::from_reason(
+      "Failed to read audio file".to_string(),
+    ));
+  };
+
+  tagged_file
+    .primary_tag()
+    .map_or(Ok(AudioTags::default()), |tag| Ok(AudioTags::from_tag(tag)))
 }
 
 #[napi]
 pub async fn write_tags(file_path: String, tags: AudioTags) -> Result<()> {
   let path = Path::new(&file_path);
-  // Read the existing file
-  let mut tagged_file = match Probe::open(path).unwrap().guess_file_type().unwrap().read() {
-    Ok(tf) => tf,
-    Err(e) => {
-      return Err(napi::Error::from_reason(format!(
-        "Failed to read audio file: {}",
-        e
-      )))
-    }
+  if !path.exists() {
+    return Err(napi::Error::from_reason(format!(
+      "File does not exist: {}",
+      file_path
+    )));
+  }
+
+  let Ok(probe) = Probe::open(path) else {
+    return Err(napi::Error::from_reason(format!(
+      "Failed to open file: {}",
+      file_path
+    )));
+  };
+  let Ok(probe) = probe.guess_file_type() else {
+    return Err(napi::Error::from_reason(format!(
+      "Failed to guess file type: {}",
+      file_path
+    )));
+  };
+  let Ok(mut tagged_file) = probe.read() else {
+    return Err(napi::Error::from_reason(format!(
+      "Failed to read audio file: {}",
+      file_path
+    )));
   };
 
   // Check if the file has tags
@@ -238,34 +298,52 @@ pub async fn write_tags(file_path: String, tags: AudioTags) -> Result<()> {
     tagged_file.insert_tag(tag);
   }
 
-  let primary_tag = tagged_file.primary_tag_mut().unwrap();
+  let primary_tag = tagged_file
+    .primary_tag_mut()
+    .ok_or(napi::Error::from_reason(
+      "Failed to get primary tag after been added".to_string(),
+    ))?;
 
   // Update the tag with new values
   tags.to_tag(primary_tag);
 
   // Write the updated tag back to the file
-  match tagged_file.save_to_path(path, WriteOptions::default()) {
-    Ok(_) => Ok(()),
-    Err(e) => Err(napi::Error::from_reason(format!(
-      "Failed to write audio file: {}",
-      e
-    ))),
-  }
+  tagged_file
+    .save_to_path(path, WriteOptions::default())
+    .map_err(|e| napi::Error::from_reason(format!("Failed to write audio file: {}", e)))?;
+
+  Ok(())
 }
 
 #[napi]
 pub async fn clear_tags(file_path: String) -> Result<()> {
   let path = Path::new(&file_path);
+  if !path.exists() {
+    return Err(napi::Error::from_reason(format!(
+      "File does not exist: {}",
+      file_path
+    )));
+  }
 
-  // Read the existing file
-  let mut tagged_file = match Probe::open(path).unwrap().guess_file_type().unwrap().read() {
-    Ok(tf) => tf,
-    Err(e) => {
-      return Err(napi::Error::from_reason(format!(
-        "Failed to read audio file: {}",
-        e
-      )))
-    }
+  let Ok(probe) = Probe::open(path) else {
+    return Err(napi::Error::from_reason(format!(
+      "Failed to open file: {}",
+      file_path
+    )));
+  };
+
+  let Ok(probe) = probe.guess_file_type() else {
+    return Err(napi::Error::from_reason(format!(
+      "Failed to guess file type: {}",
+      file_path
+    )));
+  };
+
+  let Ok(mut tagged_file) = probe.read() else {
+    return Err(napi::Error::from_reason(format!(
+      "Failed to read audio file: {}",
+      file_path
+    )));
   };
 
   // Create a new empty tag of the same type
@@ -274,14 +352,12 @@ pub async fn clear_tags(file_path: String) -> Result<()> {
   // Replace the existing primary tag with the empty one
   tagged_file.insert_tag(empty_tag);
 
-  // Write the file back with the empty tag
-  match tagged_file.save_to_path(path, WriteOptions::default()) {
-    Ok(_) => Ok(()),
-    Err(e) => Err(napi::Error::from_reason(format!(
-      "Failed to write audio file: {}",
-      e
-    ))),
-  }
+  // Write the updated tag back to the file
+  tagged_file
+    .save_to_path(path, WriteOptions::default())
+    .map_err(|e| napi::Error::from_reason(format!("Failed to write audio file: {}", e)))?;
+
+  Ok(())
 }
 
 #[napi]
@@ -290,24 +366,23 @@ pub async fn write_tags_to_buffer(
   tags: AudioTags,
 ) -> Result<napi::bindgen_prelude::Buffer> {
   // copy the buffer to a new vec
-  let owned_copy: Vec<u8> = buffer.to_vec();
+  let owned_copy: Vec<u8> = buffer.into();
 
   // Create a fresh cursor for reading
-  let mut input_cursor = Cursor::new(&owned_copy);
+  let mut cursor = Cursor::new(&owned_copy);
 
-  // Read the existing file from buffer
-  let mut tagged_file = match Probe::new(input_cursor.by_ref())
-    .guess_file_type()
-    .unwrap()
-    .read()
-  {
-    Ok(tf) => tf,
-    Err(e) => {
-      return Err(napi::Error::from_reason(format!(
-        "Failed to read audio from buffer: {}",
-        e
-      )))
-    }
+  let probe = Probe::new(&mut cursor);
+
+  let Ok(probe) = probe.guess_file_type() else {
+    return Err(napi::Error::from_reason(
+      "Failed to guess file type".to_string(),
+    ));
+  };
+
+  let Ok(mut tagged_file) = probe.read() else {
+    return Err(napi::Error::from_reason(
+      "Failed to read audio file".to_string(),
+    ));
   };
 
   // Check if the file has tags
@@ -316,22 +391,21 @@ pub async fn write_tags_to_buffer(
     let tag = Tag::new(tagged_file.primary_tag_type());
     tagged_file.insert_tag(tag);
   }
-  let primary_tag = tagged_file.primary_tag_mut().unwrap();
+  let primary_tag = tagged_file
+    .primary_tag_mut()
+    .ok_or(napi::Error::from_reason(
+      "Failed to get primary tag after been added".to_string(),
+    ))?;
 
   tags.to_tag(primary_tag);
 
   // Write to a new buffer
   let mut cursor = Cursor::new(owned_copy);
-  match tagged_file.save_to(&mut cursor, WriteOptions::default()) {
-    Ok(_) => {
-      let owned_copy_buffer = Buffer::from(cursor.into_inner());
-      Ok(owned_copy_buffer)
-    }
-    Err(e) => Err(napi::Error::from_reason(format!(
-      "Failed to write audio to buffer: {}",
-      e
-    ))),
-  }
+  tagged_file
+    .save_to(&mut cursor, WriteOptions::default())
+    .map_err(|e| napi::Error::from_reason(format!("Failed to write audio to buffer: {}", e)))?;
+
+  Ok(Buffer::from(cursor.into_inner()))
 }
 
 #[napi]
@@ -339,26 +413,32 @@ pub async fn read_cover_image_from_buffer(buffer: Buffer) -> Result<Option<Buffe
   let buffer_ref = buffer.as_ref();
   let mut cursor = Cursor::new(buffer_ref);
 
-  match Probe::new(&mut cursor).guess_file_type().unwrap().read() {
-    Ok(tagged_file) => {
-      let tag = tagged_file.primary_tag();
-      match tag {
-        Some(tag) => {
-          // Look for cover art in the tag
-          for picture in tag.pictures() {
-            if picture.pic_type() == lofty::picture::PictureType::CoverFront {
-              return Ok(Some(picture.data().to_vec().into()));
-            }
-          }
-          Ok(None)
+  let probe = Probe::new(&mut cursor);
+
+  let Ok(probe) = probe.guess_file_type() else {
+    return Err(napi::Error::from_reason(
+      "Failed to guess file type".to_string(),
+    ));
+  };
+
+  let Ok(tagged_file) = probe.read() else {
+    return Err(napi::Error::from_reason(
+      "Failed to read audio file".to_string(),
+    ));
+  };
+
+  let tag = tagged_file.primary_tag();
+  match tag {
+    Some(tag) => {
+      // Look for cover art in the tag
+      for picture in tag.pictures() {
+        if picture.pic_type() == lofty::picture::PictureType::CoverFront {
+          return Ok(Some(picture.data().to_vec().into()));
         }
-        None => Ok(None),
       }
+      Ok(None)
     }
-    Err(e) => Err(napi::Error::from_reason(format!(
-      "Failed to read audio from buffer: {}",
-      e
-    ))),
+    None => Ok(None),
   }
 }
 
@@ -366,16 +446,18 @@ pub async fn read_cover_image_from_buffer(buffer: Buffer) -> Result<Option<Buffe
 pub async fn write_cover_image_to_buffer(buffer: Buffer, image_data: Buffer) -> Result<Buffer> {
   let buffer_ref = buffer.as_ref();
   let mut cursor = Cursor::new(buffer_ref);
+  let probe = Probe::new(&mut cursor);
 
-  // Read the existing file from buffer
-  let mut tagged_file = match Probe::new(&mut cursor).guess_file_type().unwrap().read() {
-    Ok(tf) => tf,
-    Err(e) => {
-      return Err(napi::Error::from_reason(format!(
-        "Failed to read audio from buffer: {}",
-        e
-      )))
-    }
+  let Ok(probe) = probe.guess_file_type() else {
+    return Err(napi::Error::from_reason(
+      "Failed to guess file type".to_string(),
+    ));
+  };
+
+  let Ok(mut tagged_file) = probe.read() else {
+    return Err(napi::Error::from_reason(
+      "Failed to read audio file".to_string(),
+    ));
   };
 
   // Check if the file has tags
@@ -384,39 +466,39 @@ pub async fn write_cover_image_to_buffer(buffer: Buffer, image_data: Buffer) -> 
     let tag = Tag::new(tagged_file.primary_tag_type());
     tagged_file.insert_tag(tag);
   }
-  let primary_tag = tagged_file.primary_tag_mut().unwrap();
 
-  add_cover_image(primary_tag, &image_data, MimeType::Jpeg);
+  let primary_tag = tagged_file
+    .primary_tag_mut()
+    .ok_or(napi::Error::from_reason(
+      "Failed to get primary tag after been added".to_string(),
+    ))?;
+
+  add_cover_image(primary_tag, &image_data, None, MimeType::Jpeg);
 
   // Create a copy of the buffer for writing
-  let owned_copy: Vec<u8> = buffer.to_vec();
-  let mut output_cursor = Cursor::new(owned_copy);
+  let owned_copy: Vec<u8> = buffer.into();
 
   // Write the updated tag back to the buffer
-  match tagged_file.save_to(&mut output_cursor, WriteOptions::default()) {
-    Ok(_) => {
-      let modified_buffer = Buffer::from(output_cursor.into_inner());
-      Ok(modified_buffer)
-    }
-    Err(e) => Err(napi::Error::from_reason(format!(
-      "Failed to write audio to buffer: {}",
-      e
-    ))),
-  }
+  let mut cursor = Cursor::new(owned_copy);
+  tagged_file
+    .save_to(&mut cursor, WriteOptions::default())
+    .map_err(|e| napi::Error::from_reason(format!("Failed to write audio to buffer: {}", e)))?;
+
+  Ok(Buffer::from(cursor.into_inner()))
 }
 
 #[napi]
 pub async fn read_cover_image_from_file(file_path: String) -> Result<Option<Buffer>> {
   let path = Path::new(&file_path);
-  let buffer = fs::read(path).unwrap();
+  let buffer = fs::read(path)?;
   read_cover_image_from_buffer(buffer.into()).await
 }
 
 #[napi]
 pub async fn write_cover_image_to_file(file_path: String, image_data: Buffer) -> Result<()> {
   let path = Path::new(&file_path);
-  let buffer = fs::read(path).unwrap();
+  let buffer = fs::read(path)?;
   let buffer = write_cover_image_to_buffer(buffer.into(), image_data).await?;
-  fs::write(path, buffer).unwrap();
+  fs::write(path, buffer)?;
   Ok(())
 }
