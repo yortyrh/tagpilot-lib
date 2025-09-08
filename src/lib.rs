@@ -864,4 +864,562 @@ mod tests {
     assert!(minimal_tags.year.is_none());
     assert!(minimal_tags.image.is_none());
   }
+
+  // Additional comprehensive tests for better coverage
+
+  #[test]
+  fn test_mime_type_to_string_edge_cases() {
+    // Test all supported MIME types
+    assert_eq!(
+      mime_type_to_string(&MimeType::Jpeg),
+      Some("image/jpeg".to_string())
+    );
+    assert_eq!(
+      mime_type_to_string(&MimeType::Png),
+      Some("image/png".to_string())
+    );
+    assert_eq!(
+      mime_type_to_string(&MimeType::Gif),
+      Some("image/gif".to_string())
+    );
+    assert_eq!(
+      mime_type_to_string(&MimeType::Tiff),
+      Some("image/tiff".to_string())
+    );
+    assert_eq!(
+      mime_type_to_string(&MimeType::Bmp),
+      Some("image/bmp".to_string())
+    );
+
+    // Test unsupported MIME types
+    assert_eq!(
+      mime_type_to_string(&MimeType::Unknown("unsupported".to_string())),
+      None
+    );
+  }
+
+  #[test]
+  fn test_position_struct_edge_cases() {
+    // Test with both values
+    let pos_full = TestPosition {
+      no: Some(1),
+      of: Some(10),
+    };
+    assert_eq!(pos_full.no, Some(1));
+    assert_eq!(pos_full.of, Some(10));
+
+    // Test with only no
+    let pos_no_only = TestPosition {
+      no: Some(5),
+      of: None,
+    };
+    assert_eq!(pos_no_only.no, Some(5));
+    assert_eq!(pos_no_only.of, None);
+
+    // Test with only of
+    let pos_of_only = TestPosition {
+      no: None,
+      of: Some(15),
+    };
+    assert_eq!(pos_of_only.no, None);
+    assert_eq!(pos_of_only.of, Some(15));
+
+    // Test with neither
+    let pos_empty = TestPosition {
+      no: None,
+      of: None,
+    };
+    assert_eq!(pos_empty.no, None);
+    assert_eq!(pos_empty.of, None);
+
+    // Test with zero values
+    let pos_zero = TestPosition {
+      no: Some(0),
+      of: Some(0),
+    };
+    assert_eq!(pos_zero.no, Some(0));
+    assert_eq!(pos_zero.of, Some(0));
+
+    // Test with large values
+    let pos_large = TestPosition {
+      no: Some(999),
+      of: Some(1000),
+    };
+    assert_eq!(pos_large.no, Some(999));
+    assert_eq!(pos_large.of, Some(1000));
+  }
+
+  #[test]
+  fn test_image_struct_edge_cases() {
+    let image_data = create_test_image_data();
+
+    // Test with all fields
+    let image_full = TestImage {
+      data: image_data.clone(),
+      mime_type: Some("image/jpeg".to_string()),
+      description: Some("Full description".to_string()),
+    };
+    assert_eq!(image_full.data, image_data);
+    assert_eq!(image_full.mime_type, Some("image/jpeg".to_string()));
+    assert_eq!(image_full.description, Some("Full description".to_string()));
+
+    // Test with no optional fields
+    let image_minimal = TestImage {
+      data: image_data.clone(),
+      mime_type: None,
+      description: None,
+    };
+    assert_eq!(image_minimal.data, image_data);
+    assert_eq!(image_minimal.mime_type, None);
+    assert_eq!(image_minimal.description, None);
+
+    // Test with only mime_type
+    let image_mime_only = TestImage {
+      data: image_data.clone(),
+      mime_type: Some("image/png".to_string()),
+      description: None,
+    };
+    assert_eq!(image_mime_only.mime_type, Some("image/png".to_string()));
+    assert_eq!(image_mime_only.description, None);
+
+    // Test with only description
+    let image_desc_only = TestImage {
+      data: image_data.clone(),
+      mime_type: None,
+      description: Some("Description only".to_string()),
+    };
+    assert_eq!(image_desc_only.mime_type, None);
+    assert_eq!(image_desc_only.description, Some("Description only".to_string()));
+
+    // Test with empty data
+    let image_empty = TestImage {
+      data: vec![],
+      mime_type: Some("image/jpeg".to_string()),
+      description: Some("Empty data".to_string()),
+    };
+    assert_eq!(image_empty.data, vec![]);
+    assert_eq!(image_empty.mime_type, Some("image/jpeg".to_string()));
+    assert_eq!(image_empty.description, Some("Empty data".to_string()));
+
+    // Test with empty strings
+    let image_empty_strings = TestImage {
+      data: image_data,
+      mime_type: Some("".to_string()),
+      description: Some("".to_string()),
+    };
+    assert_eq!(image_empty_strings.mime_type, Some("".to_string()));
+    assert_eq!(image_empty_strings.description, Some("".to_string()));
+  }
+
+  #[test]
+  fn test_audio_tags_string_edge_cases() {
+    // Test with empty strings
+    let tags_empty_strings = TestAudioTags {
+      title: Some("".to_string()),
+      artists: Some(vec!["".to_string()]),
+      album: Some("".to_string()),
+      year: Some(2024),
+      genre: Some("".to_string()),
+      track: None,
+      album_artists: Some(vec!["".to_string()]),
+      comment: Some("".to_string()),
+      disc: None,
+      image: None,
+    };
+
+    assert_eq!(tags_empty_strings.title, Some("".to_string()));
+    assert_eq!(tags_empty_strings.artists, Some(vec!["".to_string()]));
+    assert_eq!(tags_empty_strings.album, Some("".to_string()));
+    assert_eq!(tags_empty_strings.genre, Some("".to_string()));
+    assert_eq!(tags_empty_strings.album_artists, Some(vec!["".to_string()]));
+    assert_eq!(tags_empty_strings.comment, Some("".to_string()));
+
+    // Test with very long strings
+    let long_string = "a".repeat(1000);
+    let tags_long_strings = TestAudioTags {
+      title: Some(long_string.clone()),
+      artists: Some(vec![long_string.clone()]),
+      album: Some(long_string.clone()),
+      year: Some(2024),
+      genre: Some(long_string.clone()),
+      track: None,
+      album_artists: Some(vec![long_string.clone()]),
+      comment: Some(long_string.clone()),
+      disc: None,
+      image: None,
+    };
+
+    assert_eq!(tags_long_strings.title, Some(long_string.clone()));
+    assert_eq!(tags_long_strings.artists, Some(vec![long_string.clone()]));
+    assert_eq!(tags_long_strings.album, Some(long_string.clone()));
+    assert_eq!(tags_long_strings.genre, Some(long_string.clone()));
+    assert_eq!(tags_long_strings.album_artists, Some(vec![long_string.clone()]));
+    assert_eq!(tags_long_strings.comment, Some(long_string));
+
+    // Test with special characters
+    let special_chars = "!@#$%^&*()_+-=[]{}|;':\",./<>?`~";
+    let tags_special = TestAudioTags {
+      title: Some(special_chars.to_string()),
+      artists: Some(vec![special_chars.to_string()]),
+      album: Some(special_chars.to_string()),
+      year: Some(2024),
+      genre: Some(special_chars.to_string()),
+      track: None,
+      album_artists: Some(vec![special_chars.to_string()]),
+      comment: Some(special_chars.to_string()),
+      disc: None,
+      image: None,
+    };
+
+    assert_eq!(tags_special.title, Some(special_chars.to_string()));
+    assert_eq!(tags_special.artists, Some(vec![special_chars.to_string()]));
+    assert_eq!(tags_special.album, Some(special_chars.to_string()));
+    assert_eq!(tags_special.genre, Some(special_chars.to_string()));
+    assert_eq!(tags_special.album_artists, Some(vec![special_chars.to_string()]));
+    assert_eq!(tags_special.comment, Some(special_chars.to_string()));
+
+    // Test with unicode characters
+    let unicode_string = "🎵 音乐 🎶 音楽 🎼";
+    let tags_unicode = TestAudioTags {
+      title: Some(unicode_string.to_string()),
+      artists: Some(vec![unicode_string.to_string()]),
+      album: Some(unicode_string.to_string()),
+      year: Some(2024),
+      genre: Some(unicode_string.to_string()),
+      track: None,
+      album_artists: Some(vec![unicode_string.to_string()]),
+      comment: Some(unicode_string.to_string()),
+      disc: None,
+      image: None,
+    };
+
+    assert_eq!(tags_unicode.title, Some(unicode_string.to_string()));
+    assert_eq!(tags_unicode.artists, Some(vec![unicode_string.to_string()]));
+    assert_eq!(tags_unicode.album, Some(unicode_string.to_string()));
+    assert_eq!(tags_unicode.genre, Some(unicode_string.to_string()));
+    assert_eq!(tags_unicode.album_artists, Some(vec![unicode_string.to_string()]));
+    assert_eq!(tags_unicode.comment, Some(unicode_string.to_string()));
+  }
+
+  #[test]
+  fn test_audio_tags_year_edge_cases() {
+    // Test with various years
+    let years = vec![1900, 1950, 2000, 2024, 2030, 9999];
+    
+    for year in years {
+      let tags = TestAudioTags {
+        title: Some("Test Song".to_string()),
+        artists: None,
+        album: None,
+        year: Some(year),
+        genre: None,
+        track: None,
+        album_artists: None,
+        comment: None,
+        disc: None,
+        image: None,
+      };
+      assert_eq!(tags.year, Some(year));
+    }
+
+    // Test with year 0 (edge case)
+    let tags_year_zero = TestAudioTags {
+      title: Some("Test Song".to_string()),
+      artists: None,
+      album: None,
+      year: Some(0),
+      genre: None,
+      track: None,
+      album_artists: None,
+      comment: None,
+      disc: None,
+      image: None,
+    };
+    assert_eq!(tags_year_zero.year, Some(0));
+  }
+
+  #[test]
+  fn test_audio_tags_artists_edge_cases() {
+    // Test with single artist
+    let tags_single = TestAudioTags {
+      title: Some("Test Song".to_string()),
+      artists: Some(vec!["Single Artist".to_string()]),
+      album: None,
+      year: None,
+      genre: None,
+      track: None,
+      album_artists: None,
+      comment: None,
+      disc: None,
+      image: None,
+    };
+    assert_eq!(tags_single.artists, Some(vec!["Single Artist".to_string()]));
+
+    // Test with many artists
+    let many_artists: Vec<String> = (1..=50)
+      .map(|i| format!("Artist {}", i))
+      .collect();
+    let tags_many = TestAudioTags {
+      title: Some("Test Song".to_string()),
+      artists: Some(many_artists.clone()),
+      album: None,
+      year: None,
+      genre: None,
+      track: None,
+      album_artists: None,
+      comment: None,
+      disc: None,
+      image: None,
+    };
+    assert_eq!(tags_many.artists, Some(many_artists));
+
+    // Test with duplicate artists
+    let tags_duplicates = TestAudioTags {
+      title: Some("Test Song".to_string()),
+      artists: Some(vec![
+        "Same Artist".to_string(),
+        "Same Artist".to_string(),
+        "Same Artist".to_string(),
+      ]),
+      album: None,
+      year: None,
+      genre: None,
+      track: None,
+      album_artists: None,
+      comment: None,
+      disc: None,
+      image: None,
+    };
+    assert_eq!(
+      tags_duplicates.artists,
+      Some(vec![
+        "Same Artist".to_string(),
+        "Same Artist".to_string(),
+        "Same Artist".to_string(),
+      ])
+    );
+  }
+
+  #[test]
+  fn test_audio_tags_track_disc_edge_cases() {
+    // Test track with zero values
+    let tags_track_zero = TestAudioTags {
+      title: Some("Test Song".to_string()),
+      artists: None,
+      album: None,
+      year: None,
+      genre: None,
+      track: Some(TestPosition {
+        no: Some(0),
+        of: Some(0),
+      }),
+      album_artists: None,
+      comment: None,
+      disc: Some(TestPosition {
+        no: Some(0),
+        of: Some(0),
+      }),
+      image: None,
+    };
+    assert_eq!(
+      tags_track_zero.track,
+      Some(TestPosition {
+        no: Some(0),
+        of: Some(0)
+      })
+    );
+    assert_eq!(
+      tags_track_zero.disc,
+      Some(TestPosition {
+        no: Some(0),
+        of: Some(0)
+      })
+    );
+
+    // Test track with large values
+    let tags_track_large = TestAudioTags {
+      title: Some("Test Song".to_string()),
+      artists: None,
+      album: None,
+      year: None,
+      genre: None,
+      track: Some(TestPosition {
+        no: Some(999),
+        of: Some(1000),
+      }),
+      album_artists: None,
+      comment: None,
+      disc: Some(TestPosition {
+        no: Some(99),
+        of: Some(100),
+      }),
+      image: None,
+    };
+    assert_eq!(
+      tags_track_large.track,
+      Some(TestPosition {
+        no: Some(999),
+        of: Some(1000)
+      })
+    );
+    assert_eq!(
+      tags_track_large.disc,
+      Some(TestPosition {
+        no: Some(99),
+        of: Some(100)
+      })
+    );
+
+    // Test track where no > of (invalid but should be handled)
+    let tags_track_invalid = TestAudioTags {
+      title: Some("Test Song".to_string()),
+      artists: None,
+      album: None,
+      year: None,
+      genre: None,
+      track: Some(TestPosition {
+        no: Some(10),
+        of: Some(5), // no > of
+      }),
+      album_artists: None,
+      comment: None,
+      disc: Some(TestPosition {
+        no: Some(3),
+        of: Some(1), // no > of
+      }),
+      image: None,
+    };
+    assert_eq!(
+      tags_track_invalid.track,
+      Some(TestPosition {
+        no: Some(10),
+        of: Some(5)
+      })
+    );
+    assert_eq!(
+      tags_track_invalid.disc,
+      Some(TestPosition {
+        no: Some(3),
+        of: Some(1)
+      })
+    );
+  }
+
+  #[test]
+  fn test_audio_tags_combination_scenarios() {
+    // Test realistic music metadata scenarios
+    let classical_tags = TestAudioTags {
+      title: Some("Symphony No. 9 in D minor, Op. 125".to_string()),
+      artists: Some(vec!["Ludwig van Beethoven".to_string()]),
+      album: Some("Beethoven: Complete Symphonies".to_string()),
+      year: Some(1824),
+      genre: Some("Classical".to_string()),
+      track: Some(TestPosition {
+        no: Some(1),
+        of: Some(4),
+      }),
+      album_artists: Some(vec!["Berlin Philharmonic".to_string()]),
+      comment: Some("Conducted by Herbert von Karajan".to_string()),
+      disc: Some(TestPosition {
+        no: Some(1),
+        of: Some(5),
+      }),
+      image: Some(TestImage {
+        data: create_test_image_data(),
+        mime_type: Some("image/jpeg".to_string()),
+        description: Some("Album cover art".to_string()),
+      }),
+    };
+
+    assert_eq!(
+      classical_tags.title,
+      Some("Symphony No. 9 in D minor, Op. 125".to_string())
+    );
+    assert_eq!(
+      classical_tags.artists,
+      Some(vec!["Ludwig van Beethoven".to_string()])
+    );
+    assert_eq!(classical_tags.year, Some(1824));
+    assert_eq!(classical_tags.genre, Some("Classical".to_string()));
+
+    // Test modern pop song scenario
+    let pop_tags = TestAudioTags {
+      title: Some("Shape of You".to_string()),
+      artists: Some(vec!["Ed Sheeran".to_string()]),
+      album: Some("÷ (Divide)".to_string()),
+      year: Some(2017),
+      genre: Some("Pop".to_string()),
+      track: Some(TestPosition {
+        no: Some(3),
+        of: Some(16),
+      }),
+      album_artists: Some(vec!["Ed Sheeran".to_string()]),
+      comment: Some("Produced by Steve Mac".to_string()),
+      disc: None,
+      image: None,
+    };
+
+    assert_eq!(pop_tags.title, Some("Shape of You".to_string()));
+    assert_eq!(pop_tags.artists, Some(vec!["Ed Sheeran".to_string()]));
+    assert_eq!(pop_tags.year, Some(2017));
+    assert_eq!(pop_tags.genre, Some("Pop".to_string()));
+
+    // Test compilation album scenario
+    let compilation_tags = TestAudioTags {
+      title: Some("Bohemian Rhapsody".to_string()),
+      artists: Some(vec!["Queen".to_string()]),
+      album: Some("Greatest Hits".to_string()),
+      year: Some(1975),
+      genre: Some("Rock".to_string()),
+      track: Some(TestPosition {
+        no: Some(1),
+        of: Some(17),
+      }),
+      album_artists: Some(vec!["Various Artists".to_string()]),
+      comment: Some("From the album 'A Night at the Opera'".to_string()),
+      disc: Some(TestPosition {
+        no: Some(1),
+        of: Some(2),
+      }),
+      image: Some(TestImage {
+        data: create_test_image_data(),
+        mime_type: Some("image/png".to_string()),
+        description: Some("Compilation cover".to_string()),
+      }),
+    };
+
+    assert_eq!(compilation_tags.title, Some("Bohemian Rhapsody".to_string()));
+    assert_eq!(compilation_tags.artists, Some(vec!["Queen".to_string()]));
+    assert_eq!(compilation_tags.album_artists, Some(vec!["Various Artists".to_string()]));
+    assert_eq!(compilation_tags.year, Some(1975));
+  }
+
+  #[test]
+  fn test_create_test_image_data() {
+    let image_data = create_test_image_data();
+    
+    // Test that the image data is not empty
+    assert!(!image_data.is_empty());
+    
+    // Test JPEG header structure
+    assert_eq!(image_data[0], 0xFF); // JPEG SOI marker
+    assert_eq!(image_data[1], 0xD8); // JPEG SOI marker
+    assert_eq!(image_data[2], 0xFF); // APP0 marker
+    assert_eq!(image_data[3], 0xE0); // APP0 marker
+    
+    // Test JFIF identifier
+    assert_eq!(image_data[6], 0x4A); // 'J'
+    assert_eq!(image_data[7], 0x46); // 'F'
+    assert_eq!(image_data[8], 0x49); // 'I'
+    assert_eq!(image_data[9], 0x46); // 'F'
+    
+    // Test JPEG EOI marker
+    let last_two = &image_data[image_data.len() - 2..];
+    assert_eq!(last_two[0], 0xFF); // JPEG EOI marker
+    assert_eq!(last_two[1], 0xD9); // JPEG EOI marker
+    
+    // Test that multiple calls return the same data
+    let image_data2 = create_test_image_data();
+    assert_eq!(image_data, image_data2);
+  }
 }
