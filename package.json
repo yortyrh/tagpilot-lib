@@ -63,6 +63,7 @@
     "lint": "oxlint .",
     "prepublishOnly": "napi prepublish -t npm",
     "prepare-test-files": "node convert-from-mp3.mjs music test-files",
+    "generate-test-data": "node generate-test-data.js",
     "test": "ava",
     "version": "napi version",
     "prepare": "husky"
@@ -103,6 +104,9 @@
     "extensions": {
       "ts": "module"
     },
+    "files": [
+      "__test__/index.spec.ts"
+    ],
     "timeout": "2m",
     "workerThreads": false,
     "environmentVariables": {
