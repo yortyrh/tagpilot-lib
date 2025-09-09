@@ -235,14 +235,10 @@ where
 {
   let probe = Probe::new(file);
   let Ok(probe) = probe.guess_file_type() else {
-    return Err(
-      "Failed to guess file type".to_string(),
-    ) ;
+    return Err("Failed to guess file type".to_string());
   };
   let Ok(tagged_file) = probe.read() else {
-    return Err(
-      "Failed to read audio file".to_string(),
-    );
+    return Err("Failed to read audio file".to_string());
   };
 
   tagged_file
@@ -269,14 +265,10 @@ where
 {
   let probe = Probe::new(&mut file);
   let Ok(probe) = probe.guess_file_type() else {
-    return Err(
-      "Failed to guess file type".to_string(),
-    );
+    return Err("Failed to guess file type".to_string());
   };
   let Ok(mut tagged_file) = probe.read() else {
-    return Err(
-      "Failed to read audio file".to_string(),
-    );
+    return Err("Failed to read audio file".to_string());
   };
 
   // Check if the file has tags
@@ -288,9 +280,7 @@ where
 
   let primary_tag = tagged_file
     .primary_tag_mut()
-    .ok_or(
-      "Failed to get primary tag after been added".to_string(),
-    )?;
+    .ok_or("Failed to get primary tag after been added".to_string())?;
 
   // Update the tag with new values
   tags.to_tag(primary_tag);
@@ -332,14 +322,10 @@ where
 {
   let probe = Probe::new(file);
   let Ok(probe) = probe.guess_file_type() else {
-    return Err(
-      "Failed to guess file type".to_string(),
-    );
+    return Err("Failed to guess file type".to_string());
   };
   let Ok(mut tagged_file) = probe.read() else {
-    return Err(
-      "Failed to read audio file".to_string(),
-    );
+    return Err("Failed to read audio file".to_string());
   };
 
   // Create a new empty tag of the same type
@@ -385,7 +371,10 @@ pub async fn read_cover_image_from_buffer(buffer: Vec<u8>) -> Result<Option<Vec<
   }
 }
 
-pub async fn write_cover_image_to_buffer(buffer: Vec<u8>, image_data: Vec<u8>) -> Result<Vec<u8>, String> {
+pub async fn write_cover_image_to_buffer(
+  buffer: Vec<u8>,
+  image_data: Vec<u8>,
+) -> Result<Vec<u8>, String> {
   let audio_tags = AudioTags {
     image: Some(Image {
       data: image_data,
@@ -396,9 +385,7 @@ pub async fn write_cover_image_to_buffer(buffer: Vec<u8>, image_data: Vec<u8>) -
   };
   let buffer = write_tags_to_buffer(buffer, audio_tags)
     .await
-    .map_err(|e| {
-      format!("Failed to write cover image to buffer: {}", e)
-    })?;
+    .map_err(|e| format!("Failed to write cover image to buffer: {}", e))?;
 
   Ok(buffer)
 }
@@ -409,7 +396,10 @@ pub async fn read_cover_image_from_file(file_path: String) -> Result<Option<Vec<
   read_cover_image_from_buffer(buffer.into()).await
 }
 
-pub async fn write_cover_image_to_file(file_path: String, image_data: Vec<u8>) -> Result<(), String> {
+pub async fn write_cover_image_to_file(
+  file_path: String,
+  image_data: Vec<u8>,
+) -> Result<(), String> {
   let path = Path::new(&file_path);
   let buffer = fs::read(path).map_err(|e| format!("Failed to read file: {}", e))?;
   let buffer = write_cover_image_to_buffer(buffer.into(), image_data).await?;
@@ -2549,7 +2539,12 @@ mod tests {
   fn test_audio_tags_memory_efficiency() {
     // Test memory efficiency with large data structures
     let large_artists: Vec<String> = (1..=100)
-      .map(|i| format!("Artist {} with a very long name that might cause memory issues", i))
+      .map(|i| {
+        format!(
+          "Artist {} with a very long name that might cause memory issues",
+          i
+        )
+      })
       .collect();
 
     let large_tags = AudioTags {
@@ -2658,12 +2653,21 @@ mod tests {
 
     // Verify Unicode is handled correctly
     assert_eq!(unicode_tags.title, Some("🎵 音乐测试 🎶".to_string()));
-    assert_eq!(unicode_tags.artists, Some(vec!["艺术家".to_string(), "🎤 歌手".to_string()]));
+    assert_eq!(
+      unicode_tags.artists,
+      Some(vec!["艺术家".to_string(), "🎤 歌手".to_string()])
+    );
     assert_eq!(unicode_tags.album, Some("专辑名称 🎼".to_string()));
     assert_eq!(unicode_tags.genre, Some("音乐类型 🎸".to_string()));
-    assert_eq!(unicode_tags.album_artists, Some(vec!["专辑艺术家 🎹".to_string()]));
+    assert_eq!(
+      unicode_tags.album_artists,
+      Some(vec!["专辑艺术家 🎹".to_string()])
+    );
     assert_eq!(unicode_tags.comment, Some("评论内容 🎺".to_string()));
-    assert_eq!(unicode_tags.image.as_ref().unwrap().description, Some("图片描述 🖼️".to_string()));
+    assert_eq!(
+      unicode_tags.image.as_ref().unwrap().description,
+      Some("图片描述 🖼️".to_string())
+    );
   }
 
   #[test]
@@ -2696,8 +2700,22 @@ mod tests {
     };
 
     // Verify sorted order
-    assert_eq!(tags.artists, Some(vec!["Alice".to_string(), "Bob".to_string(), "Charlie".to_string()]));
-    assert_eq!(tags.album_artists, Some(vec!["Alice".to_string(), "Bob".to_string(), "Charlie".to_string()]));
+    assert_eq!(
+      tags.artists,
+      Some(vec![
+        "Alice".to_string(),
+        "Bob".to_string(),
+        "Charlie".to_string()
+      ])
+    );
+    assert_eq!(
+      tags.album_artists,
+      Some(vec![
+        "Alice".to_string(),
+        "Bob".to_string(),
+        "Charlie".to_string()
+      ])
+    );
   }
 
   #[test]
@@ -2926,7 +2944,10 @@ mod tests {
     // Verify all tags were created correctly
     assert_eq!(tags_vec.len(), 1000);
     assert_eq!(tags_vec[0].title, Some("Performance Test 0".to_string()));
-    assert_eq!(tags_vec[999].title, Some("Performance Test 999".to_string()));
+    assert_eq!(
+      tags_vec[999].title,
+      Some("Performance Test 999".to_string())
+    );
 
     // Test iteration performance
     let iteration_start = std::time::Instant::now();
@@ -2980,7 +3001,10 @@ mod tests {
         // Each thread reads the same data
         assert_eq!(tags_ref.title, Some("Concurrent Test".to_string()));
         assert_eq!(tags_ref.year, Some(2024));
-        assert_eq!(tags_ref.artists, Some(vec!["Concurrent Artist".to_string()]));
+        assert_eq!(
+          tags_ref.artists,
+          Some(vec!["Concurrent Artist".to_string()])
+        );
         println!("Thread {} completed successfully", i);
       });
       handles.push(handle);
@@ -3051,16 +3075,56 @@ mod tests {
 
     for (i, tags) in edge_cases.iter().enumerate() {
       // Each edge case should be valid
-      assert!(tags.title.is_some() || tags.title.is_none(), "Edge case {} title", i);
-      assert!(tags.artists.is_some() || tags.artists.is_none(), "Edge case {} artists", i);
-      assert!(tags.album.is_some() || tags.album.is_none(), "Edge case {} album", i);
-      assert!(tags.year.is_some() || tags.year.is_none(), "Edge case {} year", i);
-      assert!(tags.genre.is_some() || tags.genre.is_none(), "Edge case {} genre", i);
-      assert!(tags.track.is_some() || tags.track.is_none(), "Edge case {} track", i);
-      assert!(tags.album_artists.is_some() || tags.album_artists.is_none(), "Edge case {} album_artists", i);
-      assert!(tags.comment.is_some() || tags.comment.is_none(), "Edge case {} comment", i);
-      assert!(tags.disc.is_some() || tags.disc.is_none(), "Edge case {} disc", i);
-      assert!(tags.image.is_some() || tags.image.is_none(), "Edge case {} image", i);
+      assert!(
+        tags.title.is_some() || tags.title.is_none(),
+        "Edge case {} title",
+        i
+      );
+      assert!(
+        tags.artists.is_some() || tags.artists.is_none(),
+        "Edge case {} artists",
+        i
+      );
+      assert!(
+        tags.album.is_some() || tags.album.is_none(),
+        "Edge case {} album",
+        i
+      );
+      assert!(
+        tags.year.is_some() || tags.year.is_none(),
+        "Edge case {} year",
+        i
+      );
+      assert!(
+        tags.genre.is_some() || tags.genre.is_none(),
+        "Edge case {} genre",
+        i
+      );
+      assert!(
+        tags.track.is_some() || tags.track.is_none(),
+        "Edge case {} track",
+        i
+      );
+      assert!(
+        tags.album_artists.is_some() || tags.album_artists.is_none(),
+        "Edge case {} album_artists",
+        i
+      );
+      assert!(
+        tags.comment.is_some() || tags.comment.is_none(),
+        "Edge case {} comment",
+        i
+      );
+      assert!(
+        tags.disc.is_some() || tags.disc.is_none(),
+        "Edge case {} disc",
+        i
+      );
+      assert!(
+        tags.image.is_some() || tags.image.is_none(),
+        "Edge case {} image",
+        i
+      );
     }
   }
 
@@ -3214,14 +3278,19 @@ mod tests {
 
     let mut tag = Tag::new(TagType::Id3v2);
     let image_data = create_test_image_data();
-    
+
     // Test JPEG image
-    add_cover_image(&mut tag, &image_data, Some("JPEG Test".to_string()), MimeType::Jpeg);
-    
+    add_cover_image(
+      &mut tag,
+      &image_data,
+      Some("JPEG Test".to_string()),
+      MimeType::Jpeg,
+    );
+
     // Verify the image was added
     let pictures: Vec<_> = tag.pictures().into_iter().collect();
     assert_eq!(pictures.len(), 1);
-    
+
     let picture = &pictures[0];
     assert_eq!(picture.pic_type(), PictureType::CoverFront);
     assert_eq!(picture.mime_type(), Some(&MimeType::Jpeg));
@@ -3235,7 +3304,7 @@ mod tests {
     use lofty::tag::TagType;
 
     let mut tag = Tag::new(TagType::Id3v2);
-    
+
     // Create PNG test data (minimal PNG header)
     let png_data = vec![
       0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, // PNG signature
@@ -3247,13 +3316,18 @@ mod tests {
       0x00, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x49, // more data
       0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82, // IEND chunk
     ];
-    
-    add_cover_image(&mut tag, &png_data, Some("PNG Test".to_string()), MimeType::Png);
-    
+
+    add_cover_image(
+      &mut tag,
+      &png_data,
+      Some("PNG Test".to_string()),
+      MimeType::Png,
+    );
+
     // Verify the image was added
     let pictures: Vec<_> = tag.pictures().into_iter().collect();
     assert_eq!(pictures.len(), 1);
-    
+
     let picture = &pictures[0];
     assert_eq!(picture.pic_type(), PictureType::CoverFront);
     assert_eq!(picture.mime_type(), Some(&MimeType::Png));
@@ -3267,7 +3341,7 @@ mod tests {
     use lofty::tag::TagType;
 
     let mut tag = Tag::new(TagType::Id3v2);
-    
+
     // Create GIF test data (minimal GIF header)
     let gif_data = vec![
       0x47, 0x49, 0x46, 0x38, 0x39, 0x61, // GIF89a signature
@@ -3277,13 +3351,18 @@ mod tests {
       0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, // image position and size
       0x00, 0x02, 0x02, 0x04, 0x01, 0x00, 0x3B, // image data + trailer
     ];
-    
-    add_cover_image(&mut tag, &gif_data, Some("GIF Test".to_string()), MimeType::Gif);
-    
+
+    add_cover_image(
+      &mut tag,
+      &gif_data,
+      Some("GIF Test".to_string()),
+      MimeType::Gif,
+    );
+
     // Verify the image was added
     let pictures: Vec<_> = tag.pictures().into_iter().collect();
     assert_eq!(pictures.len(), 1);
-    
+
     let picture = &pictures[0];
     assert_eq!(picture.pic_type(), PictureType::CoverFront);
     assert_eq!(picture.mime_type(), Some(&MimeType::Gif));
@@ -3297,7 +3376,7 @@ mod tests {
     use lofty::tag::TagType;
 
     let mut tag = Tag::new(TagType::Id3v2);
-    
+
     // Create TIFF test data (minimal TIFF header)
     let tiff_data = vec![
       0x49, 0x49, 0x2A, 0x00, // Little-endian TIFF signature
@@ -3305,13 +3384,18 @@ mod tests {
       0x00, 0x00, // Number of directory entries
       0x00, 0x00, 0x00, 0x00, // Offset to next IFD
     ];
-    
-    add_cover_image(&mut tag, &tiff_data, Some("TIFF Test".to_string()), MimeType::Tiff);
-    
+
+    add_cover_image(
+      &mut tag,
+      &tiff_data,
+      Some("TIFF Test".to_string()),
+      MimeType::Tiff,
+    );
+
     // Verify the image was added
     let pictures: Vec<_> = tag.pictures().into_iter().collect();
     assert_eq!(pictures.len(), 1);
-    
+
     let picture = &pictures[0];
     assert_eq!(picture.pic_type(), PictureType::CoverFront);
     assert_eq!(picture.mime_type(), Some(&MimeType::Tiff));
@@ -3325,7 +3409,7 @@ mod tests {
     use lofty::tag::TagType;
 
     let mut tag = Tag::new(TagType::Id3v2);
-    
+
     // Create BMP test data (minimal BMP header)
     let bmp_data = vec![
       0x42, 0x4D, // BM signature
@@ -3345,13 +3429,18 @@ mod tests {
       0x00, 0x00, 0x00, 0x00, // Important color count
       0x00, 0x00, 0xFF, // Pixel data (blue pixel)
     ];
-    
-    add_cover_image(&mut tag, &bmp_data, Some("BMP Test".to_string()), MimeType::Bmp);
-    
+
+    add_cover_image(
+      &mut tag,
+      &bmp_data,
+      Some("BMP Test".to_string()),
+      MimeType::Bmp,
+    );
+
     // Verify the image was added
     let pictures: Vec<_> = tag.pictures().into_iter().collect();
     assert_eq!(pictures.len(), 1);
-    
+
     let picture = &pictures[0];
     assert_eq!(picture.pic_type(), PictureType::CoverFront);
     assert_eq!(picture.mime_type(), Some(&MimeType::Bmp));
@@ -3367,14 +3456,19 @@ mod tests {
     let mut tag = Tag::new(TagType::Id3v2);
     // Use valid JPEG data but with unknown MIME type parameter
     let image_data = create_test_image_data();
-    
+
     // Test with unknown MIME type - should fall back to default
-    add_cover_image(&mut tag, &image_data, Some("Unknown Test".to_string()), MimeType::Jpeg);
-    
+    add_cover_image(
+      &mut tag,
+      &image_data,
+      Some("Unknown Test".to_string()),
+      MimeType::Jpeg,
+    );
+
     // Verify the image was added with default MIME type
     let pictures: Vec<_> = tag.pictures().into_iter().collect();
     assert_eq!(pictures.len(), 1);
-    
+
     let picture = &pictures[0];
     assert_eq!(picture.pic_type(), PictureType::CoverFront);
     assert_eq!(picture.mime_type(), Some(&MimeType::Jpeg)); // Should fall back to default
@@ -3389,14 +3483,14 @@ mod tests {
 
     let mut tag = Tag::new(TagType::Id3v2);
     let image_data = create_test_image_data();
-    
+
     // Test without description
     add_cover_image(&mut tag, &image_data, None, MimeType::Jpeg);
-    
+
     // Verify the image was added without description
     let pictures: Vec<_> = tag.pictures().into_iter().collect();
     assert_eq!(pictures.len(), 1);
-    
+
     let picture = &pictures[0];
     assert_eq!(picture.pic_type(), PictureType::CoverFront);
     assert_eq!(picture.mime_type(), Some(&MimeType::Jpeg));
@@ -3411,7 +3505,7 @@ mod tests {
 
     let mut tag = Tag::new(TagType::Id3v2);
     let first_image = create_test_image_data();
-    
+
     // Create PNG test data for second image
     let second_image = vec![
       0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, // PNG signature
@@ -3423,18 +3517,28 @@ mod tests {
       0x00, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x49, // more data
       0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82, // IEND chunk
     ];
-    
+
     // Add first image
-    add_cover_image(&mut tag, &first_image, Some("First Image".to_string()), MimeType::Jpeg);
-    
+    add_cover_image(
+      &mut tag,
+      &first_image,
+      Some("First Image".to_string()),
+      MimeType::Jpeg,
+    );
+
     // Verify first image was added
     let pictures: Vec<_> = tag.pictures().into_iter().collect();
     assert_eq!(pictures.len(), 1);
     assert_eq!(pictures[0].data(), first_image);
-    
+
     // Add second image (should replace the first)
-    add_cover_image(&mut tag, &second_image, Some("Second Image".to_string()), MimeType::Png);
-    
+    add_cover_image(
+      &mut tag,
+      &second_image,
+      Some("Second Image".to_string()),
+      MimeType::Png,
+    );
+
     // Verify second image replaced the first
     let pictures: Vec<_> = tag.pictures().into_iter().collect();
     assert_eq!(pictures.len(), 1);
@@ -3451,14 +3555,19 @@ mod tests {
     let mut tag = Tag::new(TagType::Id3v2);
     // Use minimal valid JPEG data instead of empty data
     let minimal_data = vec![0xFF, 0xD8, 0xFF, 0xD9]; // Minimal JPEG
-    
+
     // Test with minimal image data
-    add_cover_image(&mut tag, &minimal_data, Some("Minimal Test".to_string()), MimeType::Jpeg);
-    
+    add_cover_image(
+      &mut tag,
+      &minimal_data,
+      Some("Minimal Test".to_string()),
+      MimeType::Jpeg,
+    );
+
     // Verify the image was added
     let pictures: Vec<_> = tag.pictures().into_iter().collect();
     assert_eq!(pictures.len(), 1);
-    
+
     let picture = &pictures[0];
     assert_eq!(picture.pic_type(), PictureType::CoverFront);
     assert_eq!(picture.mime_type(), Some(&MimeType::Jpeg));
@@ -3472,18 +3581,23 @@ mod tests {
     use lofty::tag::TagType;
 
     let mut tag = Tag::new(TagType::Id3v2);
-    
+
     // Create large image data with valid JPEG header (1MB)
     let mut large_data: Vec<u8> = vec![0xFF, 0xD8, 0xFF, 0xE0]; // JPEG header
     large_data.extend((0..1024 * 1024 - 4).map(|i| (i % 256) as u8));
     large_data.extend(&[0xFF, 0xD9]); // JPEG footer
-    
-    add_cover_image(&mut tag, &large_data, Some("Large Image".to_string()), MimeType::Jpeg);
-    
+
+    add_cover_image(
+      &mut tag,
+      &large_data,
+      Some("Large Image".to_string()),
+      MimeType::Jpeg,
+    );
+
     // Verify the large image was added
     let pictures: Vec<_> = tag.pictures().into_iter().collect();
     assert_eq!(pictures.len(), 1);
-    
+
     let picture = &pictures[0];
     assert_eq!(picture.pic_type(), PictureType::CoverFront);
     assert_eq!(picture.mime_type(), Some(&MimeType::Jpeg));
@@ -3498,65 +3612,86 @@ mod tests {
     use lofty::tag::TagType;
 
     let mut tag = Tag::new(TagType::Id3v2);
-    
+
     // Test all supported MIME types with appropriate test data
     let test_cases = vec![
       (create_test_image_data(), MimeType::Jpeg, "image/jpeg"),
-      (vec![
-        0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, // PNG signature
-        0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52, // IHDR chunk
-        0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, // 1x1 pixel
-        0x08, 0x02, 0x00, 0x00, 0x00, 0x90, 0x77, 0x53, // bit depth, color type, etc.
-        0xDE, 0x00, 0x00, 0x00, 0x0C, 0x49, 0x44, 0x41, // IDAT chunk
-        0x54, 0x08, 0x99, 0x01, 0x01, 0x00, 0x00, 0x00, // compressed data
-        0x00, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x49, // more data
-        0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82, // IEND chunk
-      ], MimeType::Png, "image/png"),
-      (vec![
-        0x47, 0x49, 0x46, 0x38, 0x39, 0x61, // GIF89a signature
-        0x01, 0x00, 0x01, 0x00, 0x80, 0x00, 0x00, // 1x1 pixel, color table
-        0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x21, 0xF9, // color table + graphic control
-        0x04, 0x01, 0x00, 0x00, 0x00, 0x00, 0x2C, 0x00, // extension + image descriptor
-        0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, // image position and size
-        0x00, 0x02, 0x02, 0x04, 0x01, 0x00, 0x3B, // image data + trailer
-      ], MimeType::Gif, "image/gif"),
-      (vec![
-        0x49, 0x49, 0x2A, 0x00, // Little-endian TIFF signature
-        0x08, 0x00, 0x00, 0x00, // Offset to first IFD
-        0x00, 0x00, // Number of directory entries
-        0x00, 0x00, 0x00, 0x00, // Offset to next IFD
-      ], MimeType::Tiff, "image/tiff"),
-      (vec![
-        0x42, 0x4D, // BM signature
-        0x3E, 0x00, 0x00, 0x00, // File size
-        0x00, 0x00, 0x00, 0x00, // Reserved
-        0x3E, 0x00, 0x00, 0x00, // Data offset
-        0x28, 0x00, 0x00, 0x00, // Header size
-        0x01, 0x00, 0x00, 0x00, // Width
-        0x01, 0x00, 0x00, 0x00, // Height
-        0x01, 0x00, // Planes
-        0x18, 0x00, // Bits per pixel
-        0x00, 0x00, 0x00, 0x00, // Compression
-        0x00, 0x00, 0x00, 0x00, // Image size
-        0x00, 0x00, 0x00, 0x00, // X pixels per meter
-        0x00, 0x00, 0x00, 0x00, // Y pixels per meter
-        0x00, 0x00, 0x00, 0x00, // Colors in color table
-        0x00, 0x00, 0x00, 0x00, // Important color count
-        0x00, 0x00, 0xFF, // Pixel data (blue pixel)
-      ], MimeType::Bmp, "image/bmp"),
+      (
+        vec![
+          0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, // PNG signature
+          0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52, // IHDR chunk
+          0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, // 1x1 pixel
+          0x08, 0x02, 0x00, 0x00, 0x00, 0x90, 0x77, 0x53, // bit depth, color type, etc.
+          0xDE, 0x00, 0x00, 0x00, 0x0C, 0x49, 0x44, 0x41, // IDAT chunk
+          0x54, 0x08, 0x99, 0x01, 0x01, 0x00, 0x00, 0x00, // compressed data
+          0x00, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x49, // more data
+          0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82, // IEND chunk
+        ],
+        MimeType::Png,
+        "image/png",
+      ),
+      (
+        vec![
+          0x47, 0x49, 0x46, 0x38, 0x39, 0x61, // GIF89a signature
+          0x01, 0x00, 0x01, 0x00, 0x80, 0x00, 0x00, // 1x1 pixel, color table
+          0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x21, 0xF9, // color table + graphic control
+          0x04, 0x01, 0x00, 0x00, 0x00, 0x00, 0x2C, 0x00, // extension + image descriptor
+          0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, // image position and size
+          0x00, 0x02, 0x02, 0x04, 0x01, 0x00, 0x3B, // image data + trailer
+        ],
+        MimeType::Gif,
+        "image/gif",
+      ),
+      (
+        vec![
+          0x49, 0x49, 0x2A, 0x00, // Little-endian TIFF signature
+          0x08, 0x00, 0x00, 0x00, // Offset to first IFD
+          0x00, 0x00, // Number of directory entries
+          0x00, 0x00, 0x00, 0x00, // Offset to next IFD
+        ],
+        MimeType::Tiff,
+        "image/tiff",
+      ),
+      (
+        vec![
+          0x42, 0x4D, // BM signature
+          0x3E, 0x00, 0x00, 0x00, // File size
+          0x00, 0x00, 0x00, 0x00, // Reserved
+          0x3E, 0x00, 0x00, 0x00, // Data offset
+          0x28, 0x00, 0x00, 0x00, // Header size
+          0x01, 0x00, 0x00, 0x00, // Width
+          0x01, 0x00, 0x00, 0x00, // Height
+          0x01, 0x00, // Planes
+          0x18, 0x00, // Bits per pixel
+          0x00, 0x00, 0x00, 0x00, // Compression
+          0x00, 0x00, 0x00, 0x00, // Image size
+          0x00, 0x00, 0x00, 0x00, // X pixels per meter
+          0x00, 0x00, 0x00, 0x00, // Y pixels per meter
+          0x00, 0x00, 0x00, 0x00, // Colors in color table
+          0x00, 0x00, 0x00, 0x00, // Important color count
+          0x00, 0x00, 0xFF, // Pixel data (blue pixel)
+        ],
+        MimeType::Bmp,
+        "image/bmp",
+      ),
     ];
-    
+
     for (i, (image_data, expected_mime_type, description)) in test_cases.iter().enumerate() {
       // Clear previous images
       tag.remove_picture_type(PictureType::CoverFront);
-      
+
       // Add image with current MIME type
-      add_cover_image(&mut tag, image_data, Some(format!("Test {}", i)), expected_mime_type.clone());
-      
+      add_cover_image(
+        &mut tag,
+        image_data,
+        Some(format!("Test {}", i)),
+        expected_mime_type.clone(),
+      );
+
       // Verify the image was added with correct MIME type
       let pictures: Vec<_> = tag.pictures().into_iter().collect();
       assert_eq!(pictures.len(), 1, "Failed for MIME type: {}", description);
-      
+
       let picture = &pictures[0];
       assert_eq!(picture.pic_type(), PictureType::CoverFront);
       assert_eq!(picture.mime_type(), Some(expected_mime_type));
@@ -3574,7 +3709,10 @@ mod tests {
     // Test file path validation
     let non_existent_path = "/tmp/non_existent_file_12345.mp3";
     let read_result = read_tags(non_existent_path.to_string()).await;
-    assert!(read_result.is_err(), "Should fail to read from non-existent file");
+    assert!(
+      read_result.is_err(),
+      "Should fail to read from non-existent file"
+    );
 
     // Test with empty file
     let temp_file = NamedTempFile::new().unwrap();
@@ -3585,7 +3723,10 @@ mod tests {
     let invalid_path = "/tmp/non_existent_directory/test.mp3";
     let test_tags = AudioTags::default();
     let write_result = write_tags(invalid_path.to_string(), test_tags).await;
-    assert!(write_result.is_err(), "Should fail to write to non-existent directory");
+    assert!(
+      write_result.is_err(),
+      "Should fail to write to non-existent directory"
+    );
   }
 
   #[tokio::test]
@@ -3606,9 +3747,9 @@ mod tests {
       // If this fails, we'll skip the file-based tests and focus on buffer-based tests
       return;
     }
-    
+
     let tags = result.unwrap();
-    
+
     // Verify we get default empty tags for a file without metadata
     assert_eq!(tags.title, None);
     assert_eq!(tags.artists, None);
@@ -3658,7 +3799,11 @@ mod tests {
     };
 
     // Test writing tags to file
-    let write_result = write_tags(temp_file.path().to_string_lossy().to_string(), test_tags.clone()).await;
+    let write_result = write_tags(
+      temp_file.path().to_string_lossy().to_string(),
+      test_tags.clone(),
+    )
+    .await;
     if let Err(e) = &write_result {
       println!("Error writing tags to file: {}", e);
       // If this fails, we'll skip the file-based tests and focus on buffer-based tests
@@ -3748,7 +3893,7 @@ mod tests {
     }
     assert!(read_result.is_ok());
     let read_tags_after_clear = read_result.unwrap();
-    
+
     // All tags should be None after clearing
     assert_eq!(read_tags_after_clear.title, None);
     assert_eq!(read_tags_after_clear.artists, None);
@@ -3775,7 +3920,11 @@ mod tests {
 
     // Test writing cover image to file
     let image_data = create_test_image_data();
-    let write_result = write_cover_image_to_file(temp_file.path().to_string_lossy().to_string(), image_data.clone()).await;
+    let write_result = write_cover_image_to_file(
+      temp_file.path().to_string_lossy().to_string(),
+      image_data.clone(),
+    )
+    .await;
     if let Err(e) = &write_result {
       println!("Error writing cover image to file: {}", e);
       return;
@@ -3783,14 +3932,15 @@ mod tests {
     assert!(write_result.is_ok());
 
     // Test reading cover image from file
-    let read_result = read_cover_image_from_file(temp_file.path().to_string_lossy().to_string()).await;
+    let read_result =
+      read_cover_image_from_file(temp_file.path().to_string_lossy().to_string()).await;
     if let Err(e) = &read_result {
       println!("Error reading cover image from file: {}", e);
       return;
     }
     assert!(read_result.is_ok());
     let cover_image = read_result.unwrap();
-    
+
     // Verify we got the cover image
     assert!(cover_image.is_some());
     let cover_data = cover_image.unwrap();
@@ -3803,7 +3953,7 @@ mod tests {
   async fn test_clear_tags_comprehensive() {
     // Test clearing tags from buffer with various scenarios
     let audio_data = create_buffer_from_base64("SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAAwAAAbgA").unwrap();
-    
+
     // First, write some tags to the buffer
     let test_tags = AudioTags {
       title: Some("Test Song".to_string()),
@@ -3835,7 +3985,7 @@ mod tests {
       return;
     }
     let tagged_buffer = tagged_buffer.unwrap();
-    
+
     // Verify tags were written
     let read_result = read_tags_from_buffer(tagged_buffer.clone()).await;
     if let Err(e) = &read_result {
@@ -3854,7 +4004,7 @@ mod tests {
       return;
     }
     let cleared_buffer = cleared_buffer.unwrap();
-    
+
     // Verify tags were cleared
     let cleared_result = read_tags_from_buffer(cleared_buffer).await;
     if let Err(e) = &cleared_result {
@@ -3879,7 +4029,10 @@ mod tests {
     // Test clearing tags from empty buffer
     let empty_buffer = vec![];
     let result = clear_tags_to_buffer(empty_buffer).await;
-    assert!(result.is_err(), "Should fail to clear tags from empty buffer");
+    assert!(
+      result.is_err(),
+      "Should fail to clear tags from empty buffer"
+    );
   }
 
   #[tokio::test]
@@ -3887,14 +4040,17 @@ mod tests {
     // Test clearing tags from invalid audio data
     let invalid_data = vec![0x00, 0x01, 0x02, 0x03];
     let result = clear_tags_to_buffer(invalid_data).await;
-    assert!(result.is_err(), "Should fail to clear tags from invalid audio data");
+    assert!(
+      result.is_err(),
+      "Should fail to clear tags from invalid audio data"
+    );
   }
 
   #[tokio::test]
   async fn test_clear_tags_already_empty() {
     // Test clearing tags from buffer that already has no tags
     let audio_data = create_buffer_from_base64("SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAAwAAAbgA").unwrap();
-    
+
     // Clear tags from buffer that has no tags
     let cleared_buffer = clear_tags_to_buffer(audio_data.clone()).await;
     if let Err(e) = &cleared_buffer {
@@ -3902,7 +4058,7 @@ mod tests {
       return;
     }
     let cleared_buffer = cleared_buffer.unwrap();
-    
+
     // Verify the buffer is still valid and has no tags
     let result = read_tags_from_buffer(cleared_buffer).await;
     if let Err(e) = &result {
@@ -3941,7 +4097,10 @@ mod tests {
     }
     assert!(result.is_ok());
     let cover_image = result.unwrap();
-    assert!(cover_image.is_none(), "Should return None for file with no cover image");
+    assert!(
+      cover_image.is_none(),
+      "Should return None for file with no cover image"
+    );
 
     // Add a cover image to the file
     let image_data = create_test_image_data();
@@ -3963,14 +4122,15 @@ mod tests {
     assert!(write_result.is_ok());
 
     // Now test reading cover image from file
-    let read_result = read_cover_image_from_file(temp_file.path().to_string_lossy().to_string()).await;
+    let read_result =
+      read_cover_image_from_file(temp_file.path().to_string_lossy().to_string()).await;
     if let Err(e) = &read_result {
       println!("Error reading cover image from file: {}", e);
       return;
     }
     assert!(read_result.is_ok());
     let cover_image = read_result.unwrap();
-    
+
     // Verify we got the cover image
     assert!(cover_image.is_some());
     let cover_data = cover_image.unwrap();
@@ -3984,12 +4144,18 @@ mod tests {
     // Test reading cover image from non-existent file
     let non_existent_path = "/tmp/non_existent_file_12345.mp3";
     let result = read_cover_image_from_file(non_existent_path.to_string()).await;
-    assert!(result.is_err(), "Should fail to read cover image from non-existent file");
+    assert!(
+      result.is_err(),
+      "Should fail to read cover image from non-existent file"
+    );
 
     // Test reading cover image from empty file
     let temp_file = NamedTempFile::new().unwrap();
     let result = read_cover_image_from_file(temp_file.path().to_string_lossy().to_string()).await;
-    assert!(result.is_err(), "Should fail to read cover image from empty file");
+    assert!(
+      result.is_err(),
+      "Should fail to read cover image from empty file"
+    );
   }
 
   #[tokio::test]
@@ -4000,16 +4166,19 @@ mod tests {
     // Test reading different types of cover images
     let image_types = vec![
       ("JPEG", create_test_image_data()),
-      ("PNG", vec![
-        0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, // PNG signature
-        0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52, // IHDR chunk
-        0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, // 1x1 pixel
-        0x08, 0x02, 0x00, 0x00, 0x00, 0x90, 0x77, 0x53, // bit depth, color type, etc.
-        0xDE, 0x00, 0x00, 0x00, 0x0C, 0x49, 0x44, 0x41, // IDAT chunk
-        0x54, 0x08, 0x99, 0x01, 0x01, 0x00, 0x00, 0x00, // compressed data
-        0x00, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x49, // more data
-        0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82, // IEND chunk
-      ]),
+      (
+        "PNG",
+        vec![
+          0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, // PNG signature
+          0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52, // IHDR chunk
+          0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, // 1x1 pixel
+          0x08, 0x02, 0x00, 0x00, 0x00, 0x90, 0x77, 0x53, // bit depth, color type, etc.
+          0xDE, 0x00, 0x00, 0x00, 0x0C, 0x49, 0x44, 0x41, // IDAT chunk
+          0x54, 0x08, 0x99, 0x01, 0x01, 0x00, 0x00, 0x00, // compressed data
+          0x00, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x49, // more data
+          0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82, // IEND chunk
+        ],
+      ),
     ];
 
     for (image_type, image_data) in image_types {
@@ -4029,7 +4198,8 @@ mod tests {
       };
 
       // Write tags with image to file
-      let write_result = write_tags(temp_file.path().to_string_lossy().to_string(), test_tags).await;
+      let write_result =
+        write_tags(temp_file.path().to_string_lossy().to_string(), test_tags).await;
       if let Err(e) = &write_result {
         println!("Error writing {} tags to file: {}", image_type, e);
         continue;
@@ -4037,18 +4207,27 @@ mod tests {
       assert!(write_result.is_ok());
 
       // Test reading cover image from file
-      let read_result = read_cover_image_from_file(temp_file.path().to_string_lossy().to_string()).await;
+      let read_result =
+        read_cover_image_from_file(temp_file.path().to_string_lossy().to_string()).await;
       if let Err(e) = &read_result {
         println!("Error reading {} cover image from file: {}", image_type, e);
         continue;
       }
       assert!(read_result.is_ok());
       let cover_image = read_result.unwrap();
-      
+
       // Verify we got the cover image
-      assert!(cover_image.is_some(), "Should have {} cover image", image_type);
+      assert!(
+        cover_image.is_some(),
+        "Should have {} cover image",
+        image_type
+      );
       let cover_data = cover_image.unwrap();
-      assert_eq!(cover_data, image_data, "{} cover image data should match", image_type);
+      assert_eq!(
+        cover_data, image_data,
+        "{} cover image data should match",
+        image_type
+      );
     }
   }
 
@@ -4065,7 +4244,7 @@ mod tests {
 
     // Create large image data (100KB)
     let large_image_data: Vec<u8> = (0..1024 * 100).map(|i| (i % 256) as u8).collect();
-    
+
     let test_tags = AudioTags {
       image: Some(Image {
         data: large_image_data.clone(),
@@ -4084,21 +4263,21 @@ mod tests {
     assert!(write_result.is_ok());
 
     // Test reading large cover image from file
-    let read_result = read_cover_image_from_file(temp_file.path().to_string_lossy().to_string()).await;
+    let read_result =
+      read_cover_image_from_file(temp_file.path().to_string_lossy().to_string()).await;
     if let Err(e) = &read_result {
       println!("Error reading large cover image from file: {}", e);
       return;
     }
     assert!(read_result.is_ok());
     let cover_image = read_result.unwrap();
-    
+
     // Verify we got the large cover image
     assert!(cover_image.is_some());
     let cover_data = cover_image.unwrap();
     assert_eq!(cover_data.len(), large_image_data.len());
     assert_eq!(cover_data, large_image_data);
   }
-
 
   #[tokio::test]
   async fn test_round_trip_with_base64() {
@@ -4143,9 +4322,7 @@ mod tests {
     )
     .await
     .unwrap();
-    let tags = read_tags_from_buffer(buffer.to_vec())
-      .await
-      .unwrap();
+    let tags = read_tags_from_buffer(buffer.to_vec()).await.unwrap();
     assert_eq!(tags.title, Some("Test Song".to_string()));
     assert_eq!(tags.artists, Some(vec!["Test Artist".to_string()]));
     assert_eq!(tags.album, Some("Test Album".to_string()));
@@ -4173,9 +4350,7 @@ mod tests {
     assert_eq!(tags.image.is_some(), true);
 
     let buffer = clear_tags_to_buffer(buffer).await.unwrap();
-    let tags = read_tags_from_buffer(buffer.to_vec())
-      .await
-      .unwrap();
+    let tags = read_tags_from_buffer(buffer.to_vec()).await.unwrap();
     assert_eq!(tags.title, None);
     assert_eq!(tags.artists, None);
     assert_eq!(tags.album, None);
@@ -4187,15 +4362,10 @@ mod tests {
     assert_eq!(tags.disc, None);
     // assert_eq!(tags.image, None);
 
-    let buffer = write_cover_image_to_buffer(
-      buffer.to_vec(),
-      create_test_image_data(),
-    )
-    .await
-    .unwrap();
-    let image_buffer = read_cover_image_from_buffer(buffer.to_vec())
+    let buffer = write_cover_image_to_buffer(buffer.to_vec(), create_test_image_data())
       .await
       .unwrap();
+    let image_buffer = read_cover_image_from_buffer(buffer.to_vec()).await.unwrap();
     assert_eq!(image_buffer.is_some(), true);
 
     let buf = image_buffer.unwrap().to_vec();
