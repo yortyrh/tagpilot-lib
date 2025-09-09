@@ -200,13 +200,13 @@ async function testAudioFormatFullTags(t: any, files: any[], format: string) {
     try {
       const testTags: AudioTags = {
         title: `${format} Test Song`,
-        artists: [`${format} Artist`],
+        artists: [`${format} Artist`, `${format} Secondary Artist`],
         album: `${format} Album`,
         year: 2024,
         genre: `${format} Genre`,
         track: { no: 1, of: 10 },
         comment: `Test comment for ${format} format`,
-        albumArtists: [`${format} Album Artist`],
+        albumArtists: [`${format} Album Artist`, `${format} Secondary Album Artist`],
         disc: { no: 1, of: 10 },
         image: {
           data: img!.data,
@@ -218,13 +218,27 @@ async function testAudioFormatFullTags(t: any, files: any[], format: string) {
       const modifiedBuffer = await writeTagsToBuffer(testFile.data, testTags)
       const readTags = await readTagsFromBuffer(modifiedBuffer)
 
+      t.true(readTags.artists?.length === 2, `Expected 2 artists, got ${readTags.artists?.length} for ${format}`)
+      t.true(
+        readTags.albumArtists?.length === 2,
+        `Expected 2 album artists, got ${readTags.albumArtists?.length} for ${format}`,
+      )
+
       t.true(
         readTags.artists?.[0] === `${format} Artist`,
         `Expected ${format} Artist, got ${readTags.artists?.[0]} for ${format}`,
       )
       t.true(
-        readTags.albumArtists?.[0] === `${format} Artist`,
+        readTags.artists?.[1] === `${format} Secondary Artist`,
+        `Expected ${format} Secondary Artist, got ${readTags.artists?.[0]} for ${format}`,
+      )
+      t.true(
+        readTags.albumArtists?.[0] === `${format} Album Artist`,
         `Expected ${format} Album Artist, got ${readTags.albumArtists?.[0]} for ${format}`,
+      )
+      t.true(
+        readTags.albumArtists?.[1] === `${format} Secondary Album Artist`,
+        `Expected ${format} Secondary Album Artist, got ${readTags.albumArtists?.[0]} for ${format}`,
       )
       t.true(readTags.album === `${format} Album`, `Expected ${format} Album, got ${readTags.album} for ${format}`)
       t.true(readTags.genre === `${format} Genre`, `Expected ${format} Genre, got ${readTags.genre} for ${format}`)

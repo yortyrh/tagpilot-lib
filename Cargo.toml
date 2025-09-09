@@ -32,3 +32,8 @@ napi-build = "2"
 [profile.release]
 lto   = true
 strip = "symbols"
+
+[dev-dependencies]
+base64     = "0.22"
+tokio      = { version = "1", features = ["full"] }
+tokio-test = "0.4.4"

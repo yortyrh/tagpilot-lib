@@ -15,6 +15,8 @@ export interface AudioTags {
 
 export declare function clearTags(filePath: string): Promise<void>
 
+export declare function clearTagsToBuffer(buffer: Buffer): Promise<Buffer>
+
 export interface Image {
   data: Buffer
   mimeType?: string
