@@ -31,528 +31,152 @@ This directory contains examples demonstrating how to use the `@yortyrh/tagpilot
 
 ### `read-tags-example.js`
 
-**What it does:** Reads audio file metadata and displays it as formatted JSON.
+Reads audio file metadata and displays it as formatted JSON.
 
-**Features:**
+**Usage:**
 
-- Takes a file path as a command line argument
-- Reads all available metadata tags
-- Displays the result as formatted JSON
-- Handles errors gracefully
+```bash
+node examples/read-tags-example.js ./music/01.mp3
+```
 
-**Example output:**
+**Output:**
 
 ```json
 {
-  "title": "Finnegan's Wake",
-  "artists": ["The Dubliners"],
-  "album": "Celtic Moods",
-  "year": 2002,
-  "track": {
-    "no": 3,
-    "of": 19
-  },
-  "albumArtists": ["The Dubliners"],
-  "disc": {
-    "no": 3,
-    "of": 3
-  },
-  "image": {
-    "data": "<Buffer>",
-    "mimeType": "image/jpeg",
-    "description": "Cover Art"
-  }
+  "title": "Song Title",
+  "artists": ["Artist Name"],
+  "album": "Album Name",
+  "year": 2024,
+  "track": { "no": 1, "of": 12 },
+  "image": { "data": "<Buffer>", "mimeType": "image/jpeg" }
 }
 ```
 
 ### `write-tags-example.js`
 
-**What it does:** Demonstrates how to write sample metadata tags to an audio file.
+Writes sample metadata tags to an audio file.
+
+**Usage:**
+
+```bash
+node examples/write-tags-example.js ./music/01.mp3
+```
 
 **Features:**
 
-- Reads existing tags from an audio file (if any)
-- Creates comprehensive sample tag data with all supported fields
-- Writes the sample tags to the file
+- Creates comprehensive sample tag data
+- Writes tags to the file
 - Verifies changes by reading the file again
-- Shows a summary of what was written
-
-**Sample data written:**
-
-- Title: "Sample Song Title"
-- Artists: ["Sample Artist"]
-- Album: "Sample Album"
-- Year: 2024
-- Genre: "Sample Genre"
-- Track: 1 of 12
-- Album Artists: ["Sample Album Artist"]
-- Comment: "This is a sample comment for demonstration purposes"
-- Disc: 1 of 1
-- Image: Cover art data (if present)
-
-**Example output:**
-
-```
-=== Writing sample tags to: ./music/01.mp3 ===
-
-1. Reading original tags...
-No tags found in the file
-
-2. Creating sample tags...
-Sample tags to write:
-{
-  "title": "Sample Song Title",
-  "artists": ["Sample Artist"],
-  "album": "Sample Album",
-  "year": 2024,
-  "genre": "Sample Genre",
-  "track": {
-    "no": 1,
-    "of": 12
-  },
-  "albumArtists": ["Sample Album Artist"],
-  "comment": "This is a sample comment for demonstration purposes",
-  "disc": {
-    "no": 1,
-    "of": 1
-  },
-  "image": {
-    "data": "<Buffer>",
-    "mimeType": "image/jpeg",
-    "description": "Cover Art"
-  }
-}
-
-3. Writing sample tags to file...
-✅ Sample tags written successfully!
-
-4. Verifying changes...
-Updated tags: { ... }
-
-5. Summary of sample data written:
-   Title: "Sample Song Title"
-   Artists: ["Sample Artist"]
-   Album: "Sample Album"
-   Year: 2024
-   Genre: "Sample Genre"
-   Track: 1 of 12
-   Album Artists: ["Sample Album Artist"]
-   Comment: "This is a sample comment for demonstration purposes"
-   Disc: 1 of 1
-   Image: Cover art data (if present)
-
-✅ Sample tags written successfully!
-```
-
-**Use cases:**
-
-- Testing tag writing functionality
-- Creating demo files with sample metadata
-- Learning how to structure tag data
-- Preparing files for testing other functions
-- Demonstrating the library's capabilities
 
 ### `clear-tags-example.js`
 
-**What it does:** Demonstrates how to completely clear all metadata tags from an audio file.
+Clears all metadata tags from an audio file.
+
+**Usage:**
+
+```bash
+node examples/clear-tags-example.js ./music/01.mp3
+```
 
 **Features:**
 
-- Reads existing tags from an audio file to show what will be cleared
-- Clears all metadata tags (title, artist, album, year, genre, etc.)
-- Verifies that tags have been successfully cleared
-- Provides clear feedback on the operation status
-
-**Example output:**
-
-```
-=== Clearing tags from: ./music/01.mp3 ===
-
-1. Reading original tags...
-Original tags found:
-{
-  "title": "Finnegan's Wake",
-  "artists": ["The Dubliners"],
-  "album": "Celtic Moods",
-  "image": {
-    "data": "<Buffer>",
-    "mimeType": "image/jpeg",
-    "description": "Cover Art"
-  }
-}
-
-2. Clearing all tags...
-Tags cleared successfully!
-
-3. Verifying tags have been cleared...
-✓ All tags have been successfully cleared!
-File now contains no metadata tags.
-
-=== Operation completed ===
-```
-
-**Use cases:**
-
-- Removing personal information from audio files before sharing
-- Cleaning up corrupted or unwanted metadata
-- Preparing files for distribution without metadata
-- Testing tag writing functionality with clean files
+- Shows existing tags before clearing
+- Removes all metadata
+- Verifies tags have been cleared
 
 ### `read-tags-from-buffer-example.js`
 
-**What it does:** Demonstrates how to read audio file tags from a buffer instead of a file path.
+Reads audio file tags from a buffer instead of a file path.
 
-**Features:**
+**Usage:**
 
-- Reads an audio file into a buffer
-- Extracts tags from the buffer using `readTagsFromBuffer`
-- Compares results with file-based reading
-- Shows the difference between buffer and file approaches
-- Demonstrates use cases for buffer-based processing
-
-**Example output:**
-
-```
-=== Reading tags from buffer: ./music/01.mp3 ===
-
-1. Reading file into buffer...
-   File size: 2417171 bytes
-   Buffer type: Buffer
-
-2. Reading tags from buffer...
-Tags found in buffer:
-{
-  "title": "Sample Song Title",
-  "artists": ["Sample Artist"],
-  "album": "Sample Album",
-  "image": {
-    "data": "<Buffer>",
-    "mimeType": "image/jpeg",
-    "description": "Cover Art"
-  }
-}
-
-3. Reading tags directly from file for comparison...
-Tags found in file:
-{
-  "title": "Sample Song Title",
-  "artists": ["Sample Artist"],
-  "album": "Sample Album",
-  "image": {
-    "data": "<Buffer>",
-    "mimeType": "image/jpeg",
-    "description": "Cover Art"
-  }
-}
-
-4. Comparing results...
-✅ Buffer and file reading produce the same result
-✅ Tags are identical between buffer and file reading
-
-=== Use Cases for Buffer Reading ===
-• Processing audio data from network requests
-• Working with audio data in memory
-• Processing audio streams
-• Avoiding file system I/O for better performance
-• Working with audio data from databases or cloud storage
+```bash
+node examples/read-tags-from-buffer-example.js ./music/01.mp3
 ```
 
 **Use cases:**
 
 - Processing audio data from network requests
-- Working with audio data already in memory
-- Processing audio streams without saving to disk
+- Working with audio data in memory
 - Avoiding file system I/O for better performance
-- Working with audio data from databases or cloud storage
-- Processing audio data in web applications
-- Handling audio uploads in web services
 
 ### `write-tags-to-buffer-example.js`
 
-**What it does:** Demonstrates how to write audio file tags to a buffer instead of directly to a file.
+Writes audio file tags to a buffer instead of directly to a file.
 
-**Features:**
+**Usage:**
 
-- Reads an audio file into a buffer
-- Reads existing tags from the buffer
-- Creates new tags with the updated structure
-- Writes new tags to the buffer using `writeTagsToBuffer`
-- Compares results with file-based writing
-- Shows the difference between buffer and file approaches
-
-**Example output:**
-
-```
-=== Writing tags to buffer: ./music/01.mp3 ===
-
-1. Reading file into buffer...
-   File size: 2417171 bytes
-   Buffer type: Buffer
-
-2. Reading original tags from buffer...
-No tags found in buffer
-
-3. Creating new tags to write...
-New tags to write:
-{
-  "title": "Buffer Modified Title",
-  "artists": ["Buffer Modified Artist"],
-  "album": "Buffer Modified Album",
-  "year": 2024,
-  "genre": "Buffer Modified Genre",
-  "track": {
-    "no": 2,
-    "of": 15
-  },
-  "albumArtists": ["Buffer Modified Album Artist"],
-  "comment": "This was modified using writeTagsToBuffer",
-  "disc": {
-    "no": 2,
-    "of": 2
-  }
-}
-
-4. Writing tags to buffer...
-✅ Tags written to buffer successfully!
-   Original buffer size: 2417171 bytes
-   Modified buffer size: 2417171 bytes
-
-5. Reading tags from modified buffer...
-Tags from modified buffer:
-{
-  "title": "Buffer Modified Title",
-  "artists": ["Buffer Modified Artist"],
-  "album": "Buffer Modified Album",
-  "year": 2024,
-  "genre": "Buffer Modified Genre",
-  "track": {
-    "no": 2,
-    "of": 15
-  },
-  "albumArtists": ["Buffer Modified Artist"],
-  "comment": "This was modified using writeTagsToBuffer",
-  "disc": {
-    "no": 2,
-    "of": 2
-  }
-}
-
-6. Comparing with file-based approach...
-✅ Buffer and file approaches produce identical results
+```bash
+node examples/write-tags-to-buffer-example.js ./music/01.mp3
 ```
 
 **Use cases:**
 
 - Processing audio data in memory without file I/O
 - Working with audio streams and buffers
-- Batch processing of audio data
 - Web applications that handle audio uploads
-- Processing audio data from network requests
-- Working with audio data in cloud functions
-- Avoiding file system operations for better performance
 
 ### `read-cover-image-example.js`
 
-**What it does:** Demonstrates how to read cover images from audio files and save them in multiple formats.
+Reads cover images from audio files and saves them in multiple formats.
+
+**Usage:**
+
+```bash
+node examples/read-cover-image-example.js ./music/01.mp3
+```
 
 **Features:**
 
-- Reads cover image from an audio buffer using `readCoverImageFromBuffer`
-- Automatically detects image MIME type (JPEG, PNG, GIF, BMP, TIFF)
-- Converts cover image to data URL for web use
-- Saves both data URL and cover image file
-- Provides detailed file size and format information
-
-**Files Saved:**
-
-- **Data URL file**: `{audio-file}-cover-dataurl.txt` - Base64 encoded data URL
-- **Cover image file**: `{audio-file}-cover.{format}` - Original image format
-
-**Example output:**
-
-```
-=== Reading Cover Image as Data URL ===
-Audio file: ./test-files/01-with-cover.flac
-
-Reading audio file...
-   ✅ Audio loaded: 34036419 bytes
-Reading cover image from buffer...
-   ✅ Cover image found: 2976200 bytes
-   📋 Detected MIME type: image/jpeg
-Converting to data URL...
-   ✅ Data URL generated (3968291 characters)
-
-💾 Saving data URL to file...
-   ✅ Data URL saved: ./test-files/01-with-cover-cover-dataurl.txt
-   📁 File size: 3875.28 KB
-💾 Saving cover image as separate file...
-   ✅ Cover image saved: ./test-files/01-with-cover-cover.jpeg
-   📁 File size: 2906.45 KB
-   🖼️  Format: image/jpeg
-
-=== Files Saved ===
-📄 Data URL: ./test-files/01-with-cover-cover-dataurl.txt
-🖼️  Cover Image: ./test-files/01-with-cover-cover.jpeg
-📊 Total saved: 2 files
-```
-
-**Use cases:**
-
-- Extracting cover art for web applications
-- Creating data URLs for HTML/CSS embedding
-- Saving cover images as separate files
-- Processing audio files in batch operations
-- Web service APIs that need cover art
-- Using `readCoverImageFromBuffer` for buffer-based operations
+- Extracts cover art from audio files
+- Automatically detects image MIME type
+- Saves as both data URL and image file
 
 ### `cover-image-example.js`
 
-**What it does:** Demonstrates how to add cover images to audio files and save the modified files.
+Adds cover images to audio files and saves the modified files.
+
+**Usage:**
+
+```bash
+node examples/cover-image-example.js ./music/01.mp3 ./cover.jpg
+```
 
 **Features:**
 
-- Reads audio and image files into buffers
-- Embeds cover image into audio file using `writeCoverImageToBuffer`
+- Embeds cover image into audio file
 - Saves modified audio file with new name
-- Shows file size changes and processing summary
-
-**Example output:**
-
-```
-=== Setting Cover Image ===
-Audio file: ./test-files/01.flac
-Image file: ./music/01.mp3
-Output file: ./test-files/01-with-cover.flac
-
-Reading audio file...
-   ✅ Audio loaded: 31110511 bytes
-Reading image file...
-   ✅ Image loaded: 2976200 bytes
-Setting cover image...
-   ✅ Cover image set successfully!
-   Modified audio size: 34036419 bytes
-
-💾 Saving modified audio file...
-   ✅ File saved: ./test-files/01-with-cover.flac
-   📁 File size: 33238.69 KB
-   📊 Size change: 2857.33 KB
-
-=== Files Summary ===
-🎵 Original audio: ./test-files/01.flac
-🖼️  Cover image: ./music/01.mp3
-💾 Output audio: ./test-files/01-with-cover.flac
-📊 Total processed: 3 files
-```
-
-**Use cases:**
-
-- Adding cover art to audio files
-- Batch processing audio files with cover images
-- Creating audio files with embedded artwork
-- Preparing files for distribution
-- Using `writeCoverImageToBuffer` for buffer-based operations
+- Shows file size changes
 
 ### `cover-image-buffer-example.js`
 
-**What it does:** Demonstrates advanced cover image operations using buffer-based processing.
+Advanced cover image operations using buffer-based processing.
+
+**Usage:**
+
+```bash
+node examples/cover-image-buffer-example.js ./music/01.mp3 ./cover.jpg
+```
 
 **Features:**
 
-- Reads existing cover images from audio buffers using `readCoverImageFromBuffer`
-- Writes new cover images to audio buffers using `writeCoverImageToBuffer`
+- Reads and writes cover images using buffers
 - Verifies cover image operations
 - Compares file sizes before and after
-- Saves modified audio files
-
-**Example output:**
-
-```
-=== Cover Image Buffer Operations ===
-Audio file: ./test-files/02.flac
-Image file: ./music/02.mp3
-
-Reading audio file...
-   ✅ Audio loaded: 41045833 bytes
-Reading image file...
-   ✅ Image loaded: 7404054 bytes
-Reading existing cover image from buffer...
-   ℹ️  No existing cover image found
-
-Writing cover image to buffer...
-   ✅ Cover image written to buffer
-   Modified audio size: 48449933 bytes
-Verifying cover image was written...
-   ✅ Cover image found in modified buffer: 7404054 bytes
-
-💾 Saving modified buffer to file...
-   ✅ File saved: ./test-files/02-with-cover.flac
-   📁 File size: 47314.39 KB
-   📊 Size change: 7230.57 KB
-
-=== Files Summary ===
-🎵 Original audio: ./test-files/02.flac
-🖼️  Cover image: ./music/02.mp3
-💾 Output audio: ./test-files/02-with-cover.flac
-📊 Total processed: 3 files
-```
-
-**Use cases:**
-
-- Advanced cover image processing
-- Buffer-based audio manipulation
-- Verifying cover image operations
-- Processing audio streams in memory
-- Using both `readCoverImageFromBuffer` and `writeCoverImageToBuffer`
 
 ## Supported Audio Formats
 
-The library supports reading and writing tags for various audio formats including:
-
-- MP3
-- M4A
-- FLAC
-- WAV
-- OGG
-- And more (as supported by the `lofty` crate)
+- MP3, M4A, FLAC, WAV, OGG, AAC, AIFF, OPUS, Speex, WavPack
 
 ## Metadata Fields
 
-Both examples work with the following metadata fields:
-
-### Basic Information
-
-- `title` - Song title
-- `artists` - Array of primary artists
-- `album` - Album name
-- `year` - Release year
-- `genre` - Music genre
-- `comment` - Additional comments
-
-### Position Information
-
-- `track` - Track position object with `no` (current) and `of` (total)
-- `disc` - Disc position object with `no` (current) and `of` (total)
-
-### Artist Information
-
-- `albumArtists` - Array of album artists
-
-### Cover Art
-
-- `image` - Cover image object with data, MIME type, and description
-
-## Error Handling
-
-Both examples include comprehensive error handling:
-
-- File not found errors
-- Unsupported format errors
-- Read/write permission errors
-- Invalid tag data errors
+- **Basic:** `title`, `artists`, `album`, `year`, `genre`, `comment`
+- **Position:** `track` (no/of), `disc` (no/of)
+- **Artists:** `albumArtists`
+- **Cover Art:** `image` (data, mimeType, description)
 
 ## Usage Notes
 
-- **File paths:** Use relative or absolute paths to audio files
-- **Permissions:** Ensure you have read/write permissions for the target files
-- **Backup:** Consider backing up files before modifying tags
-- **Formats:** Different audio formats may support different tag types and fields
+- Use relative or absolute paths to audio files
+- Ensure read/write permissions for target files
+- Consider backing up files before modifying tags
