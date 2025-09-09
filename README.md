@@ -24,6 +24,10 @@ A high-performance Node.js library for reading and writing audio metadata and co
 npm install @yortyrh/tagpilot-lib
 ```
 
+```bash
+yarn add @yortyrh/tagpilot-lib
+```
+
 ### Cross-Platform Support
 
 The package automatically provides the correct native binary for your platform:
