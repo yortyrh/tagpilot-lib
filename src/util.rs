@@ -56,7 +56,7 @@ pub struct AudioTags {
 
 fn add_cover_image(
   primary_tag: &mut Tag,
-  image_data: &Vec<u8>,
+  image_data: &[u8],
   image_description: Option<String>,
   default_mime_type: MimeType,
 ) {
@@ -393,7 +393,7 @@ pub async fn write_cover_image_to_buffer(
 pub async fn read_cover_image_from_file(file_path: String) -> Result<Option<Vec<u8>>, String> {
   let path = Path::new(&file_path);
   let buffer = fs::read(path).map_err(|e| format!("Failed to read file: {}", e))?;
-  read_cover_image_from_buffer(buffer.into()).await
+  read_cover_image_from_buffer(buffer).await
 }
 
 pub async fn write_cover_image_to_file(
@@ -402,7 +402,7 @@ pub async fn write_cover_image_to_file(
 ) -> Result<(), String> {
   let path = Path::new(&file_path);
   let buffer = fs::read(path).map_err(|e| format!("Failed to read file: {}", e))?;
-  let buffer = write_cover_image_to_buffer(buffer.into(), image_data).await?;
+  let buffer = write_cover_image_to_buffer(buffer, image_data).await?;
   fs::write(path, buffer).map_err(|e| format!("Failed to write file: {}", e))?;
   Ok(())
 }

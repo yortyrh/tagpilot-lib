@@ -78,15 +78,11 @@ impl ApiAudioTags {
       album: audio_tags.album,
       year: audio_tags.year,
       genre: audio_tags.genre,
-      track: audio_tags
-        .track
-        .map(|position| ApiPosition::from_position(position)),
+      track: audio_tags.track.map(ApiPosition::from_position),
       album_artists: audio_tags.album_artists,
       comment: audio_tags.comment,
-      disc: audio_tags
-        .disc
-        .map(|position| ApiPosition::from_position(position)),
-      image: audio_tags.image.map(|image| ApiImage::from_image(image)),
+      disc: audio_tags.disc.map(ApiPosition::from_position),
+      image: audio_tags.image.map(ApiImage::from_image),
     }
   }
 
@@ -110,7 +106,7 @@ impl ApiAudioTags {
 pub async fn read_tags(file_path: String) -> Result<ApiAudioTags> {
   let tags = util::read_tags(file_path)
     .await
-    .map_err(|e| napi::Error::from_reason(e))?;
+    .map_err(napi::Error::from_reason)?;
   Ok(ApiAudioTags::from_audio_tags(tags))
 }
 
@@ -118,7 +114,7 @@ pub async fn read_tags(file_path: String) -> Result<ApiAudioTags> {
 pub async fn read_tags_from_buffer(buffer: napi::bindgen_prelude::Buffer) -> Result<ApiAudioTags> {
   let tags = util::read_tags_from_buffer(buffer.to_vec())
     .await
-    .map_err(|e| napi::Error::from_reason(e))?;
+    .map_err(napi::Error::from_reason)?;
   Ok(ApiAudioTags::from_audio_tags(tags))
 }
 
@@ -126,7 +122,7 @@ pub async fn read_tags_from_buffer(buffer: napi::bindgen_prelude::Buffer) -> Res
 pub async fn write_tags(file_path: String, tags: ApiAudioTags) -> Result<()> {
   util::write_tags(file_path, tags.into_audio_tags())
     .await
-    .map_err(|e| napi::Error::from_reason(e))
+    .map_err(napi::Error::from_reason)
 }
 
 #[napi]
@@ -136,7 +132,7 @@ pub async fn write_tags_to_buffer(
 ) -> Result<napi::bindgen_prelude::Buffer> {
   let result = util::write_tags_to_buffer(buffer.to_vec(), tags.into_audio_tags())
     .await
-    .map_err(|e| napi::Error::from_reason(e))?;
+    .map_err(napi::Error::from_reason)?;
   Ok(Buffer::from(result))
 }
 
@@ -144,14 +140,14 @@ pub async fn write_tags_to_buffer(
 pub async fn clear_tags(file_path: String) -> Result<()> {
   util::clear_tags(file_path)
     .await
-    .map_err(|e| napi::Error::from_reason(e))
+    .map_err(napi::Error::from_reason)
 }
 
 #[napi]
 pub async fn clear_tags_to_buffer(buffer: Buffer) -> Result<Buffer> {
   let result = util::clear_tags_to_buffer(buffer.to_vec())
     .await
-    .map_err(|e| napi::Error::from_reason(e))?;
+    .map_err(napi::Error::from_reason)?;
   Ok(Buffer::from(result))
 }
 
@@ -159,15 +155,15 @@ pub async fn clear_tags_to_buffer(buffer: Buffer) -> Result<Buffer> {
 pub async fn read_cover_image_from_buffer(buffer: Buffer) -> Result<Option<Buffer>> {
   let result = util::read_cover_image_from_buffer(buffer.to_vec())
     .await
-    .map_err(|e| napi::Error::from_reason(e))?;
-  Ok(result.map(|buffer| Buffer::from(buffer)))
+    .map_err(napi::Error::from_reason)?;
+  Ok(result.map(Buffer::from))
 }
 
 #[napi]
 pub async fn write_cover_image_to_buffer(buffer: Buffer, image_data: Buffer) -> Result<Buffer> {
   let result = util::write_cover_image_to_buffer(buffer.to_vec(), image_data.to_vec())
     .await
-    .map_err(|e| napi::Error::from_reason(e))?;
+    .map_err(napi::Error::from_reason)?;
   Ok(Buffer::from(result))
 }
 
@@ -175,13 +171,13 @@ pub async fn write_cover_image_to_buffer(buffer: Buffer, image_data: Buffer) -> 
 pub async fn read_cover_image_from_file(file_path: String) -> Result<Option<Buffer>> {
   let result = util::read_cover_image_from_file(file_path)
     .await
-    .map_err(|e| napi::Error::from_reason(e))?;
-  Ok(result.map(|buffer| Buffer::from(buffer)))
+    .map_err(napi::Error::from_reason)?;
+  Ok(result.map(Buffer::from))
 }
 
 #[napi]
 pub async fn write_cover_image_to_file(file_path: String, image_data: Buffer) -> Result<()> {
   util::write_cover_image_to_file(file_path, image_data.to_vec())
     .await
-    .map_err(|e| napi::Error::from_reason(e))
+    .map_err(napi::Error::from_reason)
 }
