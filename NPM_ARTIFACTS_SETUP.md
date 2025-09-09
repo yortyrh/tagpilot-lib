@@ -314,7 +314,7 @@ To add support for a new platform:
 
 1. Add the platform to the `targets` array in `package.json`
 2. Add the platform to the build matrix in GitHub Actions
-3. Update the `generate-npm-packages.js` script if needed
+3. Update the `scripts/generate-npm-packages.mjs` script if needed
 4. Test the new platform
 
 ### Automation Features

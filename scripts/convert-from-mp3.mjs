@@ -10,10 +10,10 @@
  *  - execa
  *
  * Usage:
- *   node convert-from-mp3.mjs <inputDir> <outputDir> [formats]
+ *   node scripts/convert-from-mp3.mjs <inputDir> <outputDir> [formats]
  * Examples:
- *   node convert-from-mp3.mjs ./in ./test-dir
- *   node convert-from-mp3.mjs ./in ./test-dir flac,ogg,opus,wav,aiff,m4a,aac,wv,spx
+ *   node scripts/convert-from-mp3.mjs ./in ./test-dir
+ *   node scripts/convert-from-mp3.mjs ./in ./test-dir flac,ogg,opus,wav,aiff,m4a,aac,wv,spx
  */
 
 import { execa } from 'execa'
@@ -158,7 +158,7 @@ async function hasAnyNonTechnicalTags(file) {
 async function main() {
   const [, , inDir, outDir, onlyListRaw] = process.argv
   if (!inDir || !outDir) {
-    console.error('Usage: node convert-from-mp3.mjs <inputDir> <outputDir> [formats]')
+    console.error('Usage: node scripts/convert-from-mp3.mjs <inputDir> <outputDir> [formats]')
     process.exit(1)
   }
 

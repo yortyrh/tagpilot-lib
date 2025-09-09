@@ -62,8 +62,9 @@
     "format:rs": "cargo fmt",
     "lint": "oxlint .",
     "prepublishOnly": "napi prepublish -t npm",
-    "prepare-test-files": "node convert-from-mp3.mjs music test-files",
-    "generate-test-data": "node generate-test-data.js",
+    "prepare-test-files": "node scripts/convert-from-mp3.mjs music test-files",
+    "generate-test-data": "node scripts/generate-test-data.mjs",
+    "generate-npm-packages": "node scripts/generate-npm-packages.mjs",
     "test": "ava",
     "version": "napi version",
     "prepare": "husky"
