@@ -35,5 +35,6 @@ strip = "symbols"
 
 [dev-dependencies]
 base64     = "0.22"
+tempfile   = "3.8"
 tokio      = { version = "1", features = ["full"] }
 tokio-test = "0.4.4"
