@@ -477,6 +477,13 @@ npm install
 npm run build
 ```
 
+```bash
+git clone https://github.com/yortyrh/tagpilot-lib.git
+cd tagpilot-lib
+yarn install
+yarn build
+```
+
 ### NPM Artifacts System
 
 The project includes a comprehensive npm artifacts system for cross-platform distribution:
