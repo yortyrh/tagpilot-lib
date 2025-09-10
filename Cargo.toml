@@ -23,7 +23,7 @@ serde_json  = "1.0"
   version  = "1.0"
 
   [dependencies.tokio]
-  features = ["rt"]
+  features = ["sync", "macros", "io-util", "rt", "time"]
   version  = "1.0"
 
 [build-dependencies]
@@ -32,3 +32,15 @@ napi-build = "2"
 [profile.release]
 lto   = true
 strip = "symbols"
+
+[dev-dependencies]
+base64 = "0.22"
+tempfile = "3.8"
+tokio = { version = "1", features = [
+  "sync",
+  "macros",
+  "io-util",
+  "rt",
+  "time",
+] }
+tokio-test = "0.4.4"

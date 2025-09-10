@@ -54,6 +54,7 @@ const {
 })
 export default __napiModule.exports
 export const clearTags = __napiModule.exports.clearTags
+export const clearTagsToBuffer = __napiModule.exports.clearTagsToBuffer
 export const readCoverImageFromBuffer = __napiModule.exports.readCoverImageFromBuffer
 export const readCoverImageFromFile = __napiModule.exports.readCoverImageFromFile
 export const readTags = __napiModule.exports.readTags

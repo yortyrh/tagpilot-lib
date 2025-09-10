@@ -1,7 +1,11 @@
 #!/usr/bin/env node
 
-const fs = require('fs')
-const path = require('path')
+import fs from 'fs'
+import path from 'path'
+import { fileURLToPath } from 'url'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 // MIME type mapping for audio files
 const mimeTypes = {
@@ -28,8 +32,8 @@ function getMimeType(fileName) {
 }
 
 function generateTestData() {
-  const testFilesDir = path.join(__dirname, 'test-files')
-  const outputFile = path.join(__dirname, '__test__', 'data', 'test-data.ts')
+  const testFilesDir = path.join(__dirname, '..', 'test-files')
+  const outputFile = path.join(__dirname, '..', '__test__', 'data', 'test-data.ts')
 
   console.log('Reading files from:', testFilesDir)
 
@@ -146,7 +150,7 @@ export const audioFiles = testFiles.filter(file => file.mimeType.startsWith('aud
 }
 
 // Run the script
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   try {
     generateTestData()
   } catch (error) {
@@ -155,4 +159,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { generateTestData }
+export { generateTestData }

@@ -24,6 +24,10 @@ A high-performance Node.js library for reading and writing audio metadata and co
 npm install @yortyrh/tagpilot-lib
 ```
 
+```bash
+yarn add @yortyrh/tagpilot-lib
+```
+
 ### Cross-Platform Support
 
 The package automatically provides the correct native binary for your platform:
@@ -297,79 +301,37 @@ interface Image {
 ```javascript
 const { readTags, writeTags } = require('@yortyrh/tagpilot-lib')
 
-async function updateSongMetadata() {
-  // Read existing metadata
-  const tags = await readTags('./music/song.mp3')
-  console.log('Current title:', tags.title)
-  console.log('Track:', tags.track?.no, 'of', tags.track?.of)
-  console.log('Disc:', tags.disc?.no, 'of', tags.disc?.of)
+// Read metadata
+const tags = await readTags('./music/song.mp3')
+console.log('Title:', tags.title)
+console.log('Artist:', tags.artists?.[0])
 
-  if (tags.image) {
-    console.log('Cover image:', tags.image.mimeType, tags.image.description)
-  }
-
-  // Update metadata
-  await writeTags('./music/song.mp3', {
-    ...tags,
-    title: 'Updated Title',
-    year: 2024,
-    track: {
-      no: 5,
-      of: 12,
-    },
-  })
-
-  console.log('Metadata updated successfully!')
-}
+// Update metadata
+await writeTags('./music/song.mp3', {
+  title: 'New Title',
+  artists: ['New Artist'],
+  album: 'New Album',
+  year: 2024,
+})
 ```
 
-### Cover Art Management
+### Cover Art
 
 ```javascript
 const { readCoverImageFromBuffer, writeCoverImageToBuffer } = require('@yortyrh/tagpilot-lib')
 const fs = require('fs')
 
-async function manageCoverArt() {
-  const audioBuffer = fs.readFileSync('./music/song.mp3')
-
-  // Read existing cover art
-  const existingCover = await readCoverImageFromBuffer(audioBuffer)
-  if (existingCover) {
-    console.log('Existing cover art found:', existingCover.length, 'bytes')
-    fs.writeFileSync('./existing-cover.jpg', existingCover)
-  }
-
-  // Add new cover art
-  const newCover = fs.readFileSync('./new-cover.jpg')
-  const modifiedAudio = await writeCoverImageToBuffer(audioBuffer, newCover)
-  fs.writeFileSync('./music/song-with-new-cover.mp3', modifiedAudio)
+// Read cover art
+const audioBuffer = fs.readFileSync('./music/song.mp3')
+const coverImage = await readCoverImageFromBuffer(audioBuffer)
+if (coverImage) {
+  fs.writeFileSync('./cover.jpg', coverImage)
 }
-```
 
-### Working with Image Metadata
-
-```javascript
-const { readTags } = require('@yortyrh/tagpilot-lib')
-const fs = require('fs')
-
-async function examineCoverArt() {
-  const tags = await readTags('./music/song.mp3')
-
-  if (tags.image) {
-    console.log('Cover art found!')
-    console.log('MIME type:', tags.image.mimeType)
-    console.log('Description:', tags.image.description || 'No description')
-    console.log('Data size:', tags.image.data.length, 'bytes')
-
-    // Save the cover art to a file
-    const extension = tags.image.mimeType?.split('/')[1] || 'jpg'
-    const filename = `cover.${extension}`
-    fs.writeFileSync(filename, tags.image.data)
-    console.log(`Cover art saved as: ${filename}`)
-  } else {
-    console.log('No cover art found in this file')
-  }
-}
+// Add cover art
+const imageBuffer = fs.readFileSync('./new-cover.jpg')
+const modifiedAudio = await writeCoverImageToBuffer(audioBuffer, imageBuffer)
+fs.writeFileSync('./music/song-with-cover.mp3', modifiedAudio)
 ```
 
 ### Batch Processing
@@ -377,50 +339,17 @@ async function examineCoverArt() {
 ```javascript
 const { readTags, writeTags } = require('@yortyrh/tagpilot-lib')
 const fs = require('fs')
-const path = require('path')
 
-async function batchUpdateMetadata() {
-  const musicDir = './music'
-  const files = fs.readdirSync(musicDir).filter((f) => f.endsWith('.mp3'))
-
-  for (const file of files) {
-    const filePath = path.join(musicDir, file)
-    const tags = await readTags(filePath)
-
-    // Update all files with a common album name
-    await writeTags(filePath, {
-      ...tags,
-      album: 'My Greatest Hits',
-      year: 2024,
-    })
-
-    console.log(`Updated: ${file}`)
-  }
-}
-```
-
-### Data URL Generation
-
-```javascript
-const { readCoverImageFromBuffer } = require('@yortyrh/tagpilot-lib')
-const fs = require('fs')
-
-function bufferToDataURL(buffer, mimeType = 'image/jpeg') {
-  const base64 = buffer.toString('base64')
-  return `data:${mimeType};base64,${base64}`
-}
-
-async function getCoverAsDataURL() {
-  const audioBuffer = fs.readFileSync('./music/song.mp3')
-  const coverImage = await readCoverImageFromBuffer(audioBuffer)
-
-  if (coverImage) {
-    const dataURL = bufferToDataURL(coverImage, 'image/jpeg')
-    console.log('Cover art data URL:', dataURL.substring(0, 100) + '...')
-    return dataURL
-  }
-
-  return null
+// Update all MP3 files in a directory
+const files = fs.readdirSync('./music').filter((f) => f.endsWith('.mp3'))
+for (const file of files) {
+  const tags = await readTags(`./music/${file}`)
+  await writeTags(`./music/${file}`, {
+    ...tags,
+    album: 'My Greatest Hits',
+    year: 2024,
+  })
+  console.log(`Updated: ${file}`)
 }
 ```
 
@@ -471,6 +400,13 @@ git clone https://github.com/yortyrh/tagpilot-lib.git
 cd tagpilot-lib
 npm install
 npm run build
+```
+
+```bash
+git clone https://github.com/yortyrh/tagpilot-lib.git
+cd tagpilot-lib
+yarn install
+yarn build
 ```
 
 ### NPM Artifacts System

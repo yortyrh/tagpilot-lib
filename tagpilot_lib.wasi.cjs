@@ -111,6 +111,7 @@ const {
 })
 module.exports = __napiModule.exports
 module.exports.clearTags = __napiModule.exports.clearTags
+module.exports.clearTagsToBuffer = __napiModule.exports.clearTagsToBuffer
 module.exports.readCoverImageFromBuffer = __napiModule.exports.readCoverImageFromBuffer
 module.exports.readCoverImageFromFile = __napiModule.exports.readCoverImageFromFile
 module.exports.readTags = __napiModule.exports.readTags
