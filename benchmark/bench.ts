@@ -9,6 +9,48 @@ const BENCHMARK_FILES_DIR = path.join(process.cwd(), 'benchmark-files')
 const SUPPORTED_FORMATS = ['.mp3', '.flac', '.ogg', '.opus', '.aiff']
 let testFiles: string[] = []
 
+function generateBarChart(results: any[]) {
+  console.log('\n=== PERFORMANCE BAR CHART (Throughput - ops/s) ===\n')
+
+  // Filter and sort results by throughput
+  const chartData = results
+    .filter((r) => r && r['Task name'] && r['Throughput avg (ops/s)'])
+    .map((r) => {
+      const throughputStr = r['Throughput avg (ops/s)']
+      const throughput =
+        typeof throughputStr === 'string' ? Number(throughputStr.replace(/[^\d.]/g, '')) : Number(throughputStr) || 0
+
+      return {
+        name: r['Task name'],
+        throughput: throughput,
+      }
+    })
+    .sort((a, b) => b.throughput - a.throughput)
+
+  if (chartData.length === 0) {
+    console.log('No data available for chart')
+    return
+  }
+
+  const maxThroughput = Math.max(...chartData.map((d) => d.throughput))
+  const barWidth = 50
+  const scale = barWidth / maxThroughput
+
+  chartData.forEach((data, index) => {
+    const barLength = Math.round(data.throughput * scale)
+    const bar = '█'.repeat(barLength)
+    const padding = ' '.repeat(Math.max(0, barWidth - barLength))
+    const percentage = ((data.throughput / maxThroughput) * 100).toFixed(1)
+
+    console.log(
+      `${(index + 1).toString().padStart(2)}. ${data.name.padEnd(35)} │${bar}${padding}│ ${data.throughput.toFixed(1).padStart(6)} ops/s (${percentage}%)`,
+    )
+  })
+
+  console.log(`\n${' '.repeat(37)}└${'─'.repeat(barWidth)}┘`)
+  console.log(`${' '.repeat(37)}0${' '.repeat(barWidth - 2)}${maxThroughput.toFixed(0)} ops/s`)
+}
+
 async function setupTestData() {
   console.log('Setting up test data...')
 
@@ -54,34 +96,6 @@ async function runBenchmark() {
     }
   })
 
-  // Format-specific benchmarks
-  for (const format of ['.mp3', '.flac', '.ogg']) {
-    const formatFiles = testFiles.filter((f) => f.endsWith(format))
-    if (formatFiles.length === 0) continue
-
-    bench.add(`tagpilot-lib: readTags (${format})`, async () => {
-      for (const filePath of formatFiles) {
-        try {
-          await readTags(filePath)
-        } catch (error) {
-          // Ignore errors
-          console.error('Error reading file:', (error as Error).message)
-        }
-      }
-    })
-
-    bench.add(`music-metadata: parseFile (${format})`, async () => {
-      for (const filePath of formatFiles) {
-        try {
-          await parseFile(filePath)
-        } catch (error) {
-          // Ignore errors
-          console.error('Error parsing file:', (error as Error).message)
-        }
-      }
-    })
-  }
-
   console.log('Running benchmarks...')
   console.log('This may take a few minutes...\n')
 
@@ -89,6 +103,9 @@ async function runBenchmark() {
 
   console.log('\n=== BENCHMARK RESULTS ===\n')
   console.table(bench.table())
+
+  // Generate bar chart
+  generateBarChart(bench.table())
 
   // Calculate performance ratios
   const results = bench.table()
