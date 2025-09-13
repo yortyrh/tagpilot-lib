@@ -9,6 +9,7 @@
 import fs from 'fs/promises'
 import path from 'path'
 import { writeTagsToBuffer } from '../index.js'
+import { safeReadFileAsync, validateAndResolvePath, isValidFileName } from './security-utils.mjs'
 
 // Image formats to alternate between
 const IMAGE_FORMATS = ['png', 'gif', 'jpg']
@@ -65,10 +66,22 @@ const getSampleMetadata = async (index, fileName) => {
 
 async function addMetadataToFile(filePath, metadata) {
   try {
+    // Security: Validate file path before reading
+    const safePath = validateAndResolvePath(filePath, process.cwd())
+    if (!safePath) {
+      console.warn(`Skipping unsafe file path: ${filePath}`)
+      return false
+    }
+
     // Add metadata
-    const buffer = await fs.readFile(filePath)
+    const buffer = await safeReadFileAsync(safePath, process.cwd())
+    if (!buffer) {
+      console.warn(`Failed to read file: ${filePath}`)
+      return false
+    }
+
     const newBuffer = await writeTagsToBuffer(buffer, metadata)
-    await fs.writeFile(filePath, newBuffer)
+    await fs.writeFile(safePath, newBuffer)
     return true
   } catch (error) {
     console.warn(`Failed to add metadata to ${filePath}:`, error.message)
@@ -89,9 +102,22 @@ async function prepareTestFiles() {
 
   for (const entry of entries) {
     if (entry.isFile()) {
+      // Security: Validate file name before processing
+      if (!isValidFileName(entry.name)) {
+        console.warn(`Skipping potentially unsafe file: ${entry.name}`)
+        continue
+      }
+
       const ext = path.extname(entry.name).toLowerCase()
       if (supportedFormats.includes(ext)) {
-        audioFiles.push(path.join(dirPath, entry.name))
+        const fullPath = path.join(dirPath, entry.name)
+        // Additional security check
+        const safePath = validateAndResolvePath(entry.name, dirPath)
+        if (safePath) {
+          audioFiles.push(safePath)
+        } else {
+          console.warn(`Skipping unsafe file path: ${entry.name}`)
+        }
       }
     }
   }

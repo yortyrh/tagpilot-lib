@@ -1,5 +1,24 @@
 const fs = require('fs')
+const path = require('path')
 const { readTagsFromBuffer, writeTagsToBuffer, writeTags } = require('../index.js')
+
+// Security utility functions
+function isValidFileName(fileName) {
+  if (!fileName || typeof fileName !== 'string') return false
+  const dangerousPatterns = [/\.\./, /\.\.\\/, /\.\.\//, /[<>:"|?*]/, /[\x00-\x1f]/, /^\./, /\/$/, /\\$/]
+  return !dangerousPatterns.some((pattern) => pattern.test(fileName))
+}
+
+function validateFilePath(filePath, baseDir) {
+  if (!filePath || typeof filePath !== 'string') return null
+  try {
+    const resolvedPath = path.resolve(baseDir, filePath)
+    if (!resolvedPath.startsWith(path.resolve(baseDir))) return null
+    return resolvedPath
+  } catch {
+    return null
+  }
+}
 
 /**
  * Example: Write audio file tags to buffer
@@ -26,9 +45,22 @@ async function main() {
   try {
     console.log(`=== Writing tags to buffer: ${filePath} ===\n`)
 
+    // Security: Validate file path
+    const fileName = path.basename(filePath)
+    if (!isValidFileName(fileName)) {
+      console.error(`❌ Unsafe file name detected: ${fileName}`)
+      process.exit(1)
+    }
+
+    const safeFilePath = validateFilePath(filePath, process.cwd())
+    if (!safeFilePath) {
+      console.error(`❌ Unsafe file path detected: ${filePath}`)
+      process.exit(1)
+    }
+
     // Step 1: Read the file into a buffer
     console.log('1. Reading file into buffer...')
-    const buffer = fs.readFileSync(filePath)
+    const buffer = fs.readFileSync(safeFilePath)
     console.log(`   File size: ${buffer.length} bytes`)
     console.log(`   Buffer type: ${buffer.constructor.name}`)
     console.log()
