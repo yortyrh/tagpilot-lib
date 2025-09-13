@@ -64,6 +64,7 @@
     "prepublishOnly": "napi prepublish -t npm",
     "prepare-test-files": "node scripts/convert-from-mp3.mjs music test-files",
     "generate-test-data": "node scripts/generate-test-data.mjs",
+    "prepare-benchmark-files": "node scripts/convert-from-mp3.mjs music benchmark-files flac,ogg,opus,aiff && node scripts/prepare-benchmark-files.mjs",
     "generate-npm-packages": "node scripts/generate-npm-packages.mjs",
     "test": "ava",
     "version": "napi version",

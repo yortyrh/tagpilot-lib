@@ -62,14 +62,20 @@ fn add_cover_image(
 ) {
   // add the new picture
   let buf = image_data.to_vec();
-  let kind = infer::get(&buf).expect("file type is known");
-  let mime_type = match kind.mime_type() {
-    "image/jpeg" => MimeType::Jpeg,
-    "image/png" => MimeType::Png,
-    "image/gif" => MimeType::Gif,
-    "image/tiff" => MimeType::Tiff,
-    "image/bmp" => MimeType::Bmp,
-    _ => default_mime_type,
+
+  let mime_type = {
+    if let Some(kind) = infer::get(&buf) {
+      match kind.mime_type() {
+        "image/jpeg" => MimeType::Jpeg,
+        "image/png" => MimeType::Png,
+        "image/gif" => MimeType::Gif,
+        "image/tiff" => MimeType::Tiff,
+        "image/bmp" => MimeType::Bmp,
+        _ => default_mime_type,
+      }
+    } else {
+      default_mime_type
+    }
   };
   primary_tag.remove_picture_type(PictureType::CoverFront);
   let cover_front_picture = Picture::new_unchecked(
