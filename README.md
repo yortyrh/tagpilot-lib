@@ -385,6 +385,29 @@ for (const file of files) {
 - **Scalable**: Handles large audio files efficiently
 - **Concurrent**: Async operations for better throughput
 
+### Benchmark Results
+
+Performance comparison against music-metadata library:
+
+![Benchmark Results](benchmark-results.jpg)
+
+**Key Performance Metrics:**
+
+- **12.3x faster** than music-metadata for reading audio metadata
+- **383 ops/s** vs 31 ops/s throughput
+- **28ms** vs 338ms average latency
+- Tested on 130 audio files across multiple formats (MP3, FLAC, OGG, OPUS, AIFF)
+
+Run the benchmark yourself:
+
+```bash
+npm run bench
+```
+
+```bash
+yarn bench
+```
+
 ## Development
 
 ### Prerequisites

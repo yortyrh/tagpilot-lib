@@ -1,6 +1,7 @@
 import { Bench } from 'tinybench'
 import fs from 'fs/promises'
 import path from 'path'
+import { ChartJSNodeCanvas } from 'chartjs-node-canvas'
 import { readTags } from '../index.js'
 import { parseFile } from 'music-metadata'
 
@@ -8,6 +9,137 @@ import { parseFile } from 'music-metadata'
 const BENCHMARK_FILES_DIR = path.join(process.cwd(), 'benchmark-files')
 const SUPPORTED_FORMATS = ['.mp3', '.flac', '.ogg', '.opus', '.aiff']
 let testFiles: string[] = []
+
+async function generateBarChartImage(results: any[]) {
+  // Filter and sort results by throughput
+  const chartData = results
+    .filter((r) => r && r['Task name'] && r['Throughput avg (ops/s)'])
+    .map((r) => {
+      const throughputStr = r['Throughput avg (ops/s)']
+      const throughput =
+        typeof throughputStr === 'string' ? Number(throughputStr.replace(/[^\d.]/g, '')) : Number(throughputStr) || 0
+
+      return {
+        name: r['Task name'],
+        throughput: throughput,
+      }
+    })
+    .sort((a, b) => b.throughput - a.throughput)
+
+  if (chartData.length === 0) {
+    console.log('No data available for chart image')
+    return
+  }
+
+  // Create Chart.js configuration
+  const chartJSNodeCanvas = new ChartJSNodeCanvas({
+    width: 800,
+    height: 400,
+    backgroundColour: 'white',
+  })
+
+  const configuration = {
+    type: 'bar' as const,
+    data: {
+      labels: chartData.map((d) => (d.name.includes('tagpilot-lib') ? 'tagpilot-lib' : 'music-metadata')),
+      datasets: [
+        {
+          label: 'Throughput (ops/s)',
+          data: chartData.map((d) => d.throughput),
+          backgroundColor: chartData.map((d) => (d.name.includes('tagpilot-lib') ? '#4CAF50' : '#2196F3')),
+          borderColor: chartData.map((d) => (d.name.includes('tagpilot-lib') ? '#388E3C' : '#1976D2')),
+          borderWidth: 2,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        title: {
+          display: true,
+          text: 'Performance Comparison: tagpilot-lib vs music-metadata',
+          font: {
+            size: 20,
+            weight: 'bold' as const,
+          },
+          color: '#333333',
+        },
+        subtitle: {
+          display: true,
+          text: 'Throughput (operations per second)',
+          font: {
+            size: 14,
+          },
+          color: '#666666',
+        },
+        legend: {
+          display: true,
+          position: 'top' as const,
+          labels: {
+            usePointStyle: true,
+            font: {
+              size: 12,
+            },
+          },
+        },
+        tooltip: {
+          callbacks: {
+            label: function (context: any) {
+              const data = chartData[context.dataIndex]
+              const percentage = ((data.throughput / Math.max(...chartData.map((d) => d.throughput))) * 100).toFixed(1)
+              return `${data.throughput.toFixed(1)} ops/s (${percentage}%)`
+            },
+          },
+        },
+      },
+      scales: {
+        x: {
+          title: {
+            display: true,
+            text: 'Library',
+            font: {
+              size: 14,
+              weight: 'bold' as const,
+            },
+          },
+          ticks: {
+            font: {
+              size: 12,
+            },
+          },
+        },
+        y: {
+          title: {
+            display: true,
+            text: 'Operations per Second',
+            font: {
+              size: 14,
+              weight: 'bold' as const,
+            },
+          },
+          ticks: {
+            font: {
+              size: 12,
+            },
+            callback: function (value: any) {
+              return value + ' ops/s'
+            },
+          },
+          beginAtZero: true,
+        },
+      },
+    },
+  }
+
+  try {
+    const imageBuffer = await chartJSNodeCanvas.renderToBuffer(configuration)
+    const imagePath = path.join(process.cwd(), 'benchmark-results.jpg')
+    await fs.writeFile(imagePath, imageBuffer)
+    console.log(`\n📊 Benchmark chart saved to: ${imagePath}`)
+  } catch (error) {
+    console.error('Error generating chart image:', (error as Error).message)
+  }
+}
 
 function generateBarChart(results: any[]) {
   console.log('\n=== PERFORMANCE BAR CHART (Throughput - ops/s) ===\n')
@@ -106,6 +238,9 @@ async function runBenchmark() {
 
   // Generate bar chart
   generateBarChart(bench.table())
+
+  // Generate JPG image
+  await generateBarChartImage(bench.table())
 
   // Calculate performance ratios
   const results = bench.table()
