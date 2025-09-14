@@ -1,5 +1,6 @@
 const fs = require('fs')
 const { readTagsFromBuffer, readTags } = require('../index.js')
+const { validatePath } = require('./helper.js')
 
 /**
  * Example: Read audio file tags from buffer
@@ -14,14 +15,7 @@ const { readTagsFromBuffer, readTags } = require('../index.js')
 
 async function main() {
   // Get file path from command line arguments
-  const filePath = process.argv[2]
-  // validate the Path Traversal vulnerability
-  // convert the path to a relative path
-  const filePathRelative = path.relative(process.cwd(), filePath)
-  if (filePathRelative.includes('..')) {
-    console.error('❌ Path Traversal vulnerability detected')
-    process.exit(1)
-  }
+  const filePath = validatePath(process.argv[2], process.cwd())
 
   if (!filePath) {
     console.error('Usage: node examples/read-tags-from-buffer-example.js <file-path>')

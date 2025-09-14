@@ -1,5 +1,6 @@
 const fs = require('fs')
 const { readCoverImageFromBuffer } = require('../index.js')
+const { validatePath } = require('./helper.js')
 
 /**
  * Example: Read cover image and return as data URL
@@ -45,14 +46,7 @@ function detectMimeType(buffer) {
 
 async function main() {
   // Get file path from command line arguments
-  const audioFilePath = process.argv[2]
-  // validate the Path Traversal vulnerability
-  // convert the path to a relative path
-  const audioFilePathRelative = path.relative(process.cwd(), audioFilePath)
-  if (audioFilePathRelative.includes('..')) {
-    console.error('❌ Path Traversal vulnerability detected')
-    process.exit(1)
-  }
+  const audioFilePath = validatePath(process.argv[2], process.cwd())
 
   if (!audioFilePath) {
     console.error('Usage: node examples/read-cover-image-example.js <audio-file-path>')

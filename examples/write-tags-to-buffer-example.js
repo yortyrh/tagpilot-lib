@@ -1,6 +1,7 @@
 const fs = require('fs')
 const path = require('path')
 const { readTagsFromBuffer, writeTagsToBuffer, writeTags } = require('../index.js')
+const { validatePath } = require('./helper.js')
 
 // Security utility functions
 function isValidFileName(fileName) {
@@ -34,7 +35,7 @@ function validateFilePath(filePath, baseDir) {
 
 async function main() {
   // Get file path from command line arguments
-  const filePath = process.argv[2]
+  const filePath = validatePath(process.argv[2], process.cwd())
 
   if (!filePath) {
     console.error('Usage: node examples/write-tags-to-buffer-example.js <file-path>')
