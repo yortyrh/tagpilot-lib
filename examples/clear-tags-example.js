@@ -12,6 +12,13 @@ const { readTags, clearTags } = require('../index.js')
 async function main() {
   // Get file path from command line arguments
   const filePath = process.argv[2]
+  // validate the Path Traversal vulnerability
+  // convert the path to a relative path
+  const filePathRelative = path.relative(process.cwd(), filePath)
+  if (filePathRelative.includes('..')) {
+    console.error('❌ Path Traversal vulnerability detected')
+    process.exit(1)
+  }
 
   if (!filePath) {
     console.error('Usage: node examples/clear-tags-example.js <file-path>')
