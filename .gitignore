@@ -135,3 +135,6 @@ Cargo.lock
 /.test
 
 /benchmark-files
+
+# Benchmark results (committed by GitHub Actions)
+benchmark-results.jpg
