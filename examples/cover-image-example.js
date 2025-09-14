@@ -15,14 +15,6 @@ async function main() {
   const audioFilePath = process.argv[2]
   const imageFilePath = process.argv[3]
   const outputFilePath = process.argv[4] || audioFilePath
-  // validate the Path Traversal vulnerability
-  // convert the two paths to relative paths
-  const audioFilePathRelative = path.relative(process.cwd(), audioFilePath)
-  const imageFilePathRelative = path.relative(process.cwd(), imageFilePath)
-  if (audioFilePathRelative.includes('..') || imageFilePathRelative.includes('..')) {
-    console.error('❌ Path Traversal vulnerability detected')
-    process.exit(1)
-  }
 
   if (!audioFilePath || !imageFilePath) {
     console.error('Usage: node examples/cover-image-example.js <audio-file-path> <image-file-path> [output-file-path]')

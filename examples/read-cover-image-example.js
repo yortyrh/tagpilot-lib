@@ -46,13 +46,6 @@ function detectMimeType(buffer) {
 async function main() {
   // Get file path from command line arguments
   const audioFilePath = process.argv[2]
-  // validate the Path Traversal vulnerability
-  // convert the path to a relative path
-  const audioFilePathRelative = path.relative(process.cwd(), audioFilePath)
-  if (audioFilePathRelative.includes('..')) {
-    console.error('❌ Path Traversal vulnerability detected')
-    process.exit(1)
-  }
 
   if (!audioFilePath) {
     console.error('Usage: node examples/read-cover-image-example.js <audio-file-path>')
