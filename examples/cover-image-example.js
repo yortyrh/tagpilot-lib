@@ -1,5 +1,6 @@
 const fs = require('fs')
 const { writeCoverImageToBuffer } = require('../index.js')
+const { validatePath } = require('./helper.js')
 
 /**
  * Example: Set cover image for audio file
@@ -12,9 +13,9 @@ const { writeCoverImageToBuffer } = require('../index.js')
 
 async function main() {
   // Get file paths from command line arguments
-  const audioFilePath = process.argv[2]
-  const imageFilePath = process.argv[3]
-  const outputFilePath = process.argv[4] || audioFilePath
+  const audioFilePath = validatePath(process.argv[2], process.cwd())
+  const imageFilePath = validatePath(process.argv[3], process.cwd())
+  const outputFilePath = validatePath(process.argv[4], process.cwd())
 
   if (!audioFilePath || !imageFilePath) {
     console.error('Usage: node examples/cover-image-example.js <audio-file-path> <image-file-path> [output-file-path]')

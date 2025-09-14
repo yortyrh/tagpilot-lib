@@ -1,4 +1,5 @@
 const { readTags } = require('../index.js')
+const { validatePath } = require('./helper.js')
 
 /**
  * Example: Read audio file tags
@@ -10,7 +11,7 @@ const { readTags } = require('../index.js')
 
 async function main() {
   // Get file path from command line arguments
-  const filePath = process.argv[2]
+  const filePath = validatePath(process.argv[2], process.cwd())
 
   if (!filePath) {
     console.error('Usage: node examples/read-tags-example.js <file-path>')

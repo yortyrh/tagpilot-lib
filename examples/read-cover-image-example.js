@@ -1,5 +1,6 @@
 const fs = require('fs')
 const { readCoverImageFromBuffer } = require('../index.js')
+const { validatePath } = require('./helper.js')
 
 /**
  * Example: Read cover image and return as data URL
@@ -45,7 +46,7 @@ function detectMimeType(buffer) {
 
 async function main() {
   // Get file path from command line arguments
-  const audioFilePath = process.argv[2]
+  const audioFilePath = validatePath(process.argv[2], process.cwd())
 
   if (!audioFilePath) {
     console.error('Usage: node examples/read-cover-image-example.js <audio-file-path>')
