@@ -72,7 +72,7 @@
   "scripts": {
     "preartifacts": "yarn generate-npm-packages",
     "artifacts": "napi artifacts",
-    "bench": "node --import @oxc-node/core/register benchmark/bench.ts",
+    "bench": "cd benchmark && npm install && npm run bench",
     "build": "napi build --platform --release",
     "build:debug": "napi build --platform",
     "format": "run-p format:prettier format:rs format:toml",
@@ -101,8 +101,6 @@
     "@types/node": "^24.3.0",
     "ava": "^6.4.1",
     "chalk": "^5.4.1",
-    "chart.js": "^4.5.0",
-    "chartjs-node-canvas": "^5.0.0",
     "execa": "^9.6.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.1.2",

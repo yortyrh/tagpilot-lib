@@ -1,3 +1,20 @@
 {
-  "type": "module"
+  "name": "@yortyrh/tagpilot-lib-benchmark",
+  "version": "1.0.0",
+  "description": "Benchmark utilities for tagpilot-lib",
+  "type": "module",
+  "scripts": {
+    "bench": "node --import @oxc-node/core/register bench.ts"
+  },
+  "dependencies": {
+    "@yortyrh/tagpilot-lib": "file:../",
+    "music-metadata": "^8.1.4",
+    "tinybench": "^5.0.0"
+  },
+  "devDependencies": {
+    "@oxc-node/core": "^0.0.32",
+    "chart.js": "^4.5.0",
+    "chartjs-node-canvas": "^5.0.0",
+    "typescript": "^5.8.3"
+  }
 }

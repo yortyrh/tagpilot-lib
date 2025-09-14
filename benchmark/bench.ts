@@ -3,11 +3,11 @@ import fs from 'fs/promises'
 import fsSync from 'fs'
 import path from 'path'
 import { ChartJSNodeCanvas } from 'chartjs-node-canvas'
-import { readTags } from '../index.js'
+import { readTags } from '@yortyrh/tagpilot-lib'
 import { parseFile } from 'music-metadata'
 
 // Test data setup
-const BENCHMARK_FILES_DIR = path.join(process.cwd(), 'benchmark-files')
+const BENCHMARK_FILES_DIR = path.join(process.cwd(), '..', 'benchmark-files')
 const SUPPORTED_FORMATS = ['.mp3', '.flac', '.ogg', '.opus', '.aiff']
 let testFiles: string[] = []
 
@@ -134,11 +134,12 @@ async function generateBarChartImage(results: any[]) {
 
   try {
     const imageBuffer = await chartJSNodeCanvas.renderToBuffer(configuration)
-    const imagePath = path.resolve(process.cwd(), 'benchmark-results.jpg')
+    const imagePath = path.resolve(process.cwd(), '..', 'benchmark-results.jpg')
 
-    // Security check: ensure the output path is within the current working directory
-    if (!imagePath.startsWith(process.cwd())) {
-      throw new Error('Output path is outside the current working directory')
+    // Security check: ensure the output path is within the parent directory
+    const parentDir = path.resolve(process.cwd(), '..')
+    if (!imagePath.startsWith(parentDir)) {
+      throw new Error('Output path is outside the parent directory')
     }
 
     await fs.writeFile(imagePath, imageBuffer)
@@ -171,26 +172,32 @@ function generateBarChart(results: any[]) {
     return
   }
 
+  // Find the maximum throughput for scaling
   const maxThroughput = Math.max(...chartData.map((d) => d.throughput))
-  const barWidth = 50
-  const scale = barWidth / maxThroughput
+  const barWidth = 50 // Maximum bar width in characters
 
+  // Generate ASCII bar chart
   chartData.forEach((data, index) => {
-    const barLength = Math.round(data.throughput * scale)
+    const barLength = Math.round((data.throughput / maxThroughput) * barWidth)
     const bar = '█'.repeat(barLength)
-    const padding = ' '.repeat(Math.max(0, barWidth - barLength))
     const percentage = ((data.throughput / maxThroughput) * 100).toFixed(1)
+    const label = data.name.includes('tagpilot-lib') ? 'tagpilot-lib' : 'music-metadata'
 
     console.log(
-      `${(index + 1).toString().padStart(2)}. ${data.name.padEnd(35)} │${bar}${padding}│ ${data.throughput.toFixed(1).padStart(6)} ops/s (${percentage}%)`,
+      `${(index + 1).toString().padStart(2)}. ${label.padEnd(25)} │${bar.padEnd(barWidth)}│ ${data.throughput.toFixed(1)} ops/s (${percentage}%)`,
     )
   })
 
-  console.log(`\n${' '.repeat(37)}└${'─'.repeat(barWidth)}┘`)
-  console.log(`${' '.repeat(37)}0${' '.repeat(barWidth - 2)}${maxThroughput.toFixed(0)} ops/s`)
+  console.log(`\n${' '.repeat(30)}└${'─'.repeat(barWidth)}┘`)
+  console.log(`${' '.repeat(32)}0${' '.repeat(barWidth - 2)}${maxThroughput.toFixed(0)} ops/s`)
 }
 
+// Security utility functions
 function isValidFileName(fileName: string): boolean {
+  if (!fileName || typeof fileName !== 'string') {
+    return false
+  }
+
   // Check for path traversal patterns and other dangerous characters
   const dangerousPatterns = [
     /\.\./, // Parent directory traversal
@@ -207,21 +214,28 @@ function isValidFileName(fileName: string): boolean {
 }
 
 function sanitizeFileName(fileName: string): string {
+  if (!fileName || typeof fileName !== 'string') {
+    return ''
+  }
+
   // Remove any potentially dangerous characters
-  return fileName.replace(/[<>:"|?*\x00-\x1f]/g, '').replace(/\.\./g, '')
+  return fileName
+    .replace(/[<>:"|?*\x00-\x1f]/g, '')
+    .replace(/\.\./g, '')
+    .replace(/^\.+/, '') // Remove leading dots
+    .replace(/[/\\]+$/, '') // Remove trailing slashes/backslashes
 }
 
 async function setupTestData() {
-  console.log('Setting up test data...')
-
   try {
     // Validate the benchmark directory path
     const resolvedBenchmarkDir = path.resolve(BENCHMARK_FILES_DIR)
     const cwd = process.cwd()
 
-    // Ensure the benchmark directory is within the current working directory
-    if (!resolvedBenchmarkDir.startsWith(cwd)) {
-      throw new Error('Benchmark directory is outside the current working directory')
+    // Ensure the benchmark directory is within the parent directory (where benchmark-files is located)
+    const parentDir = path.resolve(cwd, '..')
+    if (!resolvedBenchmarkDir.startsWith(parentDir)) {
+      throw new Error('Benchmark directory is outside the parent directory')
     }
 
     const files = await fs.readdir(resolvedBenchmarkDir)
@@ -244,17 +258,20 @@ async function setupTestData() {
         // Double-check the resolved path is still within our safe directory
         const resolvedPath = path.resolve(fullPath)
         if (!resolvedPath.startsWith(resolvedBenchmarkDir)) {
-          throw new Error(`File path traversal detected: ${file}`)
+          console.warn(`File path traversal detected: ${file}`)
+          return null
         }
 
         return resolvedPath
       })
+      .filter((filePath) => filePath !== null)
       .filter((filePath) => {
         // Additional validation: ensure file exists and is a file (not directory)
         try {
           const stats = fsSync.statSync(filePath)
           return stats.isFile()
-        } catch {
+        } catch (error) {
+          console.warn(`Cannot access file: ${filePath} - ${(error as Error).message}`)
           return false
         }
       })
@@ -271,48 +288,49 @@ async function setupTestData() {
 }
 
 async function runBenchmark() {
+  console.log('Setting up test data...')
   await setupTestData()
-
-  const bench = new Bench({ time: 2000 }) // 2 seconds per test
-
-  // Tagpilot-lib: Read tags from file
-  bench.add('tagpilot-lib: readTags', async () => {
-    for (const filePath of testFiles) {
-      try {
-        // Additional security check before file operations
-        if (!path.isAbsolute(filePath) || !filePath.startsWith(process.cwd())) {
-          console.warn(`Skipping potentially unsafe file path: ${filePath}`)
-          continue
-        }
-
-        await readTags(filePath)
-      } catch (error) {
-        // Ignore errors for unsupported formats
-        console.error('Error reading file:', (error as Error).message)
-      }
-    }
-  })
-
-  // music-metadata: Read tags from file
-  bench.add('music-metadata: parseFile', async () => {
-    for (const filePath of testFiles) {
-      try {
-        // Additional security check before file operations
-        if (!path.isAbsolute(filePath) || !filePath.startsWith(process.cwd())) {
-          console.warn(`Skipping potentially unsafe file path: ${filePath}`)
-          continue
-        }
-
-        await parseFile(filePath)
-      } catch (error) {
-        // Ignore errors for unsupported formats
-        console.error('Error parsing file:', (error as Error).message)
-      }
-    }
-  })
 
   console.log('Running benchmarks...')
   console.log('This may take a few minutes...\n')
+
+  const bench = new Bench({ time: 1000 })
+
+  // Add tagpilot-lib readTags benchmark
+  bench.add('tagpilot-lib: readTags', async () => {
+    for (const filePath of testFiles) {
+      // Security: Additional validation for each file path
+      if (!path.isAbsolute(filePath) || !filePath.startsWith(path.resolve(process.cwd(), '..'))) {
+        console.warn(`Skipping unsafe file path: ${filePath}`)
+        continue
+      }
+
+      try {
+        await readTags(filePath)
+      } catch (error) {
+        // Continue with other files if one fails
+        continue
+      }
+    }
+  })
+
+  // Add music-metadata parseFile benchmark
+  bench.add('music-metadata: parseFile', async () => {
+    for (const filePath of testFiles) {
+      // Security: Additional validation for each file path
+      if (!path.isAbsolute(filePath) || !filePath.startsWith(path.resolve(process.cwd(), '..'))) {
+        console.warn(`Skipping unsafe file path: ${filePath}`)
+        continue
+      }
+
+      try {
+        await parseFile(filePath)
+      } catch (error) {
+        // Continue with other files if one fails
+        continue
+      }
+    }
+  })
 
   await bench.run()
 
@@ -330,13 +348,23 @@ async function runBenchmark() {
   const tagpilotReadFile = results.find((r) => r?.name === 'tagpilot-lib: readTags')
   const musicMetadataReadFile = results.find((r) => r?.name === 'music-metadata: parseFile')
 
-  if (tagpilotReadFile && musicMetadataReadFile && tagpilotReadFile.average && musicMetadataReadFile.average) {
-    const ratio = Number(musicMetadataReadFile.average) / Number(tagpilotReadFile.average)
-    console.log(`\n=== PERFORMANCE COMPARISON ===`)
-    console.log(
-      `tagpilot-lib is ${ratio.toFixed(2)}x ${ratio > 1 ? 'faster' : 'slower'} than music-metadata for reading tags`,
-    )
+  if (tagpilotReadFile && musicMetadataReadFile) {
+    const tagpilotAvg = Number(tagpilotReadFile.average) || 0
+    const musicMetadataAvg = Number(musicMetadataReadFile.average) || 0
+
+    if (tagpilotAvg > 0 && musicMetadataAvg > 0) {
+      const ratio = (musicMetadataAvg / tagpilotAvg).toFixed(1)
+      console.log(`\n🏆 Performance Summary:`)
+      console.log(`   tagpilot-lib is ${ratio}x faster than music-metadata`)
+      console.log(
+        `   Average time: ${(tagpilotAvg / 1000000).toFixed(2)}ms vs ${(musicMetadataAvg / 1000000).toFixed(2)}ms`,
+      )
+    }
   }
 }
 
-runBenchmark().catch(console.error)
+// Run the benchmark
+runBenchmark().catch((error) => {
+  console.error('Benchmark failed:', (error as Error).message)
+  process.exit(1)
+})
