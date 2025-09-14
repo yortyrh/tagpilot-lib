@@ -1,5 +1,6 @@
 import fs from 'fs'
 import path from 'path'
+import { safeReadFile } from './security-utils.mjs'
 import { fileURLToPath } from 'url'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -26,7 +27,12 @@ const platforms = [
 
 // Base package.json template
 // Copy From the original one: ./package.json
-const basePackageJson = JSON.parse(fs.readFileSync('./package.json', 'utf8'))
+const packageJsonContent = safeReadFile('./package.json', process.cwd(), 'utf8')
+if (!packageJsonContent) {
+  console.error('Failed to read package.json safely')
+  process.exit(1)
+}
+const basePackageJson = JSON.parse(packageJsonContent)
 
 // Generate package.json for each platform
 platforms.forEach((platform) => {

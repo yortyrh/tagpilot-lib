@@ -2,6 +2,7 @@
 
 import fs from 'fs'
 import path from 'path'
+import { safeReadFile, validateFileArguments, isValidFileName } from './security-utils.mjs'
 import { fileURLToPath } from 'url'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -42,19 +43,36 @@ function generateTestData() {
   const testData = []
 
   for (const fileName of files) {
-    const filePath = path.join(testFilesDir, fileName)
-    const stats = fs.statSync(filePath)
+    // Security: Validate file name before processing
+    if (!isValidFileName(fileName)) {
+      console.warn(`Skipping potentially unsafe file: ${fileName}`)
+      continue
+    }
 
-    // Skip directories
-    if (stats.isDirectory()) {
+    const filePath = path.join(testFilesDir, fileName)
+
+    try {
+      const stats = fs.statSync(filePath)
+
+      // Skip directories
+      if (stats.isDirectory()) {
+        continue
+      }
+    } catch (error) {
+      console.warn(`Cannot access file: ${fileName} - ${error.message}`)
       continue
     }
 
     console.log(`Processing: ${fileName}`)
 
     try {
-      // Read file as buffer
-      const data = fs.readFileSync(filePath)
+      // Security: Use safe file reading
+      const data = safeReadFile(fileName, testFilesDir)
+      if (!data) {
+        console.warn(`Failed to read file safely: ${fileName}`)
+        continue
+      }
+
       const mimeType = getMimeType(fileName)
 
       testData.push({
