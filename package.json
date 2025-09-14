@@ -73,6 +73,7 @@
     "preartifacts": "yarn generate-npm-packages",
     "artifacts": "napi artifacts",
     "bench": "cd benchmark && npm install && npm run bench",
+    "bench:clean": "node scripts/run-benchmark.mjs",
     "build": "napi build --platform --release",
     "build:debug": "napi build --platform",
     "format": "run-p format:prettier format:rs format:toml",
