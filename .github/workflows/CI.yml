@@ -426,6 +426,7 @@ jobs:
     needs:
       - lint
       - coverage
+      - benchmark
       - build-freebsd
       - test-macOS-windows-binding
       - test-linux-binding
