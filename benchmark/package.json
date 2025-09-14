@@ -8,14 +8,14 @@
   },
   "dependencies": {
     "@yortyrh/tagpilot-lib": "file:../",
-    "debug": "4.3.7",
-    "music-metadata": "9.0.3",
     "tinybench": "5.0.0"
   },
   "devDependencies": {
     "@oxc-node/core": "0.0.32",
     "chart.js": "4.5.0",
     "chartjs-node-canvas": "5.0.0",
+    "debug": "^4.4.3",
+    "music-metadata": "^11.8.3",
     "typescript": "5.8.3"
   }
 }
