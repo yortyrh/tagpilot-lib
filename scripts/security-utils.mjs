@@ -22,6 +22,7 @@ export function isValidFileName(fileName) {
     /\.\.\\/, // Windows parent directory traversal
     /\.\.\//, // Unix parent directory traversal
     /[<>:"|?*]/, // Windows reserved characters
+    // eslint-disable-next-line no-control-regex
     /[\x00-\x1f]/, // Control characters
     /^\./, // Hidden files (starting with dot)
     /\/$/, // Directory paths (ending with slash)
@@ -42,11 +43,14 @@ export function sanitizeFileName(fileName) {
   }
 
   // Remove any potentially dangerous characters
-  return fileName
-    .replace(/[<>:"|?*\x00-\x1f]/g, '')
-    .replace(/\.\./g, '')
-    .replace(/^\.+/, '') // Remove leading dots
-    .replace(/[\/\\]+$/, '') // Remove trailing slashes/backslashes
+  return (
+    fileName
+      // eslint-disable-next-line no-control-regex
+      .replace(/[<>:"|?*\x00-\x1f]/g, '')
+      .replace(/\.\./g, '')
+      .replace(/^\.+/, '') // Remove leading dots
+      .replace(/[/\\]+$/, '')
+  ) // Remove trailing slashes/backslashes
 }
 
 /**

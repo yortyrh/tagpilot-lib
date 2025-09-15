@@ -11,19 +11,11 @@ exports.validatePath = (userInput, root = process.cwd()) => {
     return 'Access denied'
   }
 
-  // Validate that input contains only alphanumeric characters
-  if (!/^[a-z0-9]+$/.test(userInput)) {
-    return 'Access denied'
-  }
-
-  // Normalize the path and remove any leading directory traversal sequences
-  const safeInput = path.normalize(userInput).replace(/^(\.\.(\/|\\|$))+/, '')
-
   // Construct the full path
-  const pathString = path.join(root, safeInput)
+  const pathString = path.join(root, userInput)
 
-  // Final security check: ensure the path is still within the root directory
-  if (pathString.indexOf(root) !== 0) {
+  // Final security check: ensure the path is within the root directory
+  if (path.resolve(pathString).indexOf(path.resolve(root).toString()) !== 0) {
     return 'Access denied'
   }
 
