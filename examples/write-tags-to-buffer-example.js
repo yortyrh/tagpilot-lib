@@ -6,6 +6,7 @@ const { validatePath } = require('./helper.js')
 // Security utility functions
 function isValidFileName(fileName) {
   if (!fileName || typeof fileName !== 'string') return false
+  // eslint-disable-next-line no-control-regex
   const dangerousPatterns = [/\.\./, /\.\.\\/, /\.\.\//, /[<>:"|?*]/, /[\x00-\x1f]/, /^\./, /\/$/, /\\$/]
   return !dangerousPatterns.some((pattern) => pattern.test(fileName))
 }

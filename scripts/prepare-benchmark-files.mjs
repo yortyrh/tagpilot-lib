@@ -8,8 +8,8 @@
 
 import fs from 'fs/promises'
 import path from 'path'
-import { writeTagsToBuffer } from '../index.js'
-import { safeReadFileAsync, validateAndResolvePath, isValidFileName } from './security-utils.mjs'
+import { writeTags } from '../index.js'
+import { validateAndResolvePath, isValidFileName } from './security-utils.mjs'
 
 // Image formats to alternate between
 const IMAGE_FORMATS = ['png', 'gif', 'jpg']
@@ -29,7 +29,6 @@ async function getImageBuffer(imageFormat, imageSize) {
   }
   try {
     const imageUrl = `https://dummyimage.com/${imageSize}/09f/fff.${imageFormat}&text=${encodeURIComponent(imageFormat.toUpperCase() + ' ' + imageSize)}`
-    console.log(imageUrl)
     const imageBuffer = await fetch(imageUrl).then((res) => res.arrayBuffer())
     const buffer = Buffer.from(imageBuffer)
     IMAGES.set(key, buffer)
@@ -74,14 +73,7 @@ async function addMetadataToFile(filePath, metadata) {
     }
 
     // Add metadata
-    const buffer = await safeReadFileAsync(safePath, process.cwd())
-    if (!buffer) {
-      console.warn(`Failed to read file: ${filePath}`)
-      return false
-    }
-
-    const newBuffer = await writeTagsToBuffer(buffer, metadata)
-    await fs.writeFile(safePath, newBuffer)
+    await writeTags(safePath, metadata)
     return true
   } catch (error) {
     console.warn(`Failed to add metadata to ${filePath}:`, error.message)
@@ -110,7 +102,6 @@ async function prepareTestFiles() {
 
       const ext = path.extname(entry.name).toLowerCase()
       if (supportedFormats.includes(ext)) {
-        const fullPath = path.join(dirPath, entry.name)
         // Additional security check
         const safePath = validateAndResolvePath(entry.name, dirPath)
         if (safePath) {

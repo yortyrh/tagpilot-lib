@@ -2,7 +2,7 @@
 
 import fs from 'fs'
 import path from 'path'
-import { safeReadFile, validateFileArguments, isValidFileName } from './security-utils.mjs'
+import { safeReadFile, isValidFileName } from './security-utils.mjs'
 import { fileURLToPath } from 'url'
 
 const __filename = fileURLToPath(import.meta.url)

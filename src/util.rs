@@ -8,7 +8,7 @@ use lofty::picture::{MimeType, Picture, PictureType};
 use lofty::prelude::TaggedFileExt;
 use lofty::probe::Probe;
 use lofty::tag::{Accessor, ItemKey, ItemValue, Tag, TagItem};
-use std::fs::{self, File};
+use std::fs::{self, File, OpenOptions};
 use std::io::Cursor;
 use std::path::Path;
 
@@ -302,7 +302,11 @@ where
 pub async fn write_tags(file_path: String, tags: AudioTags) -> Result<(), String> {
   let path = Path::new(&file_path);
   let mut file = File::open(path).map_err(|e| format!("Failed to open file: {}", e))?;
-  let mut out = File::open(path).map_err(|e| format!("Failed to open file: {}", e))?;
+  let mut out = OpenOptions::new()
+    .read(true)
+    .write(true)
+    .open(path)
+    .map_err(|e| format!("Failed to open file: {}", e))?;
   generic_write_tags(&mut file, &mut out, tags).await
 }
 
@@ -4379,5 +4383,539 @@ mod tests {
     let kind = info.get(&buf).expect("file type is known");
     // guest buffer mime type
     assert_eq!(kind.mime_type(), "image/jpeg")
+  }
+
+  // Comprehensive tests for write_tags function
+
+  #[tokio::test]
+  async fn test_write_tags_basic_functionality() {
+    use std::io::Write;
+    use tempfile::NamedTempFile;
+
+    // Create a temporary file with valid audio data
+    let mut temp_file = NamedTempFile::new().unwrap();
+    let audio_data = create_buffer_from_base64("SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAAwAAAbgA").unwrap();
+    temp_file.write_all(&audio_data).unwrap();
+    temp_file.flush().unwrap();
+
+    // Test writing basic tags
+    let basic_tags = AudioTags {
+      title: Some("Test Song".to_string()),
+      artists: Some(vec!["Test Artist".to_string()]),
+      album: Some("Test Album".to_string()),
+      year: Some(2024),
+      ..Default::default()
+    };
+
+    let write_result = write_tags(
+      temp_file.path().to_string_lossy().to_string(),
+      basic_tags.clone(),
+    )
+    .await;
+    if let Err(e) = &write_result {
+      println!("Error writing basic tags: {}", e);
+      return;
+    }
+    assert!(write_result.is_ok());
+
+    // Verify the tags were written by reading them back
+    let read_result = read_tags(temp_file.path().to_string_lossy().to_string()).await;
+    if let Err(e) = &read_result {
+      println!("Error reading tags after write: {}", e);
+      return;
+    }
+    let read_tags = read_result.unwrap();
+    assert_eq!(read_tags.title, basic_tags.title);
+    assert_eq!(read_tags.artists, basic_tags.artists);
+    assert_eq!(read_tags.album, basic_tags.album);
+    assert_eq!(read_tags.year, basic_tags.year);
+  }
+
+  #[tokio::test]
+  async fn test_write_tags_comprehensive_data() {
+    use std::io::Write;
+    use tempfile::NamedTempFile;
+
+    // Create a temporary file with valid audio data
+    let mut temp_file = NamedTempFile::new().unwrap();
+    let audio_data = create_buffer_from_base64("SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAAwAAAbgA").unwrap();
+    temp_file.write_all(&audio_data).unwrap();
+    temp_file.flush().unwrap();
+
+    // Test writing comprehensive tags with all fields
+    let comprehensive_tags = AudioTags {
+      title: Some("Comprehensive Test Song".to_string()),
+      artists: Some(vec!["Artist 1".to_string(), "Artist 2".to_string()]),
+      album: Some("Comprehensive Test Album".to_string()),
+      year: Some(2024),
+      genre: Some("Test Genre".to_string()),
+      track: Some(Position {
+        no: Some(5),
+        of: Some(12),
+      }),
+      album_artists: Some(vec![
+        "Album Artist 1".to_string(),
+        "Album Artist 2".to_string(),
+      ]),
+      comment: Some("This is a comprehensive test comment".to_string()),
+      disc: Some(Position {
+        no: Some(1),
+        of: Some(2),
+      }),
+      image: Some(Image {
+        data: create_test_image_data(),
+        mime_type: Some("image/jpeg".to_string()),
+        description: Some("Comprehensive test cover".to_string()),
+      }),
+    };
+
+    let write_result = write_tags(
+      temp_file.path().to_string_lossy().to_string(),
+      comprehensive_tags.clone(),
+    )
+    .await;
+    if let Err(e) = &write_result {
+      println!("Error writing comprehensive tags: {}", e);
+      return;
+    }
+    assert!(write_result.is_ok());
+
+    // Verify all tags were written correctly
+    let read_result = read_tags(temp_file.path().to_string_lossy().to_string()).await;
+    if let Err(e) = &read_result {
+      println!("Error reading comprehensive tags: {}", e);
+      return;
+    }
+    let read_tags = read_result.unwrap();
+
+    assert_eq!(read_tags.title, comprehensive_tags.title);
+    assert_eq!(read_tags.artists, comprehensive_tags.artists);
+    assert_eq!(read_tags.album, comprehensive_tags.album);
+    assert_eq!(read_tags.year, comprehensive_tags.year);
+    assert_eq!(read_tags.genre, comprehensive_tags.genre);
+    assert_eq!(read_tags.track, comprehensive_tags.track);
+    assert_eq!(read_tags.album_artists, comprehensive_tags.album_artists);
+    assert_eq!(read_tags.comment, comprehensive_tags.comment);
+    assert_eq!(read_tags.disc, comprehensive_tags.disc);
+    assert!(read_tags.image.is_some());
+    if let (Some(read_image), Some(expected_image)) = (&read_tags.image, &comprehensive_tags.image)
+    {
+      assert_eq!(read_image.data, expected_image.data);
+      assert_eq!(read_image.mime_type, expected_image.mime_type);
+      assert_eq!(read_image.description, expected_image.description);
+    }
+  }
+
+  #[tokio::test]
+  async fn test_write_tags_error_cases() {
+    use tempfile::NamedTempFile;
+
+    // Test writing to non-existent file
+    let non_existent_path = "/tmp/non_existent_file_12345.mp3";
+    let test_tags = AudioTags {
+      title: Some("Test".to_string()),
+      ..Default::default()
+    };
+
+    let write_result = write_tags(non_existent_path.to_string(), test_tags.clone()).await;
+    assert!(
+      write_result.is_err(),
+      "Should fail to write to non-existent file"
+    );
+
+    // Test writing to non-existent directory
+    let invalid_path = "/tmp/non_existent_directory/test.mp3";
+    let write_result = write_tags(invalid_path.to_string(), test_tags).await;
+    assert!(
+      write_result.is_err(),
+      "Should fail to write to non-existent directory"
+    );
+
+    // Test writing to a file that exists but is not audio
+    let temp_file = NamedTempFile::new().unwrap();
+    let write_result = write_tags(
+      temp_file.path().to_string_lossy().to_string(),
+      AudioTags::default(),
+    )
+    .await;
+    assert!(
+      write_result.is_err(),
+      "Should fail to write to non-audio file"
+    );
+  }
+
+  #[tokio::test]
+  async fn test_write_tags_unicode_and_special_characters() {
+    use std::io::Write;
+    use tempfile::NamedTempFile;
+
+    // Create a temporary file with valid audio data
+    let mut temp_file = NamedTempFile::new().unwrap();
+    let audio_data = create_buffer_from_base64("SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAAwAAAbgA").unwrap();
+    temp_file.write_all(&audio_data).unwrap();
+    temp_file.flush().unwrap();
+
+    // Test writing tags with unicode and special characters
+    let unicode_tags = AudioTags {
+      title: Some("Test Song with émojis 🎵 and unicode 中文".to_string()),
+      artists: Some(vec![
+        "Artist with émojis 🎤".to_string(),
+        "Another Artist".to_string(),
+      ]),
+      album: Some("Album with special chars: !@#$%^&*()".to_string()),
+      year: Some(2024),
+      genre: Some("Genre with émojis 🎶".to_string()),
+      comment: Some("Comment with newlines\nand tabs\tand quotes\"".to_string()),
+      ..Default::default()
+    };
+
+    let write_result = write_tags(
+      temp_file.path().to_string_lossy().to_string(),
+      unicode_tags.clone(),
+    )
+    .await;
+    if let Err(e) = &write_result {
+      println!("Error writing unicode tags: {}", e);
+      return;
+    }
+    assert!(write_result.is_ok());
+
+    // Verify unicode tags were written correctly
+    let read_result = read_tags(temp_file.path().to_string_lossy().to_string()).await;
+    if let Err(e) = &read_result {
+      println!("Error reading unicode tags: {}", e);
+      return;
+    }
+    let read_tags = read_result.unwrap();
+
+    assert_eq!(read_tags.title, unicode_tags.title);
+    assert_eq!(read_tags.artists, unicode_tags.artists);
+    assert_eq!(read_tags.album, unicode_tags.album);
+    assert_eq!(read_tags.year, unicode_tags.year);
+    assert_eq!(read_tags.genre, unicode_tags.genre);
+    assert_eq!(read_tags.comment, unicode_tags.comment);
+  }
+
+  // Comprehensive tests for write_cover_image_to_file function
+
+  #[tokio::test]
+  async fn test_write_cover_image_to_file_basic_functionality() {
+    use std::io::Write;
+    use tempfile::NamedTempFile;
+
+    // Create a temporary file with valid audio data
+    let mut temp_file = NamedTempFile::new().unwrap();
+    let audio_data = create_buffer_from_base64("SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAAwAAAbgA").unwrap();
+    temp_file.write_all(&audio_data).unwrap();
+    temp_file.flush().unwrap();
+
+    // Test writing cover image to file
+    let image_data = create_test_image_data();
+    let write_result = write_cover_image_to_file(
+      temp_file.path().to_string_lossy().to_string(),
+      image_data.clone(),
+    )
+    .await;
+    if let Err(e) = &write_result {
+      println!("Error writing cover image to file: {}", e);
+      return;
+    }
+    assert!(write_result.is_ok());
+
+    // Verify the cover image was written by reading it back
+    let read_result =
+      read_cover_image_from_file(temp_file.path().to_string_lossy().to_string()).await;
+    if let Err(e) = &read_result {
+      println!("Error reading cover image from file: {}", e);
+      return;
+    }
+    let read_image = read_result.unwrap();
+    assert!(read_image.is_some());
+    assert_eq!(read_image.unwrap(), image_data);
+  }
+
+  #[tokio::test]
+  async fn test_write_cover_image_to_file_different_image_types() {
+    use std::io::Write;
+    use tempfile::NamedTempFile;
+
+    // Create a temporary file with valid audio data
+    let mut temp_file = NamedTempFile::new().unwrap();
+    let audio_data = create_buffer_from_base64("SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAAwAAAbgA").unwrap();
+    temp_file.write_all(&audio_data).unwrap();
+    temp_file.flush().unwrap();
+
+    // Test with different image types
+    let test_cases = vec![
+      (
+        "JPEG",
+        vec![
+          0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46, 0x00, 0x01,
+        ],
+      ),
+      (
+        "PNG",
+        vec![
+          0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D,
+        ],
+      ),
+      (
+        "GIF",
+        vec![
+          0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ],
+      ),
+    ];
+
+    for (image_type, image_data) in test_cases {
+      let write_result = write_cover_image_to_file(
+        temp_file.path().to_string_lossy().to_string(),
+        image_data.clone(),
+      )
+      .await;
+      if let Err(e) = &write_result {
+        println!("Error writing {} image to file: {}", image_type, e);
+        continue;
+      }
+      assert!(
+        write_result.is_ok(),
+        "Should successfully write {} image",
+        image_type
+      );
+
+      // Verify the image was written
+      let read_result =
+        read_cover_image_from_file(temp_file.path().to_string_lossy().to_string()).await;
+      if let Err(e) = &read_result {
+        println!("Error reading {} image from file: {}", image_type, e);
+        continue;
+      }
+      let read_image = read_result.unwrap();
+      assert!(
+        read_image.is_some(),
+        "Should have {} image data",
+        image_type
+      );
+      assert_eq!(
+        read_image.unwrap(),
+        image_data,
+        "{} image data should match",
+        image_type
+      );
+    }
+  }
+
+  #[tokio::test]
+  async fn test_write_cover_image_to_file_large_image() {
+    use std::io::Write;
+    use tempfile::NamedTempFile;
+
+    // Create a temporary file with valid audio data
+    let mut temp_file = NamedTempFile::new().unwrap();
+    let audio_data = create_buffer_from_base64("SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAAwAAAbgA").unwrap();
+    temp_file.write_all(&audio_data).unwrap();
+    temp_file.flush().unwrap();
+
+    // Test with large image data (100KB)
+    let large_image_data = vec![0u8; 100000];
+    let write_result = write_cover_image_to_file(
+      temp_file.path().to_string_lossy().to_string(),
+      large_image_data.clone(),
+    )
+    .await;
+    if let Err(e) = &write_result {
+      println!("Error writing large image to file: {}", e);
+      return;
+    }
+    assert!(write_result.is_ok());
+
+    // Verify the large image was written
+    let read_result =
+      read_cover_image_from_file(temp_file.path().to_string_lossy().to_string()).await;
+    if let Err(e) = &read_result {
+      println!("Error reading large image from file: {}", e);
+      return;
+    }
+    let read_image = read_result.unwrap();
+    assert!(read_image.is_some());
+    assert_eq!(read_image.unwrap().len(), large_image_data.len());
+  }
+
+  #[tokio::test]
+  async fn test_write_cover_image_to_file_empty_image() {
+    use std::io::Write;
+    use tempfile::NamedTempFile;
+
+    // Create a temporary file with valid audio data
+    let mut temp_file = NamedTempFile::new().unwrap();
+    let audio_data = create_buffer_from_base64("SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAAwAAAbgA").unwrap();
+    temp_file.write_all(&audio_data).unwrap();
+    temp_file.flush().unwrap();
+
+    // Test with empty image data
+    let empty_image_data = vec![];
+    let write_result = write_cover_image_to_file(
+      temp_file.path().to_string_lossy().to_string(),
+      empty_image_data,
+    )
+    .await;
+    if let Err(e) = &write_result {
+      println!("Error writing empty image to file: {}", e);
+      return;
+    }
+    assert!(write_result.is_ok());
+
+    // Verify the empty image was written (should still be valid)
+    let read_result =
+      read_cover_image_from_file(temp_file.path().to_string_lossy().to_string()).await;
+    if let Err(e) = &read_result {
+      println!("Error reading empty image from file: {}", e);
+      return;
+    }
+    let read_image = read_result.unwrap();
+    // Empty image might be None or Some(empty_vec), both are valid
+    if let Some(image_data) = read_image {
+      assert!(image_data.is_empty());
+    }
+  }
+
+  #[tokio::test]
+  async fn test_write_cover_image_to_file_error_cases() {
+    use tempfile::NamedTempFile;
+
+    let test_image_data = create_test_image_data();
+
+    // Test writing to non-existent file
+    let non_existent_path = "/tmp/non_existent_file_12345.mp3";
+    let write_result =
+      write_cover_image_to_file(non_existent_path.to_string(), test_image_data.clone()).await;
+    assert!(
+      write_result.is_err(),
+      "Should fail to write to non-existent file"
+    );
+
+    // Test writing to non-existent directory
+    let invalid_path = "/tmp/non_existent_directory/test.mp3";
+    let write_result =
+      write_cover_image_to_file(invalid_path.to_string(), test_image_data.clone()).await;
+    assert!(
+      write_result.is_err(),
+      "Should fail to write to non-existent directory"
+    );
+
+    // Test writing to a file that exists but is not audio
+    let temp_file = NamedTempFile::new().unwrap();
+    let write_result = write_cover_image_to_file(
+      temp_file.path().to_string_lossy().to_string(),
+      test_image_data,
+    )
+    .await;
+    assert!(
+      write_result.is_err(),
+      "Should fail to write to non-audio file"
+    );
+  }
+
+  #[tokio::test]
+  async fn test_write_cover_image_to_file_overwrite_existing() {
+    use std::io::Write;
+    use tempfile::NamedTempFile;
+
+    // Create a temporary file with valid audio data
+    let mut temp_file = NamedTempFile::new().unwrap();
+    let audio_data = create_buffer_from_base64("SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAAwAAAbgA").unwrap();
+    temp_file.write_all(&audio_data).unwrap();
+    temp_file.flush().unwrap();
+
+    // Write initial cover image
+    let initial_image = vec![0xFF, 0xD8, 0xFF, 0xE0]; // JPEG header
+    let write_result = write_cover_image_to_file(
+      temp_file.path().to_string_lossy().to_string(),
+      initial_image.clone(),
+    )
+    .await;
+    if let Err(e) = &write_result {
+      println!("Error writing initial cover image: {}", e);
+      return;
+    }
+    assert!(write_result.is_ok());
+
+    // Overwrite with new cover image
+    let new_image = vec![0x89, 0x50, 0x4E, 0x47]; // PNG header
+    let write_result = write_cover_image_to_file(
+      temp_file.path().to_string_lossy().to_string(),
+      new_image.clone(),
+    )
+    .await;
+    if let Err(e) = &write_result {
+      println!("Error writing new cover image: {}", e);
+      return;
+    }
+    assert!(write_result.is_ok());
+
+    // Verify the new image was written (overwrote the old one)
+    let read_result =
+      read_cover_image_from_file(temp_file.path().to_string_lossy().to_string()).await;
+    if let Err(e) = &read_result {
+      println!("Error reading overwritten cover image: {}", e);
+      return;
+    }
+    let read_image = read_result.unwrap();
+    assert!(read_image.is_some());
+    assert_eq!(read_image.unwrap(), new_image);
+  }
+
+  #[tokio::test]
+  async fn test_write_cover_image_to_file_roundtrip_consistency() {
+    use std::io::Write;
+    use tempfile::NamedTempFile;
+
+    // Create a temporary file with valid audio data
+    let mut temp_file = NamedTempFile::new().unwrap();
+    let audio_data = create_buffer_from_base64("SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAAwAAAbgA").unwrap();
+    temp_file.write_all(&audio_data).unwrap();
+    temp_file.flush().unwrap();
+
+    // Test multiple write/read cycles to ensure consistency
+    let test_images = vec![
+      create_test_image_data(),
+      vec![0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46],
+      vec![0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A],
+      vec![0x47, 0x49, 0x46, 0x38, 0x39, 0x61],
+    ];
+
+    for (i, image_data) in test_images.iter().enumerate() {
+      // Write image
+      let write_result = write_cover_image_to_file(
+        temp_file.path().to_string_lossy().to_string(),
+        image_data.clone(),
+      )
+      .await;
+      if let Err(e) = &write_result {
+        println!("Error writing image {} to file: {}", i, e);
+        continue;
+      }
+      assert!(
+        write_result.is_ok(),
+        "Should successfully write image {}",
+        i
+      );
+
+      // Read image back
+      let read_result =
+        read_cover_image_from_file(temp_file.path().to_string_lossy().to_string()).await;
+      if let Err(e) = &read_result {
+        println!("Error reading image {} from file: {}", i, e);
+        continue;
+      }
+      let read_image = read_result.unwrap();
+      assert!(read_image.is_some(), "Should have image {} data", i);
+      assert_eq!(
+        read_image.unwrap(),
+        *image_data,
+        "Image {} data should match",
+        i
+      );
+    }
   }
 }
