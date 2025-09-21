@@ -4864,5 +4864,4 @@ mod tests {
     assert!(read_image.is_some());
     assert_eq!(read_image.unwrap(), new_image);
   }
-
 }
