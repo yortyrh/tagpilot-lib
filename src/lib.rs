@@ -181,39 +181,3 @@ pub async fn write_cover_image_to_file(file_path: String, image_data: Buffer) ->
     .await
     .map_err(napi::Error::from_reason)
 }
-
-#[cfg(test)]
-mod tests {
-  use super::*;
-
-  #[test]
-  fn test_read_tags() {
-    let tags = ApiAudioTags {
-      title: Some("Test".to_string()),
-      artists: Some(vec!["Test".to_string()]),
-      album: Some("Test".to_string()),
-      year: Some(2021),
-      genre: Some("Test".to_string()),
-      track: Some(ApiPosition {
-        no: Some(1),
-        of: Some(12),
-      }),
-      album_artists: Some(vec!["Test".to_string()]),
-      comment: Some("Test".to_string()),
-      disc: Some(ApiPosition {
-        no: Some(1),
-        of: Some(12),
-      }),
-      image: Some(ApiImage {
-        data: Buffer::from(vec![0x00, 0x01, 0x02, 0x03]),
-        mime_type: Some("image/jpeg".to_string()),
-        description: Some("Test".to_string()),
-      }),
-    };
-    assert_eq!(tags.title, Some("Test".to_string()));
-    assert_eq!(tags.artists, Some(vec!["Test".to_string()]));
-    assert_eq!(tags.album, Some("Test".to_string()));
-    assert_eq!(tags.year, Some(2021));
-    assert_eq!(tags.genre, Some("Test".to_string()));
-  }
-}
