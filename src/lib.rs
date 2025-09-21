@@ -194,10 +194,16 @@ mod tests {
       album: Some("Test".to_string()),
       year: Some(2021),
       genre: Some("Test".to_string()),
-      track: Some(ApiPosition { no: Some(1), of: Some(12) }),
+      track: Some(ApiPosition {
+        no: Some(1),
+        of: Some(12),
+      }),
       album_artists: Some(vec!["Test".to_string()]),
       comment: Some("Test".to_string()),
-      disc: Some(ApiPosition { no: Some(1), of: Some(12) }),
+      disc: Some(ApiPosition {
+        no: Some(1),
+        of: Some(12),
+      }),
       image: Some(ApiImage {
         data: Buffer::from(vec![0x00, 0x01, 0x02, 0x03]),
         mime_type: Some("image/jpeg".to_string()),
