@@ -204,6 +204,7 @@ function isValidFileName(fileName: string): boolean {
     /\.\.\\/, // Windows parent directory traversal
     /\.\.\//, // Unix parent directory traversal
     /[<>:"|?*]/, // Windows reserved characters
+    // eslint-disable-next-line no-control-regex
     /[\x00-\x1f]/, // Control characters
     /^\./, // Hidden files (starting with dot)
     /\/$/, // Directory paths (ending with slash)
@@ -219,11 +220,14 @@ function sanitizeFileName(fileName: string): string {
   }
 
   // Remove any potentially dangerous characters
-  return fileName
-    .replace(/[<>:"|?*\x00-\x1f]/g, '')
-    .replace(/\.\./g, '')
-    .replace(/^\.+/, '') // Remove leading dots
-    .replace(/[/\\]+$/, '') // Remove trailing slashes/backslashes
+  return (
+    fileName
+      // eslint-disable-next-line no-control-regex
+      .replace(/[<>:"|?*\x00-\x1f]/g, '')
+      .replace(/\.\./g, '')
+      .replace(/^\.+/, '') // Remove leading dots
+      .replace(/[/\\]+$/, '')
+  ) // Remove trailing slashes/backslashes
 }
 
 async function setupTestData() {
@@ -309,6 +313,7 @@ async function runBenchmark() {
         await readTags(filePath)
       } catch (error) {
         // Continue with other files if one fails
+        console.warn(`Failed to read tags: ${filePath} - ${(error as Error).message}`)
         continue
       }
     }
@@ -327,6 +332,7 @@ async function runBenchmark() {
         await parseFile(filePath)
       } catch (error) {
         // Continue with other files if one fails
+        console.warn(`Failed to parse file: ${filePath} - ${(error as Error).message}`)
         continue
       }
     }

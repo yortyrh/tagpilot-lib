@@ -6,24 +6,51 @@ const path = require('path')
  * @returns {string} - The validated and sanitized path, or 'Access denied' if invalid
  */
 exports.validatePath = (userInput, root = process.cwd()) => {
+  // Validate input type and basic format first
+  if (!userInput || typeof userInput !== 'string') {
+    return 'Access denied'
+  }
+
   // Check for null byte injection
   if (userInput.indexOf('\0') !== -1) {
     return 'Access denied'
   }
 
-  // Validate that input contains only alphanumeric characters
-  if (!/^[a-z0-9]+$/.test(userInput)) {
+  // Check for dangerous patterns that could lead to path traversal
+  const dangerousPatterns = [
+    /\.\./, // Parent directory traversal
+    /\.\.\\/, // Windows parent directory traversal
+    /\.\.\//, // Unix parent directory traversal
+    /[<>:"|?*]/, // Windows reserved characters
+    /[\x00-\x1f]/, // Control characters
+    /^\./, // Hidden files (starting with dot)
+    /\/$/, // Directory paths (ending with slash)
+    /\\$/, // Windows directory paths (ending with backslash)
+  ]
+
+  if (dangerousPatterns.some((pattern) => pattern.test(userInput))) {
     return 'Access denied'
   }
 
-  // Normalize the path and remove any leading directory traversal sequences
-  const safeInput = path.normalize(userInput).replace(/^(\.\.(\/|\\|$))+/, '')
+  // Normalize the path to resolve any remaining issues
+  const normalizedInput = path.normalize(userInput)
+
+  // Double-check normalized input for traversal patterns
+  if (normalizedInput.includes('..') || normalizedInput.startsWith('.')) {
+    return 'Access denied'
+  }
 
   // Construct the full path
-  const pathString = path.join(root, safeInput)
+  const pathString = path.join(root, normalizedInput)
 
-  // Final security check: ensure the path is still within the root directory
-  if (pathString.indexOf(root) !== 0) {
+  // Resolve both paths to absolute paths for proper comparison
+  const resolvedPath = path.resolve(pathString)
+  const resolvedRoot = path.resolve(root)
+
+  // Critical security check: ensure the resolved path is within the root directory
+  // This prevents directory traversal attacks by ensuring the resolved path
+  // starts with the resolved root path followed by a path separator
+  if (!resolvedPath.startsWith(resolvedRoot + path.sep) && resolvedPath !== resolvedRoot) {
     return 'Access denied'
   }
 
