@@ -355,7 +355,11 @@ where
 pub async fn clear_tags(file_path: String) -> Result<(), String> {
   let path = Path::new(&file_path);
   let mut file = File::open(path).map_err(|e| format!("Failed to open file: {}", e))?;
-  let mut out = File::open(path).map_err(|e| format!("Failed to open file: {}", e))?;
+  let mut out = OpenOptions::new()
+    .read(true)
+    .write(true)
+    .open(path)
+    .map_err(|e| format!("Failed to open file: {}", e))?;
   generic_clear_tags(&mut file, &mut out).await
 }
 
