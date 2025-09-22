@@ -313,6 +313,71 @@ test('writeTagsToBuffer - should handle Speex format', async (t) => {
   await testAudioFormatFullTags(t, spxFiles, 'Speex')
 })
 
+test('writeTagsToBuffer - should preserve existing non-cover image when adding cover image', async (t) => {
+  // Get a test file and cover image
+  const testFile = mp3Files[0]
+  const coverImageFile = getFileByName('cover.jpg')
+
+  t.truthy(testFile, 'Should have an MP3 test file')
+  t.truthy(coverImageFile, 'Should have cover.jpg test file')
+
+  // First, create tags with a non-cover image (Artist type)
+  const initialTags: AudioTags = {
+    title: 'Test Song',
+    artists: ['Test Artist'],
+    allImages: [
+      {
+        data: coverImageFile!.data,
+        picType: AudioImageType.Artist,
+        mimeType: coverImageFile!.mimeType,
+        description: 'Artist photo',
+      },
+    ],
+  }
+
+  // Write initial tags with artist photo
+  const initialBuffer = await writeTagsToBuffer(testFile.data, initialTags)
+
+  // Now add a cover image
+  const coverImage = {
+    data: coverImageFile!.data,
+    picType: AudioImageType.CoverFront,
+    mimeType: coverImageFile!.mimeType,
+    description: 'Cover image',
+  }
+  const updatedTags: AudioTags = {
+    ...initialTags,
+    image: coverImage,
+    allImages: [...(initialTags.allImages || []), coverImage],
+  }
+
+  // Write updated tags with both images
+  const finalBuffer = await writeTagsToBuffer(initialBuffer, updatedTags)
+
+  // Read back the tags and verify both images are present
+  const readTags = await readTagsFromBuffer(finalBuffer)
+
+  // Verify we have both images
+  t.truthy(readTags.image, 'Should have a cover image')
+  t.truthy(readTags.allImages, 'Should have allImages array')
+  t.is(readTags.allImages!.length, 2, 'Should have both images')
+
+  // Verify the cover image is first and has correct type
+  t.is(readTags.image!.picType, AudioImageType.CoverFront, 'Main image should be CoverFront')
+  t.is(readTags.image!.description, 'Cover image', 'Cover image should have correct description')
+
+  // Verify the artist image is preserved
+  const artistImage = readTags.allImages!.find((img) => img.picType === AudioImageType.Artist)
+  t.truthy(artistImage, 'Should still have the artist image')
+  t.is(artistImage!.description, 'Artist photo', 'Artist image should have correct description')
+
+  // Verify the images are in the correct order (cover first)
+  t.is(readTags.allImages![0].picType, AudioImageType.CoverFront, 'Cover image should be first in allImages')
+  t.is(readTags.allImages![1].picType, AudioImageType.Artist, 'Artist image should be second in allImages')
+
+  console.log('✓ Successfully preserved existing image while adding cover image')
+})
+
 test('writeTagsToBuffer - should handle all image types in round trip', async (t) => {
   // Get a test file and cover image
   const testFile = mp3Files[0]
