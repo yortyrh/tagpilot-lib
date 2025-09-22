@@ -19,24 +19,100 @@ pub struct Position {
 }
 
 #[derive(Debug, PartialEq, Clone)]
+pub enum AudioImageType {
+  Icon,
+  OtherIcon,
+  CoverFront,
+  CoverBack,
+  Leaflet,
+  Media,
+  LeadArtist,
+  Artist,
+  Conductor,
+  Band,
+  Composer,
+  Lyricist,
+  RecordingLocation,
+  DuringRecording,
+  DuringPerformance,
+  ScreenCapture,
+  BrightFish,
+  Illustration,
+  BandLogo,
+  PublisherLogo,
+  Other,
+}
+
+#[derive(Debug, PartialEq, Clone)]
 pub struct Image {
   pub data: Vec<u8>,
+  pub pic_type: AudioImageType,
   pub mime_type: Option<String>,
   pub description: Option<String>,
 }
 
-/*
- * Convert a MimeType to a string
- */
-pub fn mime_type_to_string(mime_type: &MimeType) -> Option<String> {
-  match mime_type {
-    MimeType::Jpeg => Some(String::from("image/jpeg")),
-    MimeType::Png => Some(String::from("image/png")),
-    MimeType::Gif => Some(String::from("image/gif")),
-    MimeType::Tiff => Some(String::from("image/tiff")),
-    MimeType::Bmp => Some(String::from("image/bmp")),
-    MimeType::Unknown(_) => None,
-    _ => None,
+impl AudioImageType {
+  pub fn from_picture_type(picture_type: &PictureType) -> Self {
+    match picture_type {
+      PictureType::Icon => Self::Icon,
+      PictureType::OtherIcon => Self::OtherIcon,
+      PictureType::CoverFront => Self::CoverFront,
+      PictureType::CoverBack => Self::CoverBack,
+      PictureType::Leaflet => Self::Leaflet,
+      PictureType::Media => Self::Media,
+      PictureType::LeadArtist => Self::LeadArtist,
+      PictureType::Artist => Self::Artist,
+      PictureType::Conductor => Self::Conductor,
+      PictureType::Band => Self::Band,
+      PictureType::Composer => Self::Composer,
+      PictureType::Lyricist => Self::Lyricist,
+      PictureType::RecordingLocation => Self::RecordingLocation,
+      PictureType::DuringRecording => Self::DuringRecording,
+      PictureType::DuringPerformance => Self::DuringPerformance,
+      PictureType::ScreenCapture => Self::ScreenCapture,
+      PictureType::BrightFish => Self::BrightFish,
+      PictureType::Illustration => Self::Illustration,
+      PictureType::BandLogo => Self::BandLogo,
+      PictureType::PublisherLogo => Self::PublisherLogo,
+      _ => Self::Other,
+    }
+  }
+
+  pub fn to_picture_type(&self) -> PictureType {
+    match self {
+      AudioImageType::Icon => PictureType::Icon,
+      AudioImageType::OtherIcon => PictureType::OtherIcon,
+      AudioImageType::CoverFront => PictureType::CoverFront,
+      AudioImageType::CoverBack => PictureType::CoverBack,
+      AudioImageType::Leaflet => PictureType::Leaflet,
+      AudioImageType::Media => PictureType::Media,
+      AudioImageType::LeadArtist => PictureType::LeadArtist,
+      AudioImageType::Artist => PictureType::Artist,
+      AudioImageType::Conductor => PictureType::Conductor,
+      AudioImageType::Band => PictureType::Band,
+      AudioImageType::Composer => PictureType::Composer,
+      AudioImageType::Lyricist => PictureType::Lyricist,
+      AudioImageType::RecordingLocation => PictureType::RecordingLocation,
+      AudioImageType::DuringRecording => PictureType::DuringRecording,
+      AudioImageType::DuringPerformance => PictureType::DuringPerformance,
+      AudioImageType::ScreenCapture => PictureType::ScreenCapture,
+      AudioImageType::BrightFish => PictureType::BrightFish,
+      AudioImageType::Illustration => PictureType::Illustration,
+      AudioImageType::BandLogo => PictureType::BandLogo,
+      AudioImageType::PublisherLogo => PictureType::PublisherLogo,
+      _ => PictureType::Other,
+    }
+  }
+}
+
+impl Image {
+  pub fn from_picture(picture: &Picture) -> Self {
+    Self {
+      data: picture.data().to_vec(),
+      pic_type: AudioImageType::from_picture_type(&picture.pic_type()),
+      mime_type: picture.mime_type().map(|mime_type| mime_type.to_string()),
+      description: picture.description().map(|s| s.to_string()),
+    }
   }
 }
 
@@ -52,8 +128,16 @@ pub struct AudioTags {
   pub comment: Option<String>,
   pub disc: Option<Position>,
   pub image: Option<Image>,
+  pub all_images: Option<Vec<Image>>,
 }
 
+/**
+ * Add a cover image to the tag making sure it is the first picture
+ * @param primary_tag - The primary tag to add the cover image to
+ * @param image_data - The image data to add
+ * @param image_description - The description of the image
+ * @param default_mime_type - The default mime type to use if the image mime type is not found
+ */
 fn add_cover_image(
   primary_tag: &mut Tag,
   image_data: &[u8],
@@ -63,28 +147,26 @@ fn add_cover_image(
   // add the new picture
   let buf = image_data.to_vec();
 
-  let mime_type = {
-    if let Some(kind) = infer::get(&buf) {
-      match kind.mime_type() {
-        "image/jpeg" => MimeType::Jpeg,
-        "image/png" => MimeType::Png,
-        "image/gif" => MimeType::Gif,
-        "image/tiff" => MimeType::Tiff,
-        "image/bmp" => MimeType::Bmp,
-        _ => default_mime_type,
-      }
-    } else {
-      default_mime_type
+  let mime_type = infer::get(&buf)
+    .map(|kind| MimeType::from_str(kind.mime_type()))
+    .unwrap_or(default_mime_type);
+  let len = primary_tag.pictures().len();
+  let mut pictures_stack: Vec<Picture> = Vec::with_capacity(len + 1);
+  for i in (0..len).rev() {
+    let current_picture = primary_tag.remove_picture(i);
+    if current_picture.pic_type() != PictureType::CoverFront {
+      pictures_stack.push(current_picture);
     }
-  };
-  primary_tag.remove_picture_type(PictureType::CoverFront);
-  let cover_front_picture = Picture::new_unchecked(
+  }
+  pictures_stack.push(Picture::new_unchecked(
     lofty::picture::PictureType::CoverFront,
     Some(mime_type),
     image_description,
     buf,
-  );
-  primary_tag.set_picture(0, cover_front_picture);
+  ));
+  while let Some(picture) = pictures_stack.pop() {
+    primary_tag.push_picture(picture);
+  }
 }
 
 fn get_values_from_item(tag: &Tag, item_key: &ItemKey) -> Vec<String> {
@@ -107,6 +189,26 @@ impl AudioTags {
   pub fn from_tag(tag: &Tag) -> Self {
     let artists_values = get_values_from_item(tag, &ItemKey::TrackArtists);
     let album_artists_values = get_values_from_item(tag, &ItemKey::AlbumArtist);
+    let mut all_images: Vec<Image> = tag.pictures().iter().map(Image::from_picture).collect();
+    // sort the images by the picture type, the cover image should be the first
+    all_images.sort_by_key(|image| {
+      if image.pic_type == AudioImageType::CoverFront {
+        0
+      } else {
+        1
+      }
+    });
+    // get the first element only if it is the cover image or None
+    let image = all_images.first().map_or_else(
+      || None,
+      |image| {
+        if image.pic_type == AudioImageType::CoverFront {
+          Some(image.clone())
+        } else {
+          None
+        }
+      },
+    );
     Self {
       title: tag.title().map(|s| s.to_string()),
       artists: Some(artists_values),
@@ -123,19 +225,11 @@ impl AudioTags {
         (None, None) => None,
         (no, of) => Some(Position { no, of }),
       },
-      image: {
-        let mut image = None;
-        for picture in tag.pictures() {
-          if picture.pic_type() == lofty::picture::PictureType::CoverFront {
-            image = Some(Image {
-              data: picture.data().to_vec(),
-              mime_type: mime_type_to_string(picture.mime_type().unwrap()),
-              description: picture.description().map(|s| s.to_string()),
-            });
-            break;
-          }
-        }
-        image
+      image,
+      all_images: if all_images.is_empty() {
+        None
+      } else {
+        Some(all_images)
       },
     }
   }
@@ -218,7 +312,28 @@ impl AudioTags {
       primary_tag.insert_text(ItemKey::Comment, comment.clone());
     }
 
-    if let Some(image) = self.image.as_ref() {
+    if let Some(all_images) = self.all_images.as_ref() {
+      let mut all_images = all_images.clone();
+      all_images.sort_by_key(|image| {
+        if image.pic_type == AudioImageType::CoverFront {
+          0
+        } else {
+          1
+        }
+      });
+      let len = primary_tag.pictures().len();
+      for i in (0..len).rev() {
+        primary_tag.remove_picture(i);
+      }
+      for image in all_images {
+        primary_tag.push_picture(Picture::new_unchecked(
+          image.pic_type.to_picture_type(),
+          image.mime_type.as_ref().map(|s| MimeType::from_str(s)),
+          image.description.as_ref().map(|s| s.to_string()),
+          image.data.clone(),
+        ));
+      }
+    } else if let Some(image) = self.image.as_ref() {
       add_cover_image(
         primary_tag,
         &image.data,
@@ -392,6 +507,7 @@ pub async fn write_cover_image_to_buffer(
   let audio_tags = AudioTags {
     image: Some(Image {
       data: image_data,
+      pic_type: AudioImageType::CoverFront,
       mime_type: None,
       description: None,
     }),
@@ -452,34 +568,6 @@ mod tests {
   }
 
   #[test]
-  fn test_mime_type_to_string() {
-    assert_eq!(
-      mime_type_to_string(&MimeType::Jpeg),
-      Some("image/jpeg".to_string())
-    );
-    assert_eq!(
-      mime_type_to_string(&MimeType::Png),
-      Some("image/png".to_string())
-    );
-    assert_eq!(
-      mime_type_to_string(&MimeType::Gif),
-      Some("image/gif".to_string())
-    );
-    assert_eq!(
-      mime_type_to_string(&MimeType::Tiff),
-      Some("image/tiff".to_string())
-    );
-    assert_eq!(
-      mime_type_to_string(&MimeType::Bmp),
-      Some("image/bmp".to_string())
-    );
-    assert_eq!(
-      mime_type_to_string(&MimeType::Unknown("unknown".to_string())),
-      None
-    );
-  }
-
-  #[test]
   fn test_audio_tags_default() {
     let tags = AudioTags::default();
     assert!(tags.title.is_none());
@@ -513,6 +601,7 @@ mod tests {
         of: Some(2),
       }),
       image: None,
+      all_images: None,
     };
 
     // Test that the struct is created correctly
@@ -564,9 +653,11 @@ mod tests {
       }),
       image: Some(Image {
         data: image_data.clone(),
+        pic_type: AudioImageType::CoverFront,
         mime_type: Some("image/jpeg".to_string()),
         description: Some("Test cover".to_string()),
       }),
+      all_images: None,
     };
 
     // Test that the struct with image is created correctly
@@ -591,6 +682,7 @@ mod tests {
       comment: None,
       disc: None,
       image: None,
+      all_images: None,
     };
 
     // Test that empty artists vector is handled correctly
@@ -618,6 +710,7 @@ mod tests {
       comment: None,
       disc: None,
       image: None,
+      all_images: None,
     };
 
     // Test that multiple artists are handled correctly
@@ -651,6 +744,7 @@ mod tests {
       comment: None,
       disc: None,
       image: None,
+      all_images: None,
     };
 
     // Test that partial data is handled correctly
@@ -690,6 +784,7 @@ mod tests {
     let image_data = create_test_image_data();
     let image = Image {
       data: image_data.clone(),
+      pic_type: AudioImageType::CoverFront,
       mime_type: Some("image/jpeg".to_string()),
       description: Some("Test image".to_string()),
     };
@@ -700,6 +795,7 @@ mod tests {
 
     let image_minimal = Image {
       data: image_data,
+      pic_type: AudioImageType::CoverFront,
       mime_type: None,
       description: None,
     };
@@ -729,9 +825,11 @@ mod tests {
       }),
       image: Some(Image {
         data: create_test_image_data(),
+        pic_type: AudioImageType::CoverFront,
         mime_type: Some("image/png".to_string()),
         description: Some("Album cover".to_string()),
       }),
+      all_images: None,
     };
 
     assert_eq!(full_tags.title, Some("Full Song".to_string()));
@@ -760,6 +858,7 @@ mod tests {
       comment: None,
       disc: None,
       image: None,
+      all_images: None,
     };
 
     assert_eq!(minimal_tags.title, Some("Minimal Song".to_string()));
@@ -770,37 +869,6 @@ mod tests {
   }
 
   // Additional comprehensive tests for better coverage
-
-  #[test]
-  fn test_mime_type_to_string_edge_cases() {
-    // Test all supported MIME types
-    assert_eq!(
-      mime_type_to_string(&MimeType::Jpeg),
-      Some("image/jpeg".to_string())
-    );
-    assert_eq!(
-      mime_type_to_string(&MimeType::Png),
-      Some("image/png".to_string())
-    );
-    assert_eq!(
-      mime_type_to_string(&MimeType::Gif),
-      Some("image/gif".to_string())
-    );
-    assert_eq!(
-      mime_type_to_string(&MimeType::Tiff),
-      Some("image/tiff".to_string())
-    );
-    assert_eq!(
-      mime_type_to_string(&MimeType::Bmp),
-      Some("image/bmp".to_string())
-    );
-
-    // Test unsupported MIME types
-    assert_eq!(
-      mime_type_to_string(&MimeType::Unknown("unsupported".to_string())),
-      None
-    );
-  }
 
   #[test]
   fn test_position_struct_edge_cases() {
@@ -857,6 +925,7 @@ mod tests {
     // Test with all fields
     let image_full = Image {
       data: image_data.clone(),
+      pic_type: AudioImageType::CoverFront,
       mime_type: Some("image/jpeg".to_string()),
       description: Some("Full description".to_string()),
     };
@@ -867,6 +936,7 @@ mod tests {
     // Test with no optional fields
     let image_minimal = Image {
       data: image_data.clone(),
+      pic_type: AudioImageType::CoverFront,
       mime_type: None,
       description: None,
     };
@@ -877,6 +947,7 @@ mod tests {
     // Test with only mime_type
     let image_mime_only = Image {
       data: image_data.clone(),
+      pic_type: AudioImageType::CoverFront,
       mime_type: Some("image/png".to_string()),
       description: None,
     };
@@ -886,6 +957,7 @@ mod tests {
     // Test with only description
     let image_desc_only = Image {
       data: image_data.clone(),
+      pic_type: AudioImageType::CoverFront,
       mime_type: None,
       description: Some("Description only".to_string()),
     };
@@ -898,6 +970,7 @@ mod tests {
     // Test with empty data
     let image_empty = Image {
       data: vec![],
+      pic_type: AudioImageType::CoverFront,
       mime_type: Some("image/jpeg".to_string()),
       description: Some("Empty data".to_string()),
     };
@@ -908,6 +981,7 @@ mod tests {
     // Test with empty strings
     let image_empty_strings = Image {
       data: image_data,
+      pic_type: AudioImageType::CoverFront,
       mime_type: Some("".to_string()),
       description: Some("".to_string()),
     };
@@ -929,6 +1003,7 @@ mod tests {
       comment: Some("".to_string()),
       disc: None,
       image: None,
+      all_images: None,
     };
 
     assert_eq!(tags_empty_strings.title, Some("".to_string()));
@@ -951,6 +1026,7 @@ mod tests {
       comment: Some(long_string.clone()),
       disc: None,
       image: None,
+      all_images: None,
     };
 
     assert_eq!(tags_long_strings.title, Some(long_string.clone()));
@@ -976,6 +1052,7 @@ mod tests {
       comment: Some(special_chars.to_string()),
       disc: None,
       image: None,
+      all_images: None,
     };
 
     assert_eq!(tags_special.title, Some(special_chars.to_string()));
@@ -1001,6 +1078,7 @@ mod tests {
       comment: Some(unicode_string.to_string()),
       disc: None,
       image: None,
+      all_images: None,
     };
 
     assert_eq!(tags_unicode.title, Some(unicode_string.to_string()));
@@ -1031,6 +1109,7 @@ mod tests {
         comment: None,
         disc: None,
         image: None,
+        all_images: None,
       };
       assert_eq!(tags.year, Some(year));
     }
@@ -1047,6 +1126,7 @@ mod tests {
       comment: None,
       disc: None,
       image: None,
+      all_images: None,
     };
     assert_eq!(tags_year_zero.year, Some(0));
   }
@@ -1065,6 +1145,7 @@ mod tests {
       comment: None,
       disc: None,
       image: None,
+      all_images: None,
     };
     assert_eq!(tags_single.artists, Some(vec!["Single Artist".to_string()]));
 
@@ -1081,6 +1162,7 @@ mod tests {
       comment: None,
       disc: None,
       image: None,
+      all_images: None,
     };
     assert_eq!(tags_many.artists, Some(many_artists));
 
@@ -1100,6 +1182,7 @@ mod tests {
       comment: None,
       disc: None,
       image: None,
+      all_images: None,
     };
     assert_eq!(
       tags_duplicates.artists,
@@ -1131,6 +1214,7 @@ mod tests {
         of: Some(0),
       }),
       image: None,
+      all_images: None,
     };
     assert_eq!(
       tags_track_zero.track,
@@ -1165,6 +1249,7 @@ mod tests {
         of: Some(100),
       }),
       image: None,
+      all_images: None,
     };
     assert_eq!(
       tags_track_large.track,
@@ -1199,6 +1284,7 @@ mod tests {
         of: Some(1), // no > of
       }),
       image: None,
+      all_images: None,
     };
     assert_eq!(
       tags_track_invalid.track,
@@ -1237,9 +1323,11 @@ mod tests {
       }),
       image: Some(Image {
         data: create_test_image_data(),
+        pic_type: AudioImageType::CoverFront,
         mime_type: Some("image/jpeg".to_string()),
         description: Some("Album cover art".to_string()),
       }),
+      all_images: None,
     };
 
     assert_eq!(
@@ -1268,6 +1356,7 @@ mod tests {
       comment: Some("Produced by Steve Mac".to_string()),
       disc: None,
       image: None,
+      all_images: None,
     };
 
     assert_eq!(pop_tags.title, Some("Shape of You".to_string()));
@@ -1294,9 +1383,11 @@ mod tests {
       }),
       image: Some(Image {
         data: create_test_image_data(),
+        pic_type: AudioImageType::CoverFront,
         mime_type: Some("image/png".to_string()),
         description: Some("Compilation cover".to_string()),
       }),
+      all_images: None,
     };
 
     assert_eq!(
@@ -1366,9 +1457,11 @@ mod tests {
       }),
       image: Some(Image {
         data: original_data.clone(),
+        pic_type: AudioImageType::CoverFront,
         mime_type: Some("image/jpeg".to_string()),
         description: Some("Description".to_string()),
       }),
+      all_images: None,
     };
 
     // Test cloning
@@ -1397,11 +1490,13 @@ mod tests {
       image: match tags1.image {
         Some(image) => Some(Image {
           data: image.data.clone(),
+          pic_type: image.pic_type,
           mime_type: image.mime_type.clone(),
           description: image.description.clone(),
         }),
         None => None,
       },
+      all_images: None,
     };
 
     // Both should have the same data
@@ -1460,9 +1555,11 @@ mod tests {
       }),
       image: Some(Image {
         data: create_test_image_data(),
+        pic_type: AudioImageType::CoverFront,
         mime_type: Some("image/jpeg".to_string()),
         description: Some("Large image description".to_string()),
       }),
+      all_images: None,
     };
 
     // Verify all large data is stored correctly
@@ -1513,6 +1610,7 @@ mod tests {
         }),
         Some(Image {
           data: create_test_image_data(),
+          pic_type: AudioImageType::CoverFront,
           mime_type: Some("image/jpeg".to_string()),
           description: Some("Description".to_string()),
         }),
@@ -1548,6 +1646,7 @@ mod tests {
         None,
         Some(Image {
           data: create_test_image_data(),
+          pic_type: AudioImageType::CoverFront,
           mime_type: Some("image/png".to_string()),
           description: Some("Description".to_string()),
         }),
@@ -1582,11 +1681,13 @@ mod tests {
         image: match image {
           Some(image) => Some(Image {
             data: image.data.clone(),
+            pic_type: AudioImageType::CoverFront,
             mime_type: image.mime_type.clone(),
             description: image.description.clone(),
           }),
           None => None,
         },
+        all_images: None,
       };
 
       // Verify each field matches the expected value
@@ -1636,9 +1737,11 @@ mod tests {
       }),
       image: Some(Image {
         data: create_test_image_data(),
+        pic_type: AudioImageType::CoverFront,
         mime_type: Some("image/jpeg".to_string()),
         description: Some("Consistent Description".to_string()),
       }),
+      all_images: None,
     };
 
     // Create multiple references and verify consistency
@@ -1691,6 +1794,7 @@ mod tests {
         comment: None,
         disc: None,
         image: None,
+        all_images: None,
       };
       assert_eq!(tags.year, Some(year));
     }
@@ -1717,6 +1821,7 @@ mod tests {
             of: Some(*of),
           }),
           image: None,
+          all_images: None,
         };
         assert_eq!(
           tags.track,
@@ -1763,9 +1868,11 @@ mod tests {
         disc: None,
         image: Some(Image {
           data: create_test_image_data(),
+          pic_type: AudioImageType::CoverFront,
           mime_type: Some(string.clone()),
           description: Some(string.clone()),
         }),
+        all_images: None,
       };
 
       assert_eq!(tags.title, Some(string.clone()));
@@ -1808,6 +1915,7 @@ mod tests {
         comment: None,
         disc: None,
         image: None,
+        all_images: None,
       };
 
       assert_eq!(tags.artists, Some(vector.clone()));
@@ -1836,9 +1944,11 @@ mod tests {
       }),
       image: Some(Image {
         data: create_test_image_data(),
+        pic_type: AudioImageType::CoverFront,
         mime_type: Some("image/jpeg".to_string()),
         description: Some("Same Description".to_string()),
       }),
+      all_images: None,
     };
 
     let tags2 = AudioTags {
@@ -1859,9 +1969,11 @@ mod tests {
       }),
       image: Some(Image {
         data: create_test_image_data(),
+        pic_type: AudioImageType::CoverFront,
         mime_type: Some("image/jpeg".to_string()),
         description: Some("Same Description".to_string()),
       }),
+      all_images: None,
     };
 
     // Test individual field equality
@@ -1895,9 +2007,11 @@ mod tests {
       }),
       image: Some(Image {
         data: create_test_image_data(),
+        pic_type: AudioImageType::CoverFront,
         mime_type: Some("image/png".to_string()),
         description: Some("Different Description".to_string()),
       }),
+      all_images: None,
     };
 
     assert_ne!(tags1.title, tags3.title);
@@ -1933,9 +2047,11 @@ mod tests {
       }),
       image: Some(Image {
         data: create_test_image_data(),
+        pic_type: AudioImageType::CoverFront,
         mime_type: Some("image/jpeg".to_string()),
         description: Some("Pattern Description".to_string()),
       }),
+      all_images: None,
     };
 
     // Test pattern matching on title
@@ -2008,9 +2124,11 @@ mod tests {
       }),
       image: Some(Image {
         data: create_test_image_data(),
+        pic_type: AudioImageType::CoverFront,
         mime_type: Some("image/jpeg".to_string()),
         description: Some("Iteration Description".to_string()),
       }),
+      all_images: None,
     };
 
     // Test iteration over artists
@@ -2073,9 +2191,11 @@ mod tests {
       }),
       image: Some(Image {
         data: create_test_image_data(),
+        pic_type: AudioImageType::CoverFront,
         mime_type: Some("image/jpeg".to_string()),
         description: Some("Test cover image for roundtrip".to_string()),
       }),
+      all_images: None,
     };
 
     // Create a new empty tag
@@ -2178,7 +2298,8 @@ mod tests {
           if picture.pic_type() == lofty::picture::PictureType::CoverFront {
             image = Some(Image {
               data: picture.data().to_vec(),
-              mime_type: mime_type_to_string(picture.mime_type().unwrap()),
+              pic_type: AudioImageType::CoverFront,
+              mime_type: picture.mime_type().map(|mime_type| mime_type.to_string()),
               description: picture.description().map(|s| s.to_string()),
             });
             break;
@@ -2186,6 +2307,7 @@ mod tests {
         }
         image
       },
+      all_images: None,
     };
 
     // Verify that all fields match the original data
@@ -2241,6 +2363,7 @@ mod tests {
       comment: None,
       disc: None,
       image: None,
+      all_images: None,
     };
 
     let mut minimal_tag = Tag::new(TagType::Id3v2);
@@ -2274,6 +2397,7 @@ mod tests {
         (no, of) => Some(Position { no, of }),
       },
       image: None,
+      all_images: None,
     };
 
     assert_eq!(converted_minimal.title, minimal_test_tags.title);
@@ -2324,6 +2448,7 @@ mod tests {
         (no, of) => Some(Position { no, of }),
       },
       image: None,
+      all_images: None,
     };
 
     assert_eq!(converted_empty.title, empty_test_tags.title);
@@ -2402,6 +2527,7 @@ mod tests {
         of: Some(3),
       }),
       image: None,
+      all_images: None,
     };
 
     test_roundtrip_conversion(audio_tags);
@@ -2427,9 +2553,11 @@ mod tests {
       }),
       image: Some(Image {
         data: create_test_image_data(),
+        pic_type: AudioImageType::CoverFront,
         mime_type: Some("image/jpeg".to_string()),
         description: Some("Test cover image".to_string()),
       }),
+      all_images: None,
     };
 
     test_roundtrip_conversion(audio_tags);
@@ -2448,6 +2576,7 @@ mod tests {
       comment: None,
       disc: None,
       image: None,
+      all_images: None,
     };
 
     test_roundtrip_conversion(audio_tags);
@@ -2528,9 +2657,11 @@ mod tests {
       }),
       image: Some(Image {
         data: create_test_image_data(),
+        pic_type: AudioImageType::CoverFront,
         mime_type: Some("image/png".to_string()),
         description: Some("Serialization image".to_string()),
       }),
+      all_images: None,
     };
 
     // Test that we can create multiple references without data corruption
@@ -2579,9 +2710,11 @@ mod tests {
       }),
       image: Some(Image {
         data: create_test_image_data(),
+        pic_type: AudioImageType::CoverFront,
         mime_type: Some("image/jpeg".to_string()),
         description: Some("Memory test image".to_string()),
       }),
+      all_images: None,
     };
 
     // Verify all data is stored correctly
@@ -2604,6 +2737,7 @@ mod tests {
       comment: None,
       disc: None,
       image: None,
+      all_images: None,
     };
 
     // Should handle extreme year values
@@ -2628,9 +2762,11 @@ mod tests {
       }),
       image: Some(Image {
         data: vec![],
+        pic_type: AudioImageType::CoverFront,
         mime_type: Some("".to_string()),
         description: Some("".to_string()),
       }),
+      all_images: None,
     };
 
     // Should handle empty strings gracefully
@@ -2660,9 +2796,11 @@ mod tests {
       }),
       image: Some(Image {
         data: create_test_image_data(),
+        pic_type: AudioImageType::CoverFront,
         mime_type: Some("image/jpeg".to_string()),
         description: Some("图片描述 🖼️".to_string()),
       }),
+      all_images: None,
     };
 
     // Verify Unicode is handled correctly
@@ -2711,6 +2849,7 @@ mod tests {
         of: Some(1),
       }),
       image: None,
+      all_images: None,
     };
 
     // Verify sorted order
@@ -2753,9 +2892,11 @@ mod tests {
       }),
       image: Some(Image {
         data: create_test_image_data(),
+        pic_type: AudioImageType::CoverFront,
         mime_type: Some("image/jpeg".to_string()),
         description: Some("Original image".to_string()),
       }),
+      all_images: None,
     };
 
     // Test that we can create multiple independent copies
@@ -2784,11 +2925,13 @@ mod tests {
       image: match original_tags.image {
         Some(image) => Some(Image {
           data: image.data.clone(),
+          pic_type: AudioImageType::CoverFront,
           mime_type: image.mime_type.clone(),
           description: image.description.clone(),
         }),
         None => None,
       },
+      all_images: None,
     };
 
     // Verify copies are identical
@@ -2824,9 +2967,11 @@ mod tests {
       }),
       image: Some(Image {
         data: create_test_image_data(),
+        pic_type: AudioImageType::CoverFront,
         mime_type: Some("image/jpeg".to_string()),
         description: Some("Hash image".to_string()),
       }),
+      all_images: None,
     };
 
     let tags2 = AudioTags {
@@ -2847,9 +2992,11 @@ mod tests {
       }),
       image: Some(Image {
         data: create_test_image_data(),
+        pic_type: AudioImageType::CoverFront,
         mime_type: Some("image/jpeg".to_string()),
         description: Some("Hash image".to_string()),
       }),
+      all_images: None,
     };
 
     // Test equality
@@ -2885,9 +3032,11 @@ mod tests {
       }),
       image: Some(Image {
         data: create_test_image_data(),
+        pic_type: AudioImageType::CoverFront,
         mime_type: Some("image/jpeg".to_string()),
         description: Some("Valid image".to_string()),
       }),
+      all_images: None,
     };
 
     // Test that valid data is accepted
@@ -2942,12 +3091,14 @@ mod tests {
         image: if i % 10 == 0 {
           Some(Image {
             data: create_test_image_data(),
+            pic_type: AudioImageType::CoverFront,
             mime_type: Some("image/jpeg".to_string()),
             description: Some(format!("Image {}", i)),
           })
         } else {
           None
         },
+        all_images: None,
       };
       tags_vec.push(tags);
     }
@@ -3001,9 +3152,11 @@ mod tests {
       }),
       image: Some(Image {
         data: create_test_image_data(),
+        pic_type: AudioImageType::CoverFront,
         mime_type: Some("image/jpeg".to_string()),
         description: Some("Concurrent image".to_string()),
       }),
+      all_images: None,
     });
 
     let mut handles = vec![];
@@ -3063,6 +3216,7 @@ mod tests {
       AudioTags {
         image: Some(Image {
           data: create_test_image_data(),
+          pic_type: AudioImageType::CoverFront,
           mime_type: Some("image/jpeg".to_string()),
           description: Some("Image Only".to_string()),
         }),
@@ -3081,9 +3235,11 @@ mod tests {
         disc: Some(Position { no: None, of: None }),
         image: Some(Image {
           data: vec![],
+          pic_type: AudioImageType::CoverFront,
           mime_type: Some("".to_string()),
           description: Some("".to_string()),
         }),
+        all_images: None,
       },
     ];
 
@@ -3163,9 +3319,11 @@ mod tests {
       }),
       image: Some(Image {
         data: create_test_image_data(),
+        pic_type: AudioImageType::CoverFront,
         mime_type: Some("image/png".to_string()),
         description: Some("Serialization image".to_string()),
       }),
+      all_images: None,
     };
 
     // Simulate serialization by creating a copy
@@ -3194,11 +3352,13 @@ mod tests {
       image: match original_tags.image {
         Some(image) => Some(Image {
           data: image.data.clone(),
+          pic_type: image.pic_type,
           mime_type: image.mime_type.clone(),
           description: image.description.clone(),
         }),
         None => None,
       },
+      all_images: None,
     };
 
     // Verify roundtrip
@@ -3234,9 +3394,11 @@ mod tests {
       }),
       image: Some(Image {
         data: create_test_image_data(),
+        pic_type: AudioImageType::CoverFront,
         mime_type: Some("image/jpeg".to_string()),
         description: Some("Lifetime image".to_string()),
       }),
+      all_images: None,
     };
 
     // Test that we can create references with different lifetimes
@@ -3271,9 +3433,11 @@ mod tests {
       }),
       image: Some(Image {
         data: create_test_image_data(),
+        pic_type: AudioImageType::CoverFront,
         mime_type: Some("image/jpeg".to_string()),
         description: Some("Drop image".to_string()),
       }),
+      all_images: None,
     };
 
     // Verify data is accessible
@@ -3807,9 +3971,11 @@ mod tests {
       }),
       image: Some(Image {
         data: create_test_image_data(),
+        pic_type: AudioImageType::CoverFront,
         mime_type: Some("image/jpeg".to_string()),
         description: Some("Test cover".to_string()),
       }),
+      all_images: None,
     };
 
     // Test writing tags to file
@@ -3878,9 +4044,11 @@ mod tests {
       }),
       image: Some(Image {
         data: create_test_image_data(),
+        pic_type: AudioImageType::CoverFront,
         mime_type: Some("image/jpeg".to_string()),
         description: Some("Test cover".to_string()),
       }),
+      all_images: None,
     };
 
     // Write tags to file
@@ -3987,9 +4155,11 @@ mod tests {
       }),
       image: Some(Image {
         data: create_test_image_data(),
+        pic_type: AudioImageType::CoverFront,
         mime_type: Some("image/jpeg".to_string()),
         description: Some("Test cover".to_string()),
       }),
+      all_images: None,
     };
 
     // Write tags to buffer
@@ -4121,6 +4291,7 @@ mod tests {
     let test_tags = AudioTags {
       image: Some(Image {
         data: image_data.clone(),
+        pic_type: AudioImageType::CoverFront,
         mime_type: Some("image/jpeg".to_string()),
         description: Some("Test cover".to_string()),
       }),
@@ -4205,6 +4376,7 @@ mod tests {
       let test_tags = AudioTags {
         image: Some(Image {
           data: image_data.clone(),
+          pic_type: AudioImageType::CoverFront,
           mime_type: Some(format!("image/{}", image_type.to_lowercase())),
           description: Some(format!("Test {} cover", image_type)),
         }),
@@ -4262,6 +4434,7 @@ mod tests {
     let test_tags = AudioTags {
       image: Some(Image {
         data: large_image_data.clone(),
+        pic_type: AudioImageType::CoverFront,
         mime_type: Some("image/jpeg".to_string()),
         description: Some("Large test cover".to_string()),
       }),
@@ -4329,9 +4502,12 @@ mod tests {
         }),
         image: Some(Image {
           data: create_test_image_data(),
+          pic_type: AudioImageType::CoverFront,
           mime_type: Some("image/jpeg".to_string()),
           description: Some("Test cover image".to_string()),
         }),
+        all_images: None,
+        ..Default::default()
       },
     )
     .await
@@ -4468,9 +4644,11 @@ mod tests {
       }),
       image: Some(Image {
         data: create_test_image_data(),
+        pic_type: AudioImageType::CoverFront,
         mime_type: Some("image/jpeg".to_string()),
         description: Some("Comprehensive test cover".to_string()),
       }),
+      all_images: None,
     };
 
     let write_result = write_tags(
@@ -4570,6 +4748,7 @@ mod tests {
       year: Some(2024),
       genre: Some("Genre with émojis 🎶".to_string()),
       comment: Some("Comment with newlines\nand tabs\tand quotes\"".to_string()),
+      all_images: None,
       ..Default::default()
     };
 
@@ -4867,5 +5046,292 @@ mod tests {
     let read_image = read_result.unwrap();
     assert!(read_image.is_some());
     assert_eq!(read_image.unwrap(), new_image);
+  }
+
+  #[test]
+  fn test_from_picture_type_all_variants() {
+    use lofty::picture::PictureType;
+
+    // Test all PictureType variants that have direct mappings
+    let test_cases = vec![
+      (PictureType::Icon, AudioImageType::Icon),
+      (PictureType::OtherIcon, AudioImageType::OtherIcon),
+      (PictureType::CoverFront, AudioImageType::CoverFront),
+      (PictureType::CoverBack, AudioImageType::CoverBack),
+      (PictureType::Leaflet, AudioImageType::Leaflet),
+      (PictureType::Media, AudioImageType::Media),
+      (PictureType::LeadArtist, AudioImageType::LeadArtist),
+      (PictureType::Artist, AudioImageType::Artist),
+      (PictureType::Conductor, AudioImageType::Conductor),
+      (PictureType::Band, AudioImageType::Band),
+      (PictureType::Composer, AudioImageType::Composer),
+      (PictureType::Lyricist, AudioImageType::Lyricist),
+      (
+        PictureType::RecordingLocation,
+        AudioImageType::RecordingLocation,
+      ),
+      (
+        PictureType::DuringRecording,
+        AudioImageType::DuringRecording,
+      ),
+      (
+        PictureType::DuringPerformance,
+        AudioImageType::DuringPerformance,
+      ),
+      (PictureType::ScreenCapture, AudioImageType::ScreenCapture),
+      (PictureType::BrightFish, AudioImageType::BrightFish),
+      (PictureType::Illustration, AudioImageType::Illustration),
+      (PictureType::BandLogo, AudioImageType::BandLogo),
+      (PictureType::PublisherLogo, AudioImageType::PublisherLogo),
+    ];
+
+    for (picture_type, expected_audio_image_type) in test_cases {
+      let result = AudioImageType::from_picture_type(&picture_type);
+      assert_eq!(
+        result, expected_audio_image_type,
+        "Failed to convert PictureType::{:?} to AudioImageType::{:?}",
+        picture_type, expected_audio_image_type
+      );
+    }
+  }
+
+  #[test]
+  fn test_from_picture_type_other_variant() {
+    use lofty::picture::PictureType;
+
+    // Test that any unknown PictureType variant maps to Other
+    // We'll use a pattern match to ensure we catch any new variants
+    let all_picture_types = vec![
+      PictureType::Icon,
+      PictureType::OtherIcon,
+      PictureType::CoverFront,
+      PictureType::CoverBack,
+      PictureType::Leaflet,
+      PictureType::Media,
+      PictureType::LeadArtist,
+      PictureType::Artist,
+      PictureType::Conductor,
+      PictureType::Band,
+      PictureType::Composer,
+      PictureType::Lyricist,
+      PictureType::RecordingLocation,
+      PictureType::DuringRecording,
+      PictureType::DuringPerformance,
+      PictureType::ScreenCapture,
+      PictureType::BrightFish,
+      PictureType::Illustration,
+      PictureType::BandLogo,
+      PictureType::PublisherLogo,
+    ];
+
+    // Verify that all known variants are handled (not Other)
+    for picture_type in all_picture_types {
+      let result = AudioImageType::from_picture_type(&picture_type);
+      assert_ne!(
+        result,
+        AudioImageType::Other,
+        "PictureType::{:?} should not map to Other",
+        picture_type
+      );
+    }
+  }
+
+  #[test]
+  fn test_to_picture_type_all_variants() {
+    use lofty::picture::PictureType;
+
+    // Test all AudioImageType variants that have direct mappings
+    let test_cases = vec![
+      (AudioImageType::Icon, PictureType::Icon),
+      (AudioImageType::OtherIcon, PictureType::OtherIcon),
+      (AudioImageType::CoverFront, PictureType::CoverFront),
+      (AudioImageType::CoverBack, PictureType::CoverBack),
+      (AudioImageType::Leaflet, PictureType::Leaflet),
+      (AudioImageType::Media, PictureType::Media),
+      (AudioImageType::LeadArtist, PictureType::LeadArtist),
+      (AudioImageType::Artist, PictureType::Artist),
+      (AudioImageType::Conductor, PictureType::Conductor),
+      (AudioImageType::Band, PictureType::Band),
+      (AudioImageType::Composer, PictureType::Composer),
+      (AudioImageType::Lyricist, PictureType::Lyricist),
+      (
+        AudioImageType::RecordingLocation,
+        PictureType::RecordingLocation,
+      ),
+      (
+        AudioImageType::DuringRecording,
+        PictureType::DuringRecording,
+      ),
+      (
+        AudioImageType::DuringPerformance,
+        PictureType::DuringPerformance,
+      ),
+      (AudioImageType::ScreenCapture, PictureType::ScreenCapture),
+      (AudioImageType::BrightFish, PictureType::BrightFish),
+      (AudioImageType::Illustration, PictureType::Illustration),
+      (AudioImageType::BandLogo, PictureType::BandLogo),
+      (AudioImageType::PublisherLogo, PictureType::PublisherLogo),
+      (AudioImageType::Other, PictureType::Other),
+    ];
+
+    for (audio_image_type, expected_picture_type) in test_cases {
+      let result = audio_image_type.to_picture_type();
+      assert_eq!(
+        result, expected_picture_type,
+        "Failed to convert AudioImageType::{:?} to PictureType::{:?}",
+        audio_image_type, expected_picture_type
+      );
+    }
+  }
+
+  #[test]
+  fn test_round_trip_conversion() {
+    use lofty::picture::PictureType;
+
+    // Test that converting from PictureType to AudioImageType and back preserves the value
+    let picture_types = vec![
+      PictureType::Icon,
+      PictureType::OtherIcon,
+      PictureType::CoverFront,
+      PictureType::CoverBack,
+      PictureType::Leaflet,
+      PictureType::Media,
+      PictureType::LeadArtist,
+      PictureType::Artist,
+      PictureType::Conductor,
+      PictureType::Band,
+      PictureType::Composer,
+      PictureType::Lyricist,
+      PictureType::RecordingLocation,
+      PictureType::DuringRecording,
+      PictureType::DuringPerformance,
+      PictureType::ScreenCapture,
+      PictureType::BrightFish,
+      PictureType::Illustration,
+      PictureType::BandLogo,
+      PictureType::PublisherLogo,
+    ];
+
+    for original_picture_type in picture_types {
+      let audio_image_type = AudioImageType::from_picture_type(&original_picture_type);
+      let converted_back = audio_image_type.to_picture_type();
+      assert_eq!(
+        original_picture_type, converted_back,
+        "Round trip conversion failed for PictureType::{:?}",
+        original_picture_type
+      );
+    }
+  }
+
+  #[test]
+  fn test_round_trip_conversion_audio_image_type() {
+    // Test that converting from AudioImageType to PictureType and back preserves the value
+    let audio_image_types = vec![
+      AudioImageType::Icon,
+      AudioImageType::OtherIcon,
+      AudioImageType::CoverFront,
+      AudioImageType::CoverBack,
+      AudioImageType::Leaflet,
+      AudioImageType::Media,
+      AudioImageType::LeadArtist,
+      AudioImageType::Artist,
+      AudioImageType::Conductor,
+      AudioImageType::Band,
+      AudioImageType::Composer,
+      AudioImageType::Lyricist,
+      AudioImageType::RecordingLocation,
+      AudioImageType::DuringRecording,
+      AudioImageType::DuringPerformance,
+      AudioImageType::ScreenCapture,
+      AudioImageType::BrightFish,
+      AudioImageType::Illustration,
+      AudioImageType::BandLogo,
+      AudioImageType::PublisherLogo,
+      AudioImageType::Other,
+    ];
+
+    for original_audio_image_type in audio_image_types {
+      let picture_type = original_audio_image_type.to_picture_type();
+      let converted_back = AudioImageType::from_picture_type(&picture_type);
+      assert_eq!(
+        original_audio_image_type, converted_back,
+        "Round trip conversion failed for AudioImageType::{:?}",
+        original_audio_image_type
+      );
+    }
+  }
+
+  #[test]
+  fn test_audio_image_type_enum_completeness() {
+    // Test that we have covered all AudioImageType variants in our tests
+    let all_audio_image_types = vec![
+      AudioImageType::Icon,
+      AudioImageType::OtherIcon,
+      AudioImageType::CoverFront,
+      AudioImageType::CoverBack,
+      AudioImageType::Leaflet,
+      AudioImageType::Media,
+      AudioImageType::LeadArtist,
+      AudioImageType::Artist,
+      AudioImageType::Conductor,
+      AudioImageType::Band,
+      AudioImageType::Composer,
+      AudioImageType::Lyricist,
+      AudioImageType::RecordingLocation,
+      AudioImageType::DuringRecording,
+      AudioImageType::DuringPerformance,
+      AudioImageType::ScreenCapture,
+      AudioImageType::BrightFish,
+      AudioImageType::Illustration,
+      AudioImageType::BandLogo,
+      AudioImageType::PublisherLogo,
+      AudioImageType::Other,
+    ];
+
+    // This test ensures we have exactly 21 variants (as expected from the integration test)
+    assert_eq!(
+      all_audio_image_types.len(),
+      21,
+      "Expected 21 AudioImageType variants, found {}",
+      all_audio_image_types.len()
+    );
+  }
+
+  #[test]
+  fn test_picture_type_enum_completeness() {
+    use lofty::picture::PictureType;
+
+    // Test that we have covered all PictureType variants in our tests
+    let all_picture_types = vec![
+      PictureType::Icon,
+      PictureType::OtherIcon,
+      PictureType::CoverFront,
+      PictureType::CoverBack,
+      PictureType::Leaflet,
+      PictureType::Media,
+      PictureType::LeadArtist,
+      PictureType::Artist,
+      PictureType::Conductor,
+      PictureType::Band,
+      PictureType::Composer,
+      PictureType::Lyricist,
+      PictureType::RecordingLocation,
+      PictureType::DuringRecording,
+      PictureType::DuringPerformance,
+      PictureType::ScreenCapture,
+      PictureType::BrightFish,
+      PictureType::Illustration,
+      PictureType::BandLogo,
+      PictureType::PublisherLogo,
+      PictureType::Other,
+    ];
+
+    // This test ensures we have exactly 21 variants (matching AudioImageType)
+    assert_eq!(
+      all_picture_types.len(),
+      21,
+      "Expected 21 PictureType variants, found {}",
+      all_picture_types.len()
+    );
   }
 }

@@ -53,6 +53,8 @@ const {
   },
 })
 export default __napiModule.exports
+export const AudioImageType = __napiModule.exports.AudioImageType
+export const ApiAudioImageType = __napiModule.exports.ApiAudioImageType
 export const clearTags = __napiModule.exports.clearTags
 export const clearTagsToBuffer = __napiModule.exports.clearTagsToBuffer
 export const readCoverImageFromBuffer = __napiModule.exports.readCoverImageFromBuffer

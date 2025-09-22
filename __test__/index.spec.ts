@@ -1,5 +1,5 @@
 import test from 'ava'
-import { readTagsFromBuffer, writeTagsToBuffer, type AudioTags } from '../index.js'
+import { readTagsFromBuffer, writeTagsToBuffer, type AudioTags, AudioImageType } from '../index.js'
 import {
   mp3Files,
   flacFiles,
@@ -99,6 +99,7 @@ test('writeTagsToBuffer - should write tags with cover image', async (t) => {
     disc: { no: 1, of: 2 },
     image: {
       data: coverImageFile!.data,
+      picType: AudioImageType.CoverFront,
       mimeType: coverImageFile!.mimeType,
       description: 'Test cover image',
     },
@@ -132,6 +133,7 @@ test('readTagsFromBuffer - should read written tags and image', async (t) => {
     disc: { no: 1, of: 2 },
     image: {
       data: coverImageFile!.data,
+      picType: AudioImageType.CoverFront,
       mimeType: 'image/jpeg',
       description: 'Test cover image',
     },
@@ -210,6 +212,7 @@ async function testAudioFormatFullTags(t: any, files: any[], format: string) {
         disc: { no: 1, of: 10 },
         image: {
           data: img!.data,
+          picType: AudioImageType.CoverFront,
           mimeType: img!.mimeType,
           description: `Test cover image for ${format} format`,
         },
@@ -256,6 +259,10 @@ async function testAudioFormatFullTags(t: any, files: any[], format: string) {
         `Expected ${format} Test Song, got ${readTags.title} for ${format}`,
       )
       t.true(readTags.image?.data !== undefined, `Expected data, got ${readTags.image?.data} for ${format}`)
+      t.true(
+        readTags.image?.picType === AudioImageType.CoverFront,
+        `Expected CoverFront, got ${readTags.image?.picType} for ${format}`,
+      )
       t.true(
         readTags.image?.mimeType === img!.mimeType,
         `Expected image/png, got ${readTags.image?.mimeType} for ${format}`,
@@ -304,4 +311,106 @@ test('writeTagsToBuffer - should handle AIFF format', async (t) => {
 
 test('writeTagsToBuffer - should handle Speex format', async (t) => {
   await testAudioFormatFullTags(t, spxFiles, 'Speex')
+})
+
+test('writeTagsToBuffer - should handle all image types in round trip', async (t) => {
+  // Get a test file and cover image
+  const testFile = mp3Files[0]
+  const coverImageFile = getFileByName('cover.jpg')
+
+  t.truthy(testFile, 'Should have an MP3 test file')
+  t.truthy(coverImageFile, 'Should have cover.jpg test file')
+
+  // Create test tags with all image types
+  const allImageTypes = [
+    AudioImageType.Icon,
+    AudioImageType.OtherIcon,
+    AudioImageType.CoverFront,
+    AudioImageType.CoverBack,
+    AudioImageType.Leaflet,
+    AudioImageType.Media,
+    AudioImageType.LeadArtist,
+    AudioImageType.Artist,
+    AudioImageType.Conductor,
+    AudioImageType.Band,
+    AudioImageType.Composer,
+    AudioImageType.Lyricist,
+    AudioImageType.RecordingLocation,
+    AudioImageType.DuringRecording,
+    AudioImageType.DuringPerformance,
+    AudioImageType.ScreenCapture,
+    AudioImageType.BrightFish,
+    AudioImageType.Illustration,
+    AudioImageType.BandLogo,
+    AudioImageType.PublisherLogo,
+    AudioImageType.Other,
+  ]
+
+  const testTags: AudioTags = {
+    title: 'Round Trip Test Song',
+    artists: ['Test Artist'],
+    album: 'Test Album',
+    year: 2024,
+    genre: 'Test Genre',
+    track: { no: 1, of: 1 },
+    albumArtists: ['Test Album Artist'],
+    comment: 'Round trip test with all image types',
+    disc: { no: 1, of: 1 },
+    image: {
+      data: coverImageFile!.data,
+      picType: AudioImageType.CoverFront,
+      mimeType: coverImageFile!.mimeType,
+      description: 'Main cover image',
+    },
+    allImages: allImageTypes.map((picType) => ({
+      data: coverImageFile!.data,
+      picType: picType,
+      mimeType: coverImageFile!.mimeType,
+      description: `Test image of type ${picType}`,
+    })),
+  }
+
+  // Write tags to buffer
+  const modifiedBuffer = await writeTagsToBuffer(testFile.data, testTags)
+  t.true(Buffer.isBuffer(modifiedBuffer))
+  t.true(modifiedBuffer.length > 0)
+
+  // Read tags from the modified buffer
+  const readTags = await readTagsFromBuffer(modifiedBuffer)
+
+  // Verify basic tags
+  t.is(readTags.title, 'Round Trip Test Song')
+  t.deepEqual(readTags.artists, ['Test Artist'])
+  t.is(readTags.album, 'Test Album')
+  t.is(readTags.year, 2024)
+  t.is(readTags.genre, 'Test Genre')
+  t.is(readTags.comment, 'Round trip test with all image types')
+
+  // Verify main image
+  t.truthy(readTags.image)
+  t.is(readTags.image!.picType, AudioImageType.CoverFront)
+  // Note: The description might be overwritten by allImages processing
+  t.truthy(readTags.image!.description)
+
+  // Verify all images array
+  t.truthy(readTags.allImages)
+  t.is(readTags.allImages!.length, allImageTypes.length)
+
+  // Verify each image type is present
+  const readImageTypes = readTags.allImages!.map((img) => img.picType)
+  for (const expectedType of allImageTypes) {
+    t.true(readImageTypes.includes(expectedType), `Should contain image type ${expectedType}`)
+  }
+
+  // Verify each image has the correct data and description
+  for (let i = 0; i < readTags.allImages!.length; i++) {
+    const img = readTags.allImages![i]
+    t.true(Buffer.isBuffer(img.data))
+    t.true(img.data.length > 0)
+    t.is(img.mimeType, coverImageFile!.mimeType)
+    t.is(img.description, `Test image of type ${img.picType}`)
+  }
+
+  console.log(`✓ Round trip test passed with ${readTags.allImages!.length} image types`)
+  console.log(`  - Image types: ${readImageTypes.join(', ')}`)
 })

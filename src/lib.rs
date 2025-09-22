@@ -2,7 +2,7 @@
 
 mod util;
 
-use crate::util::{AudioTags, Image, Position};
+use crate::util::{AudioImageType, AudioTags, Image, Position};
 use napi::bindgen_prelude::Buffer;
 use napi::Result;
 use napi_derive::napi;
@@ -30,9 +30,89 @@ impl ApiPosition {
   }
 }
 
+#[napi(js_name = "AudioImageType", string_enum)]
+pub enum ApiAudioImageType {
+  Icon,
+  OtherIcon,
+  CoverFront,
+  CoverBack,
+  Leaflet,
+  Media,
+  LeadArtist,
+  Artist,
+  Conductor,
+  Band,
+  Composer,
+  Lyricist,
+  RecordingLocation,
+  DuringRecording,
+  DuringPerformance,
+  ScreenCapture,
+  BrightFish,
+  Illustration,
+  BandLogo,
+  PublisherLogo,
+  Other,
+}
+
+impl ApiAudioImageType {
+  pub fn from_audio_image_type(audio_image_type: AudioImageType) -> Self {
+    match audio_image_type {
+      AudioImageType::Icon => Self::Icon,
+      AudioImageType::OtherIcon => Self::OtherIcon,
+      AudioImageType::CoverFront => Self::CoverFront,
+      AudioImageType::CoverBack => Self::CoverBack,
+      AudioImageType::Leaflet => Self::Leaflet,
+      AudioImageType::Media => Self::Media,
+      AudioImageType::LeadArtist => Self::LeadArtist,
+      AudioImageType::Artist => Self::Artist,
+      AudioImageType::Conductor => Self::Conductor,
+      AudioImageType::Band => Self::Band,
+      AudioImageType::Composer => Self::Composer,
+      AudioImageType::Lyricist => Self::Lyricist,
+      AudioImageType::RecordingLocation => Self::RecordingLocation,
+      AudioImageType::DuringRecording => Self::DuringRecording,
+      AudioImageType::DuringPerformance => Self::DuringPerformance,
+      AudioImageType::ScreenCapture => Self::ScreenCapture,
+      AudioImageType::BrightFish => Self::BrightFish,
+      AudioImageType::Illustration => Self::Illustration,
+      AudioImageType::BandLogo => Self::BandLogo,
+      AudioImageType::PublisherLogo => Self::PublisherLogo,
+      _ => Self::Other,
+    }
+  }
+
+  pub fn into_audio_image_type(self) -> AudioImageType {
+    match self {
+      Self::Icon => AudioImageType::Icon,
+      Self::OtherIcon => AudioImageType::OtherIcon,
+      Self::CoverFront => AudioImageType::CoverFront,
+      Self::CoverBack => AudioImageType::CoverBack,
+      Self::Leaflet => AudioImageType::Leaflet,
+      Self::Media => AudioImageType::Media,
+      Self::LeadArtist => AudioImageType::LeadArtist,
+      Self::Artist => AudioImageType::Artist,
+      Self::Conductor => AudioImageType::Conductor,
+      Self::Band => AudioImageType::Band,
+      Self::Composer => AudioImageType::Composer,
+      Self::Lyricist => AudioImageType::Lyricist,
+      Self::RecordingLocation => AudioImageType::RecordingLocation,
+      Self::DuringRecording => AudioImageType::DuringRecording,
+      Self::DuringPerformance => AudioImageType::DuringPerformance,
+      Self::ScreenCapture => AudioImageType::ScreenCapture,
+      Self::BrightFish => AudioImageType::BrightFish,
+      Self::Illustration => AudioImageType::Illustration,
+      Self::BandLogo => AudioImageType::BandLogo,
+      Self::PublisherLogo => AudioImageType::PublisherLogo,
+      _ => AudioImageType::Other,
+    }
+  }
+}
+
 #[napi(js_name = "Image", object)]
 pub struct ApiImage {
   pub data: Buffer,
+  pub pic_type: ApiAudioImageType,
   pub mime_type: Option<String>,
   pub description: Option<String>,
 }
@@ -41,6 +121,7 @@ impl ApiImage {
   pub fn from_image(image: Image) -> Self {
     Self {
       data: Buffer::from(image.data),
+      pic_type: ApiAudioImageType::from_audio_image_type(image.pic_type),
       mime_type: image.mime_type,
       description: image.description,
     }
@@ -49,6 +130,7 @@ impl ApiImage {
   pub fn into_image(self) -> Image {
     Image {
       data: self.data.to_vec(),
+      pic_type: self.pic_type.into_audio_image_type(),
       mime_type: self.mime_type,
       description: self.description,
     }
@@ -68,6 +150,7 @@ pub struct ApiAudioTags {
   pub comment: Option<String>,
   pub disc: Option<ApiPosition>,
   pub image: Option<ApiImage>,
+  pub all_images: Option<Vec<ApiImage>>,
 }
 
 impl ApiAudioTags {
@@ -83,6 +166,9 @@ impl ApiAudioTags {
       comment: audio_tags.comment,
       disc: audio_tags.disc.map(ApiPosition::from_position),
       image: audio_tags.image.map(ApiImage::from_image),
+      all_images: audio_tags
+        .all_images
+        .map(|images| images.into_iter().map(ApiImage::from_image).collect()),
     }
   }
 
@@ -98,6 +184,9 @@ impl ApiAudioTags {
       comment: self.comment,
       disc: self.disc.map(|position| position.into_position()),
       image: self.image.map(|image| image.into_image()),
+      all_images: self
+        .all_images
+        .map(|images| images.into_iter().map(ApiImage::into_image).collect()),
     }
   }
 }

@@ -22,6 +22,7 @@ exports.validatePath = (userInput, root = process.cwd()) => {
     /\.\.\\/, // Windows parent directory traversal
     /\.\.\//, // Unix parent directory traversal
     /[<>:"|?*]/, // Windows reserved characters
+    // eslint-disable-next-line no-control-regex
     /[\x00-\x1f]/, // Control characters
     /^\./, // Hidden files (starting with dot)
     /\/$/, // Directory paths (ending with slash)
