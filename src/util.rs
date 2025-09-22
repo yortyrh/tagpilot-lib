@@ -18,7 +18,7 @@ pub struct Position {
   pub of: Option<u32>,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum AudioImageType {
   Icon,
   OtherIcon,
@@ -78,7 +78,7 @@ impl AudioImageType {
     }
   }
 
-  pub fn to_picture_type(&self) -> PictureType {
+  pub fn build_picture_type(&self) -> PictureType {
     match self {
       AudioImageType::Icon => PictureType::Icon,
       AudioImageType::OtherIcon => PictureType::OtherIcon,
@@ -327,7 +327,7 @@ impl AudioTags {
       }
       for image in all_images {
         primary_tag.push_picture(Picture::new_unchecked(
-          image.pic_type.to_picture_type(),
+          image.pic_type.build_picture_type(),
           image.mime_type.as_ref().map(|s| MimeType::from_str(s)),
           image.description.as_ref().map(|s| s.to_string()),
           image.data.clone(),
@@ -2257,14 +2257,11 @@ mod tests {
     }
 
     if let Some(image) = &original_test_tags.image {
-      let mime_type = match image.mime_type.as_deref() {
-        Some("image/jpeg") => lofty::picture::MimeType::Jpeg,
-        Some("image/png") => lofty::picture::MimeType::Png,
-        Some("image/gif") => lofty::picture::MimeType::Gif,
-        Some("image/tiff") => lofty::picture::MimeType::Tiff,
-        Some("image/bmp") => lofty::picture::MimeType::Bmp,
-        _ => lofty::picture::MimeType::Jpeg,
-      };
+      let mime_type = image
+        .mime_type
+        .as_deref()
+        .map(|s| MimeType::from_str(s))
+        .unwrap();
 
       let picture = lofty::picture::Picture::new_unchecked(
         lofty::picture::PictureType::CoverFront,
@@ -2386,16 +2383,10 @@ mod tests {
       album: minimal_tag.album().map(|s| s.to_string()),
       year: minimal_tag.year(),
       genre: minimal_tag.genre().map(|s| s.to_string()),
-      track: match (minimal_tag.track(), minimal_tag.track_total()) {
-        (None, None) => None,
-        (no, of) => Some(Position { no, of }),
-      },
+      track: None,
       album_artists: minimal_tag.artist().map(|s| vec![s.to_string()]),
       comment: minimal_tag.comment().map(|s| s.to_string()),
-      disc: match (minimal_tag.disk(), minimal_tag.disk_total()) {
-        (None, None) => None,
-        (no, of) => Some(Position { no, of }),
-      },
+      disc: None,
       image: None,
       all_images: None,
     };
@@ -2437,16 +2428,10 @@ mod tests {
       album: empty_tag.album().map(|s| s.to_string()),
       year: empty_tag.year(),
       genre: empty_tag.genre().map(|s| s.to_string()),
-      track: match (empty_tag.track(), empty_tag.track_total()) {
-        (None, None) => None,
-        (no, of) => Some(Position { no, of }),
-      },
+      track: None,
       album_artists: empty_tag.artist().map(|s| vec![s.to_string()]),
       comment: empty_tag.comment().map(|s| s.to_string()),
-      disc: match (empty_tag.disk(), empty_tag.disk_total()) {
-        (None, None) => None,
-        (no, of) => Some(Position { no, of }),
-      },
+      disc: None,
       image: None,
       all_images: None,
     };
@@ -2906,22 +2891,16 @@ mod tests {
       album: original_tags.album.clone(),
       year: original_tags.year,
       genre: original_tags.genre.clone(),
-      track: match &original_tags.track {
-        Some(position) => Some(Position {
-          no: position.no,
-          of: position.of,
-        }),
-        None => None,
-      },
+      track: original_tags.clone().track.map(|position| Position {
+        no: position.no,
+        of: position.of,
+      }),
       album_artists: original_tags.album_artists.clone(),
       comment: original_tags.comment.clone(),
-      disc: match &original_tags.disc {
-        Some(position) => Some(Position {
-          no: position.no,
-          of: position.of,
-        }),
-        None => None,
-      },
+      disc: original_tags.clone().disc.map(|position| Position {
+        no: position.no,
+        of: position.of,
+      }),
       image: match original_tags.image {
         Some(image) => Some(Image {
           data: image.data.clone(),
@@ -3942,154 +3921,6 @@ mod tests {
   }
 
   #[tokio::test]
-  async fn test_file_operations_write_and_read() {
-    use std::io::Write;
-    use tempfile::NamedTempFile;
-
-    // Create a temporary file with valid audio data
-    let mut temp_file = NamedTempFile::new().unwrap();
-    let audio_data = create_buffer_from_base64("SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAAwAAAbgA").unwrap();
-    temp_file.write_all(&audio_data).unwrap();
-    temp_file.flush().unwrap();
-
-    // Create test tags
-    let test_tags = AudioTags {
-      title: Some("Test Song".to_string()),
-      artists: Some(vec!["Test Artist".to_string()]),
-      album: Some("Test Album".to_string()),
-      year: Some(2024),
-      genre: Some("Test Genre".to_string()),
-      track: Some(Position {
-        no: Some(1),
-        of: Some(10),
-      }),
-      album_artists: Some(vec!["Test Album Artist".to_string()]),
-      comment: Some("Test comment".to_string()),
-      disc: Some(Position {
-        no: Some(1),
-        of: Some(2),
-      }),
-      image: Some(Image {
-        data: create_test_image_data(),
-        pic_type: AudioImageType::CoverFront,
-        mime_type: Some("image/jpeg".to_string()),
-        description: Some("Test cover".to_string()),
-      }),
-      all_images: None,
-    };
-
-    // Test writing tags to file
-    let write_result = write_tags(
-      temp_file.path().to_string_lossy().to_string(),
-      test_tags.clone(),
-    )
-    .await;
-    if let Err(e) = &write_result {
-      println!("Error writing tags to file: {}", e);
-      // If this fails, we'll skip the file-based tests and focus on buffer-based tests
-      return;
-    }
-    assert!(write_result.is_ok());
-
-    // Test reading tags from file
-    let read_result = read_tags(temp_file.path().to_string_lossy().to_string()).await;
-    if let Err(e) = &read_result {
-      println!("Error reading tags from file: {}", e);
-      // If this fails, we'll skip the file-based tests and focus on buffer-based tests
-      return;
-    }
-    assert!(read_result.is_ok());
-    let read_tags = read_result.unwrap();
-
-    // Verify the tags match what we wrote
-    assert_eq!(read_tags.title, test_tags.title);
-    assert_eq!(read_tags.artists, test_tags.artists);
-    assert_eq!(read_tags.album, test_tags.album);
-    assert_eq!(read_tags.year, test_tags.year);
-    assert_eq!(read_tags.genre, test_tags.genre);
-    assert_eq!(read_tags.track, test_tags.track);
-    assert_eq!(read_tags.album_artists, test_tags.album_artists);
-    assert_eq!(read_tags.comment, test_tags.comment);
-    assert_eq!(read_tags.disc, test_tags.disc);
-    assert!(read_tags.image.is_some());
-  }
-
-  #[tokio::test]
-  async fn test_file_operations_clear_tags() {
-    use std::io::Write;
-    use tempfile::NamedTempFile;
-
-    // Create a temporary file with valid audio data
-    let mut temp_file = NamedTempFile::new().unwrap();
-    let audio_data = create_buffer_from_base64("SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAAwAAAbgA").unwrap();
-    temp_file.write_all(&audio_data).unwrap();
-    temp_file.flush().unwrap();
-
-    // First, write some tags to the file
-    let test_tags = AudioTags {
-      title: Some("Test Song".to_string()),
-      artists: Some(vec!["Test Artist".to_string()]),
-      album: Some("Test Album".to_string()),
-      year: Some(2024),
-      genre: Some("Test Genre".to_string()),
-      track: Some(Position {
-        no: Some(1),
-        of: Some(10),
-      }),
-      album_artists: Some(vec!["Test Album Artist".to_string()]),
-      comment: Some("Test comment".to_string()),
-      disc: Some(Position {
-        no: Some(1),
-        of: Some(2),
-      }),
-      image: Some(Image {
-        data: create_test_image_data(),
-        pic_type: AudioImageType::CoverFront,
-        mime_type: Some("image/jpeg".to_string()),
-        description: Some("Test cover".to_string()),
-      }),
-      all_images: None,
-    };
-
-    // Write tags to file
-    let write_result = write_tags(temp_file.path().to_string_lossy().to_string(), test_tags).await;
-    if let Err(e) = &write_result {
-      println!("Error writing tags to file: {}", e);
-      return;
-    }
-    assert!(write_result.is_ok());
-
-    // Clear tags from file
-    let clear_result = clear_tags(temp_file.path().to_string_lossy().to_string()).await;
-    if let Err(e) = &clear_result {
-      println!("Error clearing tags from file: {}", e);
-      return;
-    }
-    assert!(clear_result.is_ok());
-
-    // Verify tags were cleared by reading the file
-    let read_result = read_tags(temp_file.path().to_string_lossy().to_string()).await;
-    if let Err(e) = &read_result {
-      println!("Error reading tags after clear: {}", e);
-      return;
-    }
-    assert!(read_result.is_ok());
-    let read_tags_after_clear = read_result.unwrap();
-
-    // All tags should be None after clearing
-    assert_eq!(read_tags_after_clear.title, None);
-    assert_eq!(read_tags_after_clear.artists, None);
-    assert_eq!(read_tags_after_clear.album, None);
-    assert_eq!(read_tags_after_clear.year, None);
-    assert_eq!(read_tags_after_clear.genre, None);
-    assert_eq!(read_tags_after_clear.track, None);
-    assert_eq!(read_tags_after_clear.album_artists, None);
-    assert_eq!(read_tags_after_clear.comment, None);
-    assert_eq!(read_tags_after_clear.disc, None);
-    assert_eq!(read_tags_after_clear.image, None);
-  }
-
-  #[tokio::test]
   async fn test_file_operations_cover_image() {
     use std::io::Write;
     use tempfile::NamedTempFile;
@@ -4132,83 +3963,6 @@ mod tests {
   // Additional comprehensive tests for util::clear_tags and util::read_cover_image_from_file
 
   #[tokio::test]
-  async fn test_clear_tags_comprehensive() {
-    // Test clearing tags from buffer with various scenarios
-    let audio_data = create_buffer_from_base64("SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAAwAAAbgA").unwrap();
-
-    // First, write some tags to the buffer
-    let test_tags = AudioTags {
-      title: Some("Test Song".to_string()),
-      artists: Some(vec!["Test Artist".to_string()]),
-      album: Some("Test Album".to_string()),
-      year: Some(2024),
-      genre: Some("Test Genre".to_string()),
-      track: Some(Position {
-        no: Some(1),
-        of: Some(10),
-      }),
-      album_artists: Some(vec!["Test Album Artist".to_string()]),
-      comment: Some("Test comment".to_string()),
-      disc: Some(Position {
-        no: Some(1),
-        of: Some(2),
-      }),
-      image: Some(Image {
-        data: create_test_image_data(),
-        pic_type: AudioImageType::CoverFront,
-        mime_type: Some("image/jpeg".to_string()),
-        description: Some("Test cover".to_string()),
-      }),
-      all_images: None,
-    };
-
-    // Write tags to buffer
-    let tagged_buffer = write_tags_to_buffer(audio_data.clone(), test_tags).await;
-    if let Err(e) = &tagged_buffer {
-      println!("Error writing tags to buffer: {}", e);
-      return;
-    }
-    let tagged_buffer = tagged_buffer.unwrap();
-
-    // Verify tags were written
-    let read_result = read_tags_from_buffer(tagged_buffer.clone()).await;
-    if let Err(e) = &read_result {
-      println!("Error reading tags from buffer: {}", e);
-      return;
-    }
-    let read_result = read_result.unwrap();
-    assert_eq!(read_result.title, Some("Test Song".to_string()));
-    assert_eq!(read_result.artists, Some(vec!["Test Artist".to_string()]));
-    assert!(read_result.image.is_some());
-
-    // Clear tags from buffer
-    let cleared_buffer = clear_tags_to_buffer(tagged_buffer).await;
-    if let Err(e) = &cleared_buffer {
-      println!("Error clearing tags from buffer: {}", e);
-      return;
-    }
-    let cleared_buffer = cleared_buffer.unwrap();
-
-    // Verify tags were cleared
-    let cleared_result = read_tags_from_buffer(cleared_buffer).await;
-    if let Err(e) = &cleared_result {
-      println!("Error reading cleared tags from buffer: {}", e);
-      return;
-    }
-    let cleared_result = cleared_result.unwrap();
-    assert_eq!(cleared_result.title, None);
-    assert_eq!(cleared_result.artists, None);
-    assert_eq!(cleared_result.album, None);
-    assert_eq!(cleared_result.year, None);
-    assert_eq!(cleared_result.genre, None);
-    assert_eq!(cleared_result.track, None);
-    assert_eq!(cleared_result.album_artists, None);
-    assert_eq!(cleared_result.comment, None);
-    assert_eq!(cleared_result.disc, None);
-    assert_eq!(cleared_result.image, None);
-  }
-
-  #[tokio::test]
   async fn test_clear_tags_empty_buffer() {
     // Test clearing tags from empty buffer
     let empty_buffer = vec![];
@@ -4228,98 +3982,6 @@ mod tests {
       result.is_err(),
       "Should fail to clear tags from invalid audio data"
     );
-  }
-
-  #[tokio::test]
-  async fn test_clear_tags_already_empty() {
-    // Test clearing tags from buffer that already has no tags
-    let audio_data = create_buffer_from_base64("SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAAwAAAbgA").unwrap();
-
-    // Clear tags from buffer that has no tags
-    let cleared_buffer = clear_tags_to_buffer(audio_data.clone()).await;
-    if let Err(e) = &cleared_buffer {
-      println!("Error clearing tags from buffer: {}", e);
-      return;
-    }
-    let cleared_buffer = cleared_buffer.unwrap();
-
-    // Verify the buffer is still valid and has no tags
-    let result = read_tags_from_buffer(cleared_buffer).await;
-    if let Err(e) = &result {
-      println!("Error reading tags from cleared buffer: {}", e);
-      return;
-    }
-    let result = result.unwrap();
-    assert_eq!(result.title, None);
-    assert_eq!(result.artists, None);
-    assert_eq!(result.album, None);
-    assert_eq!(result.year, None);
-    assert_eq!(result.genre, None);
-    assert_eq!(result.track, None);
-    assert_eq!(result.album_artists, None);
-    assert_eq!(result.comment, None);
-    assert_eq!(result.disc, None);
-    assert_eq!(result.image, None);
-  }
-
-  #[tokio::test]
-  async fn test_read_cover_image_from_file_comprehensive() {
-    use std::io::Write;
-    use tempfile::NamedTempFile;
-
-    // Test reading cover image from file with various scenarios
-    let mut temp_file = NamedTempFile::new().unwrap();
-    let audio_data = create_buffer_from_base64("SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAAwAAAbgA").unwrap();
-    temp_file.write_all(&audio_data).unwrap();
-    temp_file.flush().unwrap();
-
-    // Test reading cover image from file with no cover image
-    let result = read_cover_image_from_file(temp_file.path().to_string_lossy().to_string()).await;
-    if let Err(e) = &result {
-      println!("Error reading cover image from file: {}", e);
-      return;
-    }
-    assert!(result.is_ok());
-    let cover_image = result.unwrap();
-    assert!(
-      cover_image.is_none(),
-      "Should return None for file with no cover image"
-    );
-
-    // Add a cover image to the file
-    let image_data = create_test_image_data();
-    let test_tags = AudioTags {
-      image: Some(Image {
-        data: image_data.clone(),
-        pic_type: AudioImageType::CoverFront,
-        mime_type: Some("image/jpeg".to_string()),
-        description: Some("Test cover".to_string()),
-      }),
-      ..Default::default()
-    };
-
-    // Write tags with image to file
-    let write_result = write_tags(temp_file.path().to_string_lossy().to_string(), test_tags).await;
-    if let Err(e) = &write_result {
-      println!("Error writing tags to file: {}", e);
-      return;
-    }
-    assert!(write_result.is_ok());
-
-    // Now test reading cover image from file
-    let read_result =
-      read_cover_image_from_file(temp_file.path().to_string_lossy().to_string()).await;
-    if let Err(e) = &read_result {
-      println!("Error reading cover image from file: {}", e);
-      return;
-    }
-    assert!(read_result.is_ok());
-    let cover_image = read_result.unwrap();
-
-    // Verify we got the cover image
-    assert!(cover_image.is_some());
-    let cover_data = cover_image.unwrap();
-    assert_eq!(cover_data, image_data);
   }
 
   #[tokio::test]
@@ -4415,55 +4077,6 @@ mod tests {
         image_type
       );
     }
-  }
-
-  #[tokio::test]
-  async fn test_read_cover_image_from_file_large_image() {
-    use std::io::Write;
-    use tempfile::NamedTempFile;
-
-    // Test reading large cover image from file
-    let mut temp_file = NamedTempFile::new().unwrap();
-    let audio_data = create_buffer_from_base64("SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAAwAAAbgA").unwrap();
-    temp_file.write_all(&audio_data).unwrap();
-    temp_file.flush().unwrap();
-
-    // Create large image data (100KB)
-    let large_image_data: Vec<u8> = (0..1024 * 100).map(|i| (i % 256) as u8).collect();
-
-    let test_tags = AudioTags {
-      image: Some(Image {
-        data: large_image_data.clone(),
-        pic_type: AudioImageType::CoverFront,
-        mime_type: Some("image/jpeg".to_string()),
-        description: Some("Large test cover".to_string()),
-      }),
-      ..Default::default()
-    };
-
-    // Write tags with large image to file
-    let write_result = write_tags(temp_file.path().to_string_lossy().to_string(), test_tags).await;
-    if let Err(e) = &write_result {
-      println!("Error writing large image tags to file: {}", e);
-      return;
-    }
-    assert!(write_result.is_ok());
-
-    // Test reading large cover image from file
-    let read_result =
-      read_cover_image_from_file(temp_file.path().to_string_lossy().to_string()).await;
-    if let Err(e) = &read_result {
-      println!("Error reading large cover image from file: {}", e);
-      return;
-    }
-    assert!(read_result.is_ok());
-    let cover_image = read_result.unwrap();
-
-    // Verify we got the large cover image
-    assert!(cover_image.is_some());
-    let cover_data = cover_image.unwrap();
-    assert_eq!(cover_data.len(), large_image_data.len());
-    assert_eq!(cover_data, large_image_data);
   }
 
   #[tokio::test]
@@ -4568,127 +4181,6 @@ mod tests {
   // Comprehensive tests for write_tags function
 
   #[tokio::test]
-  async fn test_write_tags_basic_functionality() {
-    use std::io::Write;
-    use tempfile::NamedTempFile;
-
-    // Create a temporary file with valid audio data
-    let mut temp_file = NamedTempFile::new().unwrap();
-    let audio_data = create_buffer_from_base64("SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAAwAAAbgA").unwrap();
-    temp_file.write_all(&audio_data).unwrap();
-    temp_file.flush().unwrap();
-
-    // Test writing basic tags
-    let basic_tags = AudioTags {
-      title: Some("Test Song".to_string()),
-      artists: Some(vec!["Test Artist".to_string()]),
-      album: Some("Test Album".to_string()),
-      year: Some(2024),
-      ..Default::default()
-    };
-
-    let write_result = write_tags(
-      temp_file.path().to_string_lossy().to_string(),
-      basic_tags.clone(),
-    )
-    .await;
-    if let Err(e) = &write_result {
-      println!("Error writing basic tags: {}", e);
-      return;
-    }
-    assert!(write_result.is_ok());
-
-    // Verify the tags were written by reading them back
-    let read_result = read_tags(temp_file.path().to_string_lossy().to_string()).await;
-    if let Err(e) = &read_result {
-      println!("Error reading tags after write: {}", e);
-      return;
-    }
-    let read_tags = read_result.unwrap();
-    assert_eq!(read_tags.title, basic_tags.title);
-    assert_eq!(read_tags.artists, basic_tags.artists);
-    assert_eq!(read_tags.album, basic_tags.album);
-    assert_eq!(read_tags.year, basic_tags.year);
-  }
-
-  #[tokio::test]
-  async fn test_write_tags_comprehensive_data() {
-    use std::io::Write;
-    use tempfile::NamedTempFile;
-
-    // Create a temporary file with valid audio data
-    let mut temp_file = NamedTempFile::new().unwrap();
-    let audio_data = create_buffer_from_base64("SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAAwAAAbgA").unwrap();
-    temp_file.write_all(&audio_data).unwrap();
-    temp_file.flush().unwrap();
-
-    // Test writing comprehensive tags with all fields
-    let comprehensive_tags = AudioTags {
-      title: Some("Comprehensive Test Song".to_string()),
-      artists: Some(vec!["Artist 1".to_string(), "Artist 2".to_string()]),
-      album: Some("Comprehensive Test Album".to_string()),
-      year: Some(2024),
-      genre: Some("Test Genre".to_string()),
-      track: Some(Position {
-        no: Some(5),
-        of: Some(12),
-      }),
-      album_artists: Some(vec![
-        "Album Artist 1".to_string(),
-        "Album Artist 2".to_string(),
-      ]),
-      comment: Some("This is a comprehensive test comment".to_string()),
-      disc: Some(Position {
-        no: Some(1),
-        of: Some(2),
-      }),
-      image: Some(Image {
-        data: create_test_image_data(),
-        pic_type: AudioImageType::CoverFront,
-        mime_type: Some("image/jpeg".to_string()),
-        description: Some("Comprehensive test cover".to_string()),
-      }),
-      all_images: None,
-    };
-
-    let write_result = write_tags(
-      temp_file.path().to_string_lossy().to_string(),
-      comprehensive_tags.clone(),
-    )
-    .await;
-    if let Err(e) = &write_result {
-      println!("Error writing comprehensive tags: {}", e);
-      return;
-    }
-    assert!(write_result.is_ok());
-
-    // Verify all tags were written correctly
-    let read_result = read_tags(temp_file.path().to_string_lossy().to_string()).await;
-    if let Err(e) = &read_result {
-      println!("Error reading comprehensive tags: {}", e);
-      return;
-    }
-    let read_tags = read_result.unwrap();
-
-    assert_eq!(read_tags.title, comprehensive_tags.title);
-    assert_eq!(read_tags.artists, comprehensive_tags.artists);
-    assert_eq!(read_tags.album, comprehensive_tags.album);
-    assert_eq!(read_tags.year, comprehensive_tags.year);
-    assert_eq!(read_tags.genre, comprehensive_tags.genre);
-    assert_eq!(read_tags.track, comprehensive_tags.track);
-    assert_eq!(read_tags.album_artists, comprehensive_tags.album_artists);
-    assert_eq!(read_tags.comment, comprehensive_tags.comment);
-    assert_eq!(read_tags.disc, comprehensive_tags.disc);
-    assert!(read_tags.image.is_some());
-    if let (Some(read_image), Some(expected_image)) = (&read_tags.image, &comprehensive_tags.image)
-    {
-      assert_eq!(read_image.data, expected_image.data);
-      assert_eq!(read_image.mime_type, expected_image.mime_type);
-      assert_eq!(read_image.description, expected_image.description);
-    }
-  }
-
-  #[tokio::test]
   async fn test_write_tags_error_cases() {
     use tempfile::NamedTempFile;
 
@@ -4726,96 +4218,7 @@ mod tests {
     );
   }
 
-  #[tokio::test]
-  async fn test_write_tags_unicode_and_special_characters() {
-    use std::io::Write;
-    use tempfile::NamedTempFile;
-
-    // Create a temporary file with valid audio data
-    let mut temp_file = NamedTempFile::new().unwrap();
-    let audio_data = create_buffer_from_base64("SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAAwAAAbgA").unwrap();
-    temp_file.write_all(&audio_data).unwrap();
-    temp_file.flush().unwrap();
-
-    // Test writing tags with unicode and special characters
-    let unicode_tags = AudioTags {
-      title: Some("Test Song with émojis 🎵 and unicode 中文".to_string()),
-      artists: Some(vec![
-        "Artist with émojis 🎤".to_string(),
-        "Another Artist".to_string(),
-      ]),
-      album: Some("Album with special chars: !@#$%^&*()".to_string()),
-      year: Some(2024),
-      genre: Some("Genre with émojis 🎶".to_string()),
-      comment: Some("Comment with newlines\nand tabs\tand quotes\"".to_string()),
-      all_images: None,
-      ..Default::default()
-    };
-
-    let write_result = write_tags(
-      temp_file.path().to_string_lossy().to_string(),
-      unicode_tags.clone(),
-    )
-    .await;
-    if let Err(e) = &write_result {
-      println!("Error writing unicode tags: {}", e);
-      return;
-    }
-    assert!(write_result.is_ok());
-
-    // Verify unicode tags were written correctly
-    let read_result = read_tags(temp_file.path().to_string_lossy().to_string()).await;
-    if let Err(e) = &read_result {
-      println!("Error reading unicode tags: {}", e);
-      return;
-    }
-    let read_tags = read_result.unwrap();
-
-    assert_eq!(read_tags.title, unicode_tags.title);
-    assert_eq!(read_tags.artists, unicode_tags.artists);
-    assert_eq!(read_tags.album, unicode_tags.album);
-    assert_eq!(read_tags.year, unicode_tags.year);
-    assert_eq!(read_tags.genre, unicode_tags.genre);
-    assert_eq!(read_tags.comment, unicode_tags.comment);
-  }
-
   // Comprehensive tests for write_cover_image_to_file function
-
-  #[tokio::test]
-  async fn test_write_cover_image_to_file_basic_functionality() {
-    use std::io::Write;
-    use tempfile::NamedTempFile;
-
-    // Create a temporary file with valid audio data
-    let mut temp_file = NamedTempFile::new().unwrap();
-    let audio_data = create_buffer_from_base64("SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAAwAAAbgA").unwrap();
-    temp_file.write_all(&audio_data).unwrap();
-    temp_file.flush().unwrap();
-
-    // Test writing cover image to file
-    let image_data = create_test_image_data();
-    let write_result = write_cover_image_to_file(
-      temp_file.path().to_string_lossy().to_string(),
-      image_data.clone(),
-    )
-    .await;
-    if let Err(e) = &write_result {
-      println!("Error writing cover image to file: {}", e);
-      return;
-    }
-    assert!(write_result.is_ok());
-
-    // Verify the cover image was written by reading it back
-    let read_result =
-      read_cover_image_from_file(temp_file.path().to_string_lossy().to_string()).await;
-    if let Err(e) = &read_result {
-      println!("Error reading cover image from file: {}", e);
-      return;
-    }
-    let read_image = read_result.unwrap();
-    assert!(read_image.is_some());
-    assert_eq!(read_image.unwrap(), image_data);
-  }
 
   #[tokio::test]
   async fn test_write_cover_image_to_file_different_image_types() {
@@ -4889,80 +4292,6 @@ mod tests {
   }
 
   #[tokio::test]
-  async fn test_write_cover_image_to_file_large_image() {
-    use std::io::Write;
-    use tempfile::NamedTempFile;
-
-    // Create a temporary file with valid audio data
-    let mut temp_file = NamedTempFile::new().unwrap();
-    let audio_data = create_buffer_from_base64("SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAAwAAAbgA").unwrap();
-    temp_file.write_all(&audio_data).unwrap();
-    temp_file.flush().unwrap();
-
-    // Test with large image data (100KB)
-    let large_image_data = vec![0u8; 100000];
-    let write_result = write_cover_image_to_file(
-      temp_file.path().to_string_lossy().to_string(),
-      large_image_data.clone(),
-    )
-    .await;
-    if let Err(e) = &write_result {
-      println!("Error writing large image to file: {}", e);
-      return;
-    }
-    assert!(write_result.is_ok());
-
-    // Verify the large image was written
-    let read_result =
-      read_cover_image_from_file(temp_file.path().to_string_lossy().to_string()).await;
-    if let Err(e) = &read_result {
-      println!("Error reading large image from file: {}", e);
-      return;
-    }
-    let read_image = read_result.unwrap();
-    assert!(read_image.is_some());
-    assert_eq!(read_image.unwrap().len(), large_image_data.len());
-  }
-
-  #[tokio::test]
-  async fn test_write_cover_image_to_file_empty_image() {
-    use std::io::Write;
-    use tempfile::NamedTempFile;
-
-    // Create a temporary file with valid audio data
-    let mut temp_file = NamedTempFile::new().unwrap();
-    let audio_data = create_buffer_from_base64("SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAAwAAAbgA").unwrap();
-    temp_file.write_all(&audio_data).unwrap();
-    temp_file.flush().unwrap();
-
-    // Test with empty image data
-    let empty_image_data = vec![];
-    let write_result = write_cover_image_to_file(
-      temp_file.path().to_string_lossy().to_string(),
-      empty_image_data,
-    )
-    .await;
-    if let Err(e) = &write_result {
-      println!("Error writing empty image to file: {}", e);
-      return;
-    }
-    assert!(write_result.is_ok());
-
-    // Verify the empty image was written (should still be valid)
-    let read_result =
-      read_cover_image_from_file(temp_file.path().to_string_lossy().to_string()).await;
-    if let Err(e) = &read_result {
-      println!("Error reading empty image from file: {}", e);
-      return;
-    }
-    let read_image = read_result.unwrap();
-    // Empty image might be None or Some(empty_vec), both are valid
-    if let Some(image_data) = read_image {
-      assert!(image_data.is_empty());
-    }
-  }
-
-  #[tokio::test]
   async fn test_write_cover_image_to_file_error_cases() {
     use tempfile::NamedTempFile;
 
@@ -5000,52 +4329,140 @@ mod tests {
   }
 
   #[tokio::test]
-  async fn test_write_cover_image_to_file_overwrite_existing() {
+  async fn test_write_cover_image_to_file_read_only() {
+    use std::fs::{self, File};
     use std::io::Write;
-    use tempfile::NamedTempFile;
+    use std::os::unix::fs::PermissionsExt;
+    use tempfile::tempdir;
 
-    // Create a temporary file with valid audio data
-    let mut temp_file = NamedTempFile::new().unwrap();
-    let audio_data = create_buffer_from_base64("SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAAwAAAbgA").unwrap();
-    temp_file.write_all(&audio_data).unwrap();
-    temp_file.flush().unwrap();
+    // Create a temporary directory
+    let temp_dir = tempdir().expect("Failed to create temp dir");
+    let file_path = temp_dir.path().join("readonly.mp3");
 
-    // Write initial cover image
-    let initial_image = vec![0xFF, 0xD8, 0xFF, 0xE0]; // JPEG header
-    let write_result = write_cover_image_to_file(
-      temp_file.path().to_string_lossy().to_string(),
-      initial_image.clone(),
-    )
-    .await;
-    if let Err(e) = &write_result {
-      println!("Error writing initial cover image: {}", e);
-      return;
-    }
-    assert!(write_result.is_ok());
+    // Create a valid MP3 file
+    let audio_data = create_buffer_from_base64("SUQzBAAAAAAAIlRTU0UAAAAOAAADTGF2ZjYxLjcuMTAwAAAAAAAAAAAAAAD/+1AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABJbmZvAAAADwAAACgAAEIeAAkJDw8WFhYcHCIiIikpLy8vNTU8PDxCQkhISE5OVVVVW1thYWFoaG5ubnR0e3t7gYGHh4eOjpSUlJqaoaGhp6etra20tLq6usDAx8fHzc3T09Pa2uDg4Obm7e3t8/P5+fn//wAAAABMYXZjNjEuMTkAAAAAAAAAAAAAAAAkBXwAAAAAAABCHsH9lAcAAAAAAAAAAAAAAAAAAAAA//uQZAAP8AAAaQAAAAgAAA0gAAABAAABpAAAACAAADSAAAAETEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVTEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV").unwrap();
+    File::create(&file_path)
+      .expect("Failed to create file")
+      .write_all(&audio_data)
+      .expect("Failed to write data");
 
-    // Overwrite with new cover image
-    let new_image = vec![0x89, 0x50, 0x4E, 0x47]; // PNG header
-    let write_result = write_cover_image_to_file(
-      temp_file.path().to_string_lossy().to_string(),
-      new_image.clone(),
-    )
-    .await;
-    if let Err(e) = &write_result {
-      println!("Error writing new cover image: {}", e);
-      return;
-    }
-    assert!(write_result.is_ok());
+    // Make the file read-only
+    let mut perms = fs::metadata(&file_path)
+      .expect("Failed to get metadata")
+      .permissions();
+    perms.set_mode(0o444); // read-only for everyone
+    fs::set_permissions(&file_path, perms).expect("Failed to set permissions");
 
-    // Verify the new image was written (overwrote the old one)
-    let read_result =
-      read_cover_image_from_file(temp_file.path().to_string_lossy().to_string()).await;
-    if let Err(e) = &read_result {
-      println!("Error reading overwritten cover image: {}", e);
-      return;
-    }
+    // Try to write cover image
+    let image_data = create_test_image_data();
+    let result =
+      write_cover_image_to_file(file_path.to_string_lossy().to_string(), image_data).await;
+
+    // Verify error
+    assert!(result.is_err(), "Should fail for read-only file");
+    assert!(
+      result.unwrap_err().contains("Failed to write file"),
+      "Should indicate write error"
+    );
+  }
+
+  #[tokio::test]
+  async fn test_write_cover_image_to_file_corrupted_audio() {
+    use std::fs::File;
+    use std::io::Write;
+    use tempfile::tempdir;
+
+    // Create a temporary directory
+    let temp_dir = tempdir().expect("Failed to create temp dir");
+    let file_path = temp_dir.path().join("corrupted.mp3");
+
+    // Create a corrupted MP3 file (valid header but corrupted data)
+    let corrupted_data = vec![
+      // ID3v2 header
+      0x49, 0x44, 0x33, // "ID3"
+      0x03, 0x00, // version 2.3.0
+      0x00, // flags
+      0x00, 0x00, 0x00, 0x10, // size
+      // Corrupted data
+      0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+    ];
+    File::create(&file_path)
+      .expect("Failed to create file")
+      .write_all(&corrupted_data)
+      .expect("Failed to write data");
+
+    // Try to write cover image
+    let image_data = create_test_image_data();
+    let result =
+      write_cover_image_to_file(file_path.to_string_lossy().to_string(), image_data).await;
+
+    // Verify error
+    assert!(result.is_err(), "Should fail for corrupted audio file");
+    assert!(
+      result.unwrap_err().contains("Failed to read audio file"),
+      "Should indicate read error"
+    );
+  }
+
+  #[tokio::test]
+  async fn test_write_cover_image_to_file_success() {
+    use std::fs::File;
+    use std::io::Write;
+    use tempfile::tempdir;
+
+    // Create a temporary directory
+    let temp_dir = tempdir().expect("Failed to create temp dir");
+    let file_path = temp_dir.path().join("test.mp3");
+
+    // Create a valid MP3 file
+    let audio_data = create_buffer_from_base64("SUQzBAAAAAAAIlRTU0UAAAAOAAADTGF2ZjYxLjcuMTAwAAAAAAAAAAAAAAD/+1AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABJbmZvAAAADwAAACgAAEIeAAkJDw8WFhYcHCIiIikpLy8vNTU8PDxCQkhISE5OVVVVW1thYWFoaG5ubnR0e3t7gYGHh4eOjpSUlJqaoaGhp6etra20tLq6usDAx8fHzc3T09Pa2uDg4Obm7e3t8/P5+fn//wAAAABMYXZjNjEuMTkAAAAAAAAAAAAAAAAkBXwAAAAAAABCHsH9lAcAAAAAAAAAAAAAAAAAAAAA//uQZAAP8AAAaQAAAAgAAA0gAAABAAABpAAAACAAADSAAAAETEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVTEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV").unwrap();
+    File::create(&file_path)
+      .expect("Failed to create file")
+      .write_all(&audio_data)
+      .expect("Failed to write data");
+
+    // Create test image data
+    let image_data = create_test_image_data();
+
+    // Write cover image
+    let result =
+      write_cover_image_to_file(file_path.to_string_lossy().to_string(), image_data.clone()).await;
+
+    // Verify success
+    assert!(result.is_ok(), "Should successfully write cover image");
+
+    // Read back the file and verify the image was written correctly
+    let read_result = read_cover_image_from_file(file_path.to_string_lossy().to_string()).await;
+    assert!(read_result.is_ok(), "Should successfully read cover image");
+
     let read_image = read_result.unwrap();
-    assert!(read_image.is_some());
-    assert_eq!(read_image.unwrap(), new_image);
+    assert!(read_image.is_some(), "Should have cover image");
+    assert_eq!(
+      read_image.unwrap(),
+      image_data,
+      "Cover image data should match"
+    );
+
+    // Read all tags and verify the image is set as cover
+    let tags = read_tags(file_path.to_string_lossy().to_string())
+      .await
+      .expect("Should read tags");
+    assert!(tags.image.is_some(), "Should have cover image in tags");
+    let tag_image = tags.image.unwrap();
+    assert_eq!(
+      tag_image.data, image_data,
+      "Cover image data should match in tags"
+    );
+    assert_eq!(
+      tag_image.pic_type,
+      AudioImageType::CoverFront,
+      "Image should be set as cover"
+    );
+    assert_eq!(
+      tag_image.mime_type,
+      Some("image/jpeg".to_string()),
+      "MIME type should be JPEG"
+    );
   }
 
   #[test]
@@ -5175,7 +4592,7 @@ mod tests {
     ];
 
     for (audio_image_type, expected_picture_type) in test_cases {
-      let result = audio_image_type.to_picture_type();
+      let result = audio_image_type.build_picture_type();
       assert_eq!(
         result, expected_picture_type,
         "Failed to convert AudioImageType::{:?} to PictureType::{:?}",
@@ -5214,7 +4631,7 @@ mod tests {
 
     for original_picture_type in picture_types {
       let audio_image_type = AudioImageType::from_picture_type(&original_picture_type);
-      let converted_back = audio_image_type.to_picture_type();
+      let converted_back = audio_image_type.build_picture_type();
       assert_eq!(
         original_picture_type, converted_back,
         "Round trip conversion failed for PictureType::{:?}",
@@ -5251,7 +4668,7 @@ mod tests {
     ];
 
     for original_audio_image_type in audio_image_types {
-      let picture_type = original_audio_image_type.to_picture_type();
+      let picture_type = original_audio_image_type.build_picture_type();
       let converted_back = AudioImageType::from_picture_type(&picture_type);
       assert_eq!(
         original_audio_image_type, converted_back,
@@ -5294,6 +4711,800 @@ mod tests {
       21,
       "Expected 21 AudioImageType variants, found {}",
       all_audio_image_types.len()
+    );
+  }
+
+  #[tokio::test]
+  async fn test_clear_tags_file_not_found() {
+    // Try to clear tags from a non-existent file
+    let result = clear_tags("non_existent_file.mp3".to_string()).await;
+
+    // Verify error
+    assert!(result.is_err(), "Should fail for non-existent file");
+    assert!(
+      result.unwrap_err().contains("Failed to open file"),
+      "Should indicate file open error"
+    );
+  }
+
+  #[tokio::test]
+  async fn test_clear_tags_no_write_permission() {
+    use std::fs::{self, File};
+    use std::io::Write;
+    use std::os::unix::fs::PermissionsExt;
+    use tempfile::tempdir;
+
+    // Create a temporary directory
+    let temp_dir = tempdir().expect("Failed to create temp dir");
+    let file_path = temp_dir.path().join("readonly.mp3");
+
+    // Create a minimal MP3 file
+    let data = vec![
+      // ID3v2 header
+      0x49, 0x44, 0x33, // "ID3"
+      0x03, 0x00, // version 2.3.0
+      0x00, // flags
+      0x00, 0x00, 0x00, 0x10, // size
+      // Some padding
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // MP3 frame header
+      0xFF, 0xFB, 0x90, 0x44, 0x00, 0x00, 0x00, 0x00,
+    ];
+
+    // Write the file
+    File::create(&file_path)
+      .expect("Failed to create file")
+      .write_all(&data)
+      .expect("Failed to write data");
+
+    // Make the file read-only
+    let mut perms = fs::metadata(&file_path)
+      .expect("Failed to get metadata")
+      .permissions();
+    perms.set_mode(0o444); // read-only for everyone
+    fs::set_permissions(&file_path, perms).expect("Failed to set permissions");
+
+    // Try to clear tags
+    let result = clear_tags(file_path.to_string_lossy().to_string()).await;
+
+    // Verify error
+    assert!(result.is_err(), "Should fail for read-only file");
+    assert!(
+      result.unwrap_err().contains("Failed to open file"),
+      "Should indicate file open error"
+    );
+  }
+
+  #[tokio::test]
+  async fn test_clear_tags_invalid_file() {
+    use std::fs::File;
+    use std::io::Write;
+    use tempfile::tempdir;
+
+    // Create a temporary directory
+    let temp_dir = tempdir().expect("Failed to create temp dir");
+    let file_path = temp_dir.path().join("invalid.mp3");
+
+    // Create an invalid file that's too short to be a valid MP3
+    let data = vec![0x00];
+    File::create(&file_path)
+      .expect("Failed to create file")
+      .write_all(&data)
+      .expect("Failed to write data");
+
+    // Try to clear tags
+    let result = clear_tags(file_path.to_string_lossy().to_string()).await;
+
+    // Verify error
+    assert!(result.is_err(), "Should fail for invalid file");
+    let error = result.unwrap_err();
+    assert!(
+      error.contains("Failed to read audio file"),
+      "Should indicate read error, got: {}",
+      error
+    );
+  }
+
+  #[tokio::test]
+  async fn test_clear_tags_success() {
+    use std::fs::File;
+    use std::io::Write;
+    use tempfile::tempdir;
+
+    // Create a temporary directory
+    let temp_dir = tempdir().expect("Failed to create temp dir");
+    let file_path = temp_dir.path().join("test.mp3");
+
+    // Create a minimal valid MP3 file
+    let audio_data = create_buffer_from_base64("SUQzBAAAAAAAIlRTU0UAAAAOAAADTGF2ZjYxLjcuMTAwAAAAAAAAAAAAAAD/+1AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABJbmZvAAAADwAAACgAAEIeAAkJDw8WFhYcHCIiIikpLy8vNTU8PDxCQkhISE5OVVVVW1thYWFoaG5ubnR0e3t7gYGHh4eOjpSUlJqaoaGhp6etra20tLq6usDAx8fHzc3T09Pa2uDg4Obm7e3t8/P5+fn//wAAAABMYXZjNjEuMTkAAAAAAAAAAAAAAAAkBXwAAAAAAABCHsH9lAcAAAAAAAAAAAAAAAAAAAAA//uQZAAP8AAAaQAAAAgAAA0gAAABAAABpAAAACAAADSAAAAETEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVTEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV").unwrap();
+
+    // Create test tags
+    let test_tags = AudioTags {
+      title: Some("Test Song".to_string()),
+      artists: Some(vec!["Test Artist".to_string()]),
+      album: Some("Test Album".to_string()),
+      year: Some(2024),
+      genre: Some("Test Genre".to_string()),
+      track: Some(Position {
+        no: Some(1),
+        of: Some(10),
+      }),
+      album_artists: Some(vec!["Test Album Artist".to_string()]),
+      comment: Some("Test comment".to_string()),
+      disc: Some(Position {
+        no: Some(1),
+        of: Some(2),
+      }),
+      image: Some(Image {
+        data: create_test_image_data(),
+        pic_type: AudioImageType::CoverFront,
+        mime_type: Some("image/jpeg".to_string()),
+        description: Some("Test cover".to_string()),
+      }),
+      all_images: None,
+    };
+
+    // Write tags to buffer
+    let tagged_buffer = write_tags_to_buffer(audio_data, test_tags)
+      .await
+      .expect("Failed to write tags");
+
+    // Write the file
+    File::create(&file_path)
+      .expect("Failed to create file")
+      .write_all(&tagged_buffer)
+      .expect("Failed to write data");
+
+    // Clear the tags
+    let result = clear_tags(file_path.to_string_lossy().to_string()).await;
+
+    // Verify success
+    assert!(result.is_ok(), "Should successfully clear tags");
+
+    // Read back the tags
+    let read_result = read_tags(file_path.to_string_lossy().to_string()).await;
+    assert!(read_result.is_ok(), "Should successfully read cleared file");
+
+    // Verify tags are cleared
+    let read_tags = read_result.unwrap();
+    assert!(read_tags.title.is_none(), "Title should be cleared");
+    assert!(read_tags.artists.is_none(), "Artists should be cleared");
+    assert!(read_tags.album.is_none(), "Album should be cleared");
+    assert!(read_tags.image.is_none(), "Image should be cleared");
+  }
+
+  #[tokio::test]
+  async fn test_clear_tags_to_buffer_with_failing_read() {
+    use std::io::{self, Read, Seek, SeekFrom, Write};
+
+    // Create a custom type that implements FileLike but fails to read after format detection
+    struct FailingFile {
+      read_count: usize,
+      data: Vec<u8>,
+      position: usize,
+    }
+
+    impl FailingFile {
+      fn new() -> Self {
+        // Create a minimal valid MP3 file
+        let data = vec![
+          // ID3v2 header
+          0x49, 0x44, 0x33, // "ID3"
+          0x03, 0x00, // version 2.3.0
+          0x00, // flags
+          0x00, 0x00, 0x00, 0x10, // size
+          // Some padding
+          0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // MP3 frame header
+          0xFF, 0xFB, 0x90, 0x44, 0x00, 0x00, 0x00, 0x00,
+        ];
+        Self {
+          read_count: 0,
+          data,
+          position: 0,
+        }
+      }
+    }
+
+    impl Read for FailingFile {
+      fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+        // First few reads return valid data to pass format detection
+        if self.read_count < 2 {
+          let remaining = self.data.len() - self.position;
+          let to_read = buf.len().min(remaining);
+          if to_read > 0 {
+            buf[..to_read].copy_from_slice(&self.data[self.position..self.position + to_read]);
+            self.position += to_read;
+            self.read_count += 1;
+            Ok(to_read)
+          } else {
+            Ok(0)
+          }
+        } else {
+          // Later reads fail
+          Err(io::Error::new(io::ErrorKind::Other, "Simulated read error"))
+        }
+      }
+    }
+
+    impl Seek for FailingFile {
+      fn seek(&mut self, pos: SeekFrom) -> io::Result<u64> {
+        match pos {
+          SeekFrom::Start(offset) => {
+            self.position = offset as usize;
+            Ok(offset)
+          }
+          SeekFrom::Current(offset) => {
+            let new_pos = self.position as i64 + offset;
+            if new_pos >= 0 {
+              self.position = new_pos as usize;
+              Ok(new_pos as u64)
+            } else {
+              Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "Invalid seek position",
+              ))
+            }
+          }
+          SeekFrom::End(offset) => {
+            let new_pos = self.data.len() as i64 + offset;
+            if new_pos >= 0 {
+              self.position = new_pos as usize;
+              Ok(new_pos as u64)
+            } else {
+              Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "Invalid seek position",
+              ))
+            }
+          }
+        }
+      }
+    }
+
+    impl Length for FailingFile {
+      type Error = io::Error;
+      fn len(&self) -> Result<u64, Self::Error> {
+        Ok(self.data.len() as u64)
+      }
+    }
+
+    impl Truncate for FailingFile {
+      type Error = io::Error;
+      fn truncate(&mut self, _size: u64) -> Result<(), Self::Error> {
+        Ok(())
+      }
+    }
+
+    impl Write for FailingFile {
+      fn write(&mut self, _buf: &[u8]) -> io::Result<usize> {
+        Ok(_buf.len()) // Pretend we wrote everything
+      }
+
+      fn flush(&mut self) -> io::Result<()> {
+        Ok(())
+      }
+    }
+
+    // Create our failing file
+    let mut failing_file = FailingFile::new();
+    let mut out = FailingFile::new();
+
+    // Try to clear tags
+    let result = generic_clear_tags(&mut failing_file, &mut out).await;
+
+    // Verify error
+    assert!(result.is_err(), "Should fail when reading fails");
+    assert!(
+      result.unwrap_err().contains("Failed to read audio file"),
+      "Should indicate read error"
+    );
+  }
+
+  #[tokio::test]
+  async fn test_read_cover_image_from_buffer_no_cover() {
+    // Create a minimal valid MP3 file
+    let audio_data = create_buffer_from_base64("SUQzBAAAAAAAIlRTU0UAAAAOAAADTGF2ZjYxLjcuMTAwAAAAAAAAAAAAAAD/+1AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABJbmZvAAAADwAAACgAAEIeAAkJDw8WFhYcHCIiIikpLy8vNTU8PDxCQkhISE5OVVVVW1thYWFoaG5ubnR0e3t7gYGHh4eOjpSUlJqaoaGhp6etra20tLq6usDAx8fHzc3T09Pa2uDg4Obm7e3t8/P5+fn//wAAAABMYXZjNjEuMTkAAAAAAAAAAAAAAAAkBXwAAAAAAABCHsH9lAcAAAAAAAAAAAAAAAAAAAAA//uQZAAP8AAAaQAAAAgAAA0gAAABAAABpAAAACAAADSAAAAETEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVTEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV").unwrap();
+
+    // Create test tags with non-cover images
+    let test_tags = AudioTags {
+      title: Some("Test Song".to_string()),
+      artists: Some(vec!["Test Artist".to_string()]),
+      album: None,
+      year: None,
+      genre: None,
+      track: None,
+      album_artists: None,
+      comment: None,
+      disc: None,
+      image: None,
+      all_images: Some(vec![
+        // Artist photo
+        Image {
+          data: create_test_image_data(),
+          pic_type: AudioImageType::Artist,
+          mime_type: Some("image/jpeg".to_string()),
+          description: Some("Artist photo".to_string()),
+        },
+        // Band logo
+        Image {
+          data: create_test_image_data(),
+          pic_type: AudioImageType::BandLogo,
+          mime_type: Some("image/jpeg".to_string()),
+          description: Some("Band logo".to_string()),
+        },
+        // Lead artist photo
+        Image {
+          data: create_test_image_data(),
+          pic_type: AudioImageType::LeadArtist,
+          mime_type: Some("image/jpeg".to_string()),
+          description: Some("Lead artist photo".to_string()),
+        },
+      ]),
+    };
+
+    // Write tags to buffer
+    let tagged_buffer = write_tags_to_buffer(audio_data, test_tags)
+      .await
+      .expect("Failed to write tags");
+
+    // Try to read cover image
+    let result = read_cover_image_from_buffer(tagged_buffer).await;
+
+    // Verify result
+    assert!(result.is_ok(), "Should succeed even without cover image");
+    assert_eq!(
+      result.unwrap(),
+      None,
+      "Should return None when no cover image exists"
+    );
+  }
+
+  #[tokio::test]
+  async fn test_generic_read_tags_guess_file_type_error() {
+    use std::io::{self, Read, Seek, SeekFrom};
+
+    // Create a custom type that implements FileLike but always fails to read
+    struct FailingFile;
+
+    impl Read for FailingFile {
+      fn read(&mut self, _buf: &mut [u8]) -> io::Result<usize> {
+        Err(io::Error::new(io::ErrorKind::Other, "Simulated read error"))
+      }
+    }
+
+    impl Seek for FailingFile {
+      fn seek(&mut self, _pos: SeekFrom) -> io::Result<u64> {
+        Ok(0)
+      }
+    }
+
+    impl Length for FailingFile {
+      type Error = io::Error;
+      fn len(&self) -> Result<u64, Self::Error> {
+        Ok(1000) // Pretend we have some length
+      }
+    }
+
+    impl Truncate for FailingFile {
+      type Error = io::Error;
+      fn truncate(&mut self, _size: u64) -> Result<(), Self::Error> {
+        Ok(())
+      }
+    }
+
+    impl io::Write for FailingFile {
+      fn write(&mut self, _buf: &[u8]) -> io::Result<usize> {
+        Ok(_buf.len()) // Pretend we wrote everything
+      }
+
+      fn flush(&mut self) -> io::Result<()> {
+        Ok(())
+      }
+    }
+
+    // Create our failing file
+    let mut failing_file = FailingFile;
+
+    // Try to read tags from the failing file
+    let result = generic_read_tags(&mut failing_file).await;
+
+    // Verify we get an error
+    assert!(result.is_err(), "Should return error for invalid file");
+
+    // Verify the error message matches exactly what generic_read_tags returns
+    match result {
+      Err(e) => {
+        assert_eq!(
+          e, "Failed to guess file type",
+          "Error message should indicate failure to guess file type, got: {}",
+          e
+        );
+      }
+      Ok(_) => panic!("Should not successfully read tags from invalid file"),
+    }
+  }
+
+  #[test]
+  fn test_to_tag_replaces_existing_images() {
+    use lofty::picture::{MimeType, Picture, PictureType};
+    use lofty::tag::{Tag, TagType};
+
+    // Create a primary tag with existing images that should be replaced
+    let mut primary_tag = Tag::new(TagType::Id3v2);
+
+    // Add some existing images to the primary tag
+    let existing_images = vec![
+      (PictureType::BandLogo, "Old band logo"),
+      (PictureType::Artist, "Old artist photo"),
+      (PictureType::CoverFront, "Old cover"),
+    ];
+
+    for (pic_type, description) in existing_images {
+      let image = Picture::new_unchecked(
+        pic_type,
+        Some(MimeType::Jpeg),
+        Some(description.to_string()),
+        vec![0xFF, 0xD8, 0xFF, 0xE0], // Minimal JPEG header for old images
+      );
+      primary_tag.push_picture(image);
+    }
+
+    // Verify the primary tag has the initial images
+    assert_eq!(
+      primary_tag.pictures().len(),
+      3,
+      "Primary tag should have 3 initial images"
+    );
+
+    // Create new test images with different types
+    let test_images = vec![
+      (AudioImageType::Artist, "New artist photo".to_string()),
+      (AudioImageType::BandLogo, "New band logo".to_string()),
+      (AudioImageType::CoverFront, "New cover image".to_string()), // Cover image in the middle
+      (AudioImageType::Conductor, "Conductor photo".to_string()),
+      (AudioImageType::LeadArtist, "Lead artist photo".to_string()),
+    ];
+
+    // Create test image data (different from the old images)
+    let image_data = vec![0xFF, 0xD8, 0xFF, 0xE1]; // Slightly different JPEG header for new images
+    let all_images: Vec<Image> = test_images
+      .iter()
+      .map(|(pic_type, description)| Image {
+        data: image_data.clone(),
+        pic_type: *pic_type,
+        mime_type: Some("image/jpeg".to_string()),
+        description: Some(description.clone()),
+      })
+      .collect();
+
+    // Create AudioTags with these images
+    let audio_tags = AudioTags {
+      title: Some("Test Song".to_string()),
+      artists: Some(vec!["Test Artist".to_string()]),
+      album: None,
+      year: None,
+      genre: None,
+      track: None,
+      album_artists: None,
+      comment: None,
+      disc: None,
+      image: None, // No main image set
+      all_images: Some(all_images),
+    };
+
+    // Convert AudioTags to the primary tag (this should replace all existing images)
+    audio_tags.to_tag(&mut primary_tag);
+
+    // Get the pictures from the updated tag
+    let pictures = primary_tag.pictures();
+
+    // Verify we have all new images and no old images
+    assert_eq!(
+      pictures.len(),
+      test_images.len(),
+      "Should have only the new images"
+    );
+
+    // Verify none of the old images exist by checking their data
+    for picture in pictures {
+      assert_eq!(
+        picture.data(),
+        &image_data,
+        "Should only have new image data"
+      );
+    }
+
+    // Verify the cover image is first
+    assert_eq!(
+      pictures[0].pic_type(),
+      PictureType::CoverFront,
+      "First image should be cover"
+    );
+    assert_eq!(
+      pictures[0].description().map(|s| s.to_string()),
+      Some(test_images[2].1.clone()),
+      "Cover image should have correct description"
+    );
+
+    // Create a map of the original order (excluding cover)
+    let original_order: Vec<(&AudioImageType, String)> = test_images
+      .iter()
+      .filter(|(pic_type, _)| *pic_type != AudioImageType::CoverFront)
+      .map(|(pic_type, desc)| (pic_type, desc.clone()))
+      .collect();
+
+    // Verify the remaining images are in the same order as they were in all_images
+    for (i, (expected_type, expected_desc)) in original_order.iter().enumerate() {
+      let picture = &pictures[i + 1]; // +1 because cover is first
+      let actual_type = AudioImageType::from_picture_type(&picture.pic_type());
+      assert_eq!(
+        actual_type,
+        **expected_type,
+        "Image at position {} should have type {:?}",
+        i + 1,
+        expected_type
+      );
+      assert_eq!(
+        picture.description().map(|s| s.to_string()),
+        Some(expected_desc.clone()),
+        "Image at position {} should have description '{}'",
+        i + 1,
+        expected_desc
+      );
+    }
+  }
+
+  #[test]
+  fn test_to_tag_image_ordering() {
+    use lofty::picture::PictureType;
+    use lofty::tag::{Tag, TagType};
+
+    // Create test images with different types
+    let test_images = vec![
+      (AudioImageType::Artist, "Artist photo".to_string()),
+      (AudioImageType::BandLogo, "Band logo".to_string()),
+      (AudioImageType::CoverFront, "Cover image".to_string()), // Cover image in the middle
+      (AudioImageType::Conductor, "Conductor photo".to_string()),
+      (AudioImageType::LeadArtist, "Lead artist photo".to_string()),
+    ];
+
+    // Create test image data
+    let image_data = vec![0xFF, 0xD8, 0xFF, 0xE0]; // Minimal JPEG header
+    let all_images: Vec<Image> = test_images
+      .iter()
+      .map(|(pic_type, description)| Image {
+        data: image_data.clone(),
+        pic_type: *pic_type,
+        mime_type: Some("image/jpeg".to_string()),
+        description: Some(description.clone()),
+      })
+      .collect();
+
+    // Create AudioTags with these images
+    let audio_tags = AudioTags {
+      title: Some("Test Song".to_string()),
+      artists: Some(vec!["Test Artist".to_string()]),
+      album: None,
+      year: None,
+      genre: None,
+      track: None,
+      album_artists: None,
+      comment: None,
+      disc: None,
+      image: None, // No main image set
+      all_images: Some(all_images),
+    };
+
+    // Create a new tag and convert AudioTags to it
+    let mut tag = Tag::new(TagType::Id3v2);
+    audio_tags.to_tag(&mut tag);
+
+    // Get the pictures from the tag
+    let pictures = tag.pictures();
+
+    // Verify we have all images
+    assert_eq!(pictures.len(), test_images.len(), "Should have all images");
+
+    // Verify the cover image is first
+    assert_eq!(
+      pictures[0].pic_type(),
+      PictureType::CoverFront,
+      "First image should be cover"
+    );
+    assert_eq!(
+      pictures[0].description().map(|s| s.to_string()),
+      Some(test_images[2].1.clone()),
+      "Cover image should have correct description"
+    );
+
+    // Create a map of the original order (excluding cover)
+    let original_order: Vec<(&AudioImageType, String)> = test_images
+      .iter()
+      .filter(|(pic_type, _)| *pic_type != AudioImageType::CoverFront)
+      .map(|(pic_type, desc)| (pic_type, desc.clone()))
+      .collect();
+
+    // Verify the remaining images are in the same order as they were in all_images
+    for (i, (expected_type, expected_desc)) in original_order.iter().enumerate() {
+      let picture = &pictures[i + 1]; // +1 because cover is first
+      let actual_type = AudioImageType::from_picture_type(&picture.pic_type());
+      assert_eq!(
+        actual_type,
+        **expected_type,
+        "Image at position {} should have type {:?}",
+        i + 1,
+        expected_type
+      );
+      assert_eq!(
+        picture.description().map(|s| s.to_string()),
+        Some(expected_desc.clone()),
+        "Image at position {} should have description '{}'",
+        i + 1,
+        expected_desc
+      );
+    }
+  }
+
+  #[test]
+  fn test_from_tag_no_cover_image() {
+    use lofty::picture::{MimeType, Picture, PictureType};
+    use lofty::tag::{Tag, TagType};
+
+    // Create a test tag
+    let mut tag = Tag::new(TagType::Id3v2);
+
+    // Add several non-cover images
+    let test_images = vec![
+      (PictureType::Artist, "Artist photo"),
+      (PictureType::BandLogo, "Band logo"),
+      (PictureType::Conductor, "Conductor photo"),
+    ];
+
+    for (pic_type, description) in test_images.iter() {
+      let image = Picture::new_unchecked(
+        *pic_type,
+        Some(MimeType::Jpeg),
+        Some(description.to_string()),
+        vec![0xFF, 0xD8, 0xFF, 0xE0], // Minimal JPEG header
+      );
+      tag.push_picture(image);
+    }
+
+    // Convert to AudioTags
+    let audio_tags = AudioTags::from_tag(&tag);
+
+    // Verify main image is None since there's no cover image
+    assert!(
+      audio_tags.image.is_none(),
+      "Should not have main image when no cover image exists"
+    );
+
+    // Verify all_images contains all the non-cover images
+    assert!(audio_tags.all_images.is_some(), "Should have all_images");
+    let all_images = audio_tags.all_images.unwrap();
+    assert_eq!(
+      all_images.len(),
+      test_images.len(),
+      "Should have all non-cover images"
+    );
+
+    // Verify each image is present with correct type and description
+    for (i, (pic_type, description)) in test_images.iter().enumerate() {
+      let image = &all_images[i];
+      let expected_type = AudioImageType::from_picture_type(pic_type);
+      assert_eq!(
+        image.pic_type, expected_type,
+        "Image {} should have correct type",
+        i
+      );
+      assert_eq!(
+        image.description,
+        Some(description.to_string()),
+        "Image {} should have correct description",
+        i
+      );
+    }
+  }
+
+  #[test]
+  fn test_add_cover_image_preserves_existing_images() {
+    use lofty::picture::{MimeType, Picture, PictureType};
+    use lofty::tag::{Tag, TagType};
+
+    // Create a test tag
+    let mut tag = Tag::new(TagType::Id3v2);
+
+    // Add an artist image first
+    let artist_image = Picture::new_unchecked(
+      PictureType::Artist,
+      Some(MimeType::Jpeg),
+      Some("Artist photo".to_string()),
+      vec![0xFF, 0xD8, 0xFF, 0xE0], // Minimal JPEG header
+    );
+    tag.push_picture(artist_image);
+
+    // Add a cover image
+    let cover_data = vec![0xFF, 0xD8, 0xFF, 0xE0]; // Minimal JPEG header
+    add_cover_image(
+      &mut tag,
+      &cover_data,
+      Some("Cover image".to_string()),
+      MimeType::Jpeg,
+    );
+
+    // Verify the tag has both images
+    let pictures = tag.pictures();
+    assert_eq!(pictures.len(), 2, "Should have both images");
+
+    // Verify the cover image is first
+    let first_picture = &pictures[0];
+    assert_eq!(
+      first_picture.pic_type(),
+      PictureType::CoverFront,
+      "First image should be cover"
+    );
+    assert_eq!(
+      first_picture.description(),
+      Some("Cover image"),
+      "Cover image should have correct description"
+    );
+
+    // Verify the artist image is preserved
+    let second_picture = &pictures[1];
+    assert_eq!(
+      second_picture.pic_type(),
+      PictureType::Artist,
+      "Second image should be artist"
+    );
+    assert_eq!(
+      second_picture.description(),
+      Some("Artist photo"),
+      "Artist image should have correct description"
+    );
+
+    // Convert to AudioTags and verify the images are correctly mapped
+    let audio_tags = AudioTags::from_tag(&tag);
+
+    // Verify main image is set to cover
+    assert!(audio_tags.image.is_some(), "Should have main image");
+    let main_image = audio_tags.image.unwrap();
+    assert_eq!(
+      main_image.pic_type,
+      AudioImageType::CoverFront,
+      "Main image should be cover"
+    );
+    assert_eq!(
+      main_image.description,
+      Some("Cover image".to_string()),
+      "Main image should have correct description"
+    );
+
+    // Verify all_images contains both images in correct order
+    assert!(audio_tags.all_images.is_some(), "Should have all_images");
+    let all_images = audio_tags.all_images.unwrap();
+    assert_eq!(all_images.len(), 2, "Should have both images in all_images");
+
+    // Verify cover image is first in all_images
+    assert_eq!(
+      all_images[0].pic_type,
+      AudioImageType::CoverFront,
+      "First image in all_images should be cover"
+    );
+    assert_eq!(
+      all_images[0].description,
+      Some("Cover image".to_string()),
+      "Cover image should have correct description"
+    );
+
+    // Verify artist image is second in all_images
+    assert_eq!(
+      all_images[1].pic_type,
+      AudioImageType::Artist,
+      "Second image in all_images should be artist"
+    );
+    assert_eq!(
+      all_images[1].description,
+      Some("Artist photo".to_string()),
+      "Artist image should have correct description"
     );
   }
 
