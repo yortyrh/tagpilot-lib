@@ -10,14 +10,25 @@ const { validatePath } = require('./helper.js')
  * 2. Write sample tag data including cover and back images to the file
  * 3. Verify the changes by reading the file again
  *
- * The example includes:
- * - Basic metadata (title, artist, album, etc.)
- * - Front cover image (from provided file)
- * - Back cover image (from provided file)
+ * Image Handling:
+ * - The 'image' field is used for the primary cover image (CoverFront)
+ * - The 'allImages' field contains all images, including the cover
+ * - When 'allImages' is provided, it takes precedence over 'image'
+ * - The library ensures the cover image (CoverFront) is always first in 'allImages'
+ *
+ * In this example:
+ * - We set both 'image' (for backward compatibility) and 'allImages'
+ * - The front cover is added as both the primary image and first in allImages
+ * - The back cover is added to allImages after the front cover
+ * - The library will maintain this order (cover first, then others)
  *
  * Supported image formats:
  * - JPEG (.jpg, .jpeg)
  * - PNG (.png)
+ *
+ * Note: When reading tags:
+ * - 'image' will contain the CoverFront image if present
+ * - 'allImages' will contain all images in order (CoverFront first if present)
  */
 
 const fs = require('fs')
@@ -99,14 +110,17 @@ async function main() {
       albumArtists: ['Sample Album Artist'],
       comment: 'This is a sample comment for demonstration purposes',
       disc: { no: 1, of: 3 },
-      // Add cover image as the primary image
+      // Set the primary cover image in 'image' field
+      // This is for backward compatibility and convenience when only a cover is needed
       image: {
         data: coverImage.data,
         picType: 'CoverFront',
         mimeType: coverImage.mimeType,
         description: 'Front cover image',
       },
-      // Add both front and back cover images
+      // Set all images in 'allImages' field
+      // This takes precedence over 'image' field
+      // The library ensures CoverFront is always first in the list
       allImages: [
         {
           data: coverImage.data,
@@ -153,11 +167,14 @@ async function main() {
     console.log(`   Comment: "${sampleTags.comment}"`)
     console.log(`   Disc: ${sampleTags.disc?.no || 'N/A'} of ${sampleTags.disc?.of || 'N/A'}`)
     console.log('   Images:')
-    console.log(`     - Cover Image: ${sampleTags.image?.data.length} bytes (${sampleTags.image?.mimeType})`)
+    // Show primary cover image (from 'image' field)
+    console.log('   Primary cover image:')
+    console.log(`     ${sampleTags.image?.data.length} bytes (${sampleTags.image?.mimeType})`)
+
+    // Show all images in order (from 'allImages' field)
+    console.log('   All images (in order, cover first):')
     sampleTags.allImages?.forEach((img, index) => {
-      console.log(
-        `     - Image ${index + 1}: ${img.data.length} bytes (${img.mimeType}, ${img.picType}, "${img.description}")`,
-      )
+      console.log(`     ${index + 1}. ${img.picType}: ${img.data.length} bytes (${img.mimeType}, "${img.description}")`)
     })
 
     console.log('\n✅ Sample tags written successfully!')

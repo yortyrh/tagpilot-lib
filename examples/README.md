@@ -59,12 +59,15 @@ Writes sample metadata tags to an audio file.
 **Usage:**
 
 ```bash
-node examples/write-tags-example.js ./music/01.mp3
+node examples/write-tags-example.js ./music/01.mp3 ./front-cover.jpg ./back-cover.jpg
 ```
 
 **Features:**
 
 - Creates comprehensive sample tag data
+- Handles multiple images (front cover and back cover)
+- Demonstrates both `image` and `allImages` fields
+- Ensures cover image is first in `allImages`
 - Writes tags to the file
 - Verifies changes by reading the file again
 
@@ -173,7 +176,9 @@ node examples/cover-image-buffer-example.js ./music/01.mp3 ./cover.jpg
 - **Basic:** `title`, `artists`, `album`, `year`, `genre`, `comment`
 - **Position:** `track` (no/of), `disc` (no/of)
 - **Artists:** `albumArtists`
-- **Cover Art:** `image` (data, mimeType, description)
+- **Images:**
+  - `image`: Primary cover art (data, mimeType, description, picType)
+  - `allImages`: All images including cover (array of images with picType)
 
 ## Usage Notes
 
