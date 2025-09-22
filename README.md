@@ -267,7 +267,8 @@ interface AudioTags {
   albumArtists?: Array<string> // Array of album artists
   comment?: string // Additional comments
   disc?: Position // Disc position information
-  image?: Image // Cover art information
+  image?: Image // Primary cover art (CoverFront type)
+  allImages?: Array<Image> // All images, including cover art
 }
 ```
 
@@ -291,6 +292,7 @@ interface Image {
   data: Buffer // Raw image data
   mimeType?: string // MIME type (e.g., "image/jpeg")
   description?: string // Optional description of the image
+  picType?: string // Picture type (e.g., "CoverFront", "CoverBack", etc.)
 }
 ```
 
@@ -315,7 +317,64 @@ await writeTags('./music/song.mp3', {
 })
 ```
 
-### Cover Art
+### Image Handling
+
+The library provides two ways to handle images in audio files:
+
+1. **Single Cover Image** (`image` field):
+   - Represents the primary cover image (CoverFront type)
+   - Convenient for simple cover art operations
+   - Backward compatible with older versions
+
+2. **Multiple Images** (`allImages` field):
+   - Contains all images, including the cover art
+   - Takes precedence over the `image` field when both are present
+   - Automatically ensures cover image (CoverFront) is first in the list
+   - Preserves order of non-cover images
+
+```javascript
+const { readTags, writeTags } = require('@yortyrh/tagpilot-lib')
+const fs = require('fs')
+
+// Read all images
+const tags = await readTags('./music/song.mp3')
+if (tags.image) {
+  console.log('Cover image:', tags.image.data.length, 'bytes')
+}
+if (tags.allImages) {
+  console.log(
+    'All images:',
+    tags.allImages.map((img) => img.picType),
+  )
+}
+
+// Write multiple images
+await writeTags('./music/song.mp3', {
+  // ... other tags ...
+  image: {
+    data: coverImageBuffer,
+    picType: 'CoverFront',
+    mimeType: 'image/jpeg',
+    description: 'Album cover',
+  },
+  allImages: [
+    {
+      data: coverImageBuffer,
+      picType: 'CoverFront',
+      mimeType: 'image/jpeg',
+      description: 'Album cover',
+    },
+    {
+      data: backImageBuffer,
+      picType: 'CoverBack',
+      mimeType: 'image/jpeg',
+      description: 'Album back',
+    },
+  ],
+})
+```
+
+### Cover Art Operations
 
 ```javascript
 const { readCoverImageFromBuffer, writeCoverImageToBuffer } = require('@yortyrh/tagpilot-lib')
