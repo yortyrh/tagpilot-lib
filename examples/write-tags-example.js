@@ -59,9 +59,29 @@ async function main() {
   const frontCoverPath = validatePath(process.argv[3], process.cwd())
   const backCoverPath = validatePath(process.argv[4], process.cwd())
 
-  if (!filePath || !frontCoverPath || !backCoverPath) {
+  // Check if all required arguments were provided
+  if (!process.argv[2] || !process.argv[3] || !process.argv[4]) {
     console.error('Usage: node examples/write-tags-example.js <file-path> <front-cover-path> <back-cover-path>')
     console.error('Example: node examples/write-tags-example.js ./music/01.mp3 ./images/front.jpg ./images/back.png')
+    process.exit(1)
+  }
+
+  // Check if any paths were invalid
+  const invalidPaths = []
+  if (!filePath) invalidPaths.push(['audio file', process.argv[2]])
+  if (!frontCoverPath) invalidPaths.push(['front cover image', process.argv[3]])
+  if (!backCoverPath) invalidPaths.push(['back cover image', process.argv[4]])
+
+  if (invalidPaths.length > 0) {
+    console.error('Error: Invalid path(s) provided:')
+    invalidPaths.forEach(([type, path]) => {
+      console.error(`  - ${type}: "${path}"`)
+    })
+    console.error('\nPaths must:')
+    console.error('  - Be within the current directory')
+    console.error('  - Not contain parent directory traversal (.., ./, etc.)')
+    console.error('  - Not contain special characters (<>:"|?*)')
+    console.error('  - Not be hidden files (starting with .)')
     process.exit(1)
   }
 
@@ -70,7 +90,7 @@ async function main() {
     fs.accessSync(frontCoverPath, fs.constants.R_OK)
     fs.accessSync(backCoverPath, fs.constants.R_OK)
   } catch (error) {
-    console.error('Error: Cannot access image files.')
+    console.error('Error: Cannot access image files.', error)
     console.error(`Front cover: ${frontCoverPath}`)
     console.error(`Back cover: ${backCoverPath}`)
     process.exit(1)

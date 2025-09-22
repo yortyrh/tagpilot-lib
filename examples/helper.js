@@ -3,17 +3,18 @@ const path = require('path')
 /**
  * Validates and sanitizes user input to prevent path traversal attacks
  * @param {string} userInput - The user-provided path input
- * @returns {string} - The validated and sanitized path, or 'Access denied' if invalid
+ * @param {string} root - The root directory to validate against
+ * @returns {string|null} - The validated and sanitized path, or null if invalid
  */
 exports.validatePath = (userInput, root = process.cwd()) => {
   // Validate input type and basic format first
   if (!userInput || typeof userInput !== 'string') {
-    return 'Access denied'
+    return null
   }
 
   // Check for null byte injection
   if (userInput.indexOf('\0') !== -1) {
-    return 'Access denied'
+    return null
   }
 
   // Check for dangerous patterns that could lead to path traversal
@@ -30,7 +31,7 @@ exports.validatePath = (userInput, root = process.cwd()) => {
   ]
 
   if (dangerousPatterns.some((pattern) => pattern.test(userInput))) {
-    return 'Access denied'
+    return null
   }
 
   // Normalize the path to resolve any remaining issues
@@ -38,7 +39,7 @@ exports.validatePath = (userInput, root = process.cwd()) => {
 
   // Double-check normalized input for traversal patterns
   if (normalizedInput.includes('..') || normalizedInput.startsWith('.')) {
-    return 'Access denied'
+    return null
   }
 
   // Construct the full path
@@ -52,7 +53,7 @@ exports.validatePath = (userInput, root = process.cwd()) => {
   // This prevents directory traversal attacks by ensuring the resolved path
   // starts with the resolved root path followed by a path separator
   if (!resolvedPath.startsWith(resolvedRoot + path.sep) && resolvedPath !== resolvedRoot) {
-    return 'Access denied'
+    return null
   }
 
   return pathString
