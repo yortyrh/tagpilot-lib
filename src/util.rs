@@ -188,6 +188,7 @@ fn get_values_from_item(tag: &Tag, item_key: &ItemKey) -> Vec<String> {
 impl AudioTags {
   pub fn from_tag(tag: &Tag) -> Self {
     let artists_values = get_values_from_item(tag, &ItemKey::TrackArtists);
+    let artist = tag.artist().map(|s| s.to_string());
     let album_artists_values = get_values_from_item(tag, &ItemKey::AlbumArtist);
     let mut all_images: Vec<Image> = tag.pictures().iter().map(Image::from_picture).collect();
     // sort the images by the picture type, the cover image should be the first
@@ -211,7 +212,11 @@ impl AudioTags {
     );
     Self {
       title: tag.title().map(|s| s.to_string()),
-      artists: Some(artists_values),
+      artists: if artists_values.is_empty() {
+        artist.map(|s| vec![s])
+      } else {
+        Some(artists_values)
+      },
       album: tag.album().map(|s| s.to_string()),
       year: tag.year(),
       genre: tag.genre().map(|s| s.to_string()),
