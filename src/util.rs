@@ -7,7 +7,7 @@ use lofty::io::{FileLike, Length, Truncate};
 use lofty::picture::{MimeType, Picture, PictureType};
 use lofty::prelude::TaggedFileExt;
 use lofty::probe::Probe;
-use lofty::tag::{Accessor, ItemKey, ItemValue, Tag, TagItem};
+use lofty::tag::{Accessor, ItemKey, ItemValue, Tag, TagItem, TagType};
 use std::fs::{self, File, OpenOptions};
 use std::io::Cursor;
 use std::path::Path;
@@ -127,6 +127,10 @@ pub struct AudioTags {
   pub album_artists: Option<Vec<String>>,
   pub comment: Option<String>,
   pub disc: Option<Position>,
+  pub copyright: Option<String>,
+  pub license: Option<String>,
+  pub artist_website: Option<String>,
+  pub composer: Option<String>,
   pub image: Option<Image>,
   pub all_images: Option<Vec<Image>>,
 }
@@ -186,6 +190,202 @@ fn get_values_from_item(tag: &Tag, item_key: &ItemKey) -> Vec<String> {
 
 // add method to AudioTags from &Tag
 impl AudioTags {
+  pub fn with_basic_fields(
+    title: Option<String>,
+    artists: Option<Vec<String>>,
+    album: Option<String>,
+    year: Option<u32>,
+    genre: Option<String>,
+  ) -> Self {
+    let mut tags = Self::empty();
+    tags.title = title;
+    tags.artists = artists;
+    tags.album = album;
+    tags.year = year;
+    tags.genre = genre;
+    tags
+  }
+
+  pub fn with_track_info(
+    mut self,
+    track_no: Option<u32>,
+    track_total: Option<u32>,
+    disc_no: Option<u32>,
+    disc_total: Option<u32>,
+  ) -> Self {
+    self.track = if track_no.is_some() || track_total.is_some() {
+      Some(Position {
+        no: track_no,
+        of: track_total,
+      })
+    } else {
+      None
+    };
+    self.disc = if disc_no.is_some() || disc_total.is_some() {
+      Some(Position {
+        no: disc_no,
+        of: disc_total,
+      })
+    } else {
+      None
+    };
+    self
+  }
+
+  pub fn with_additional_info(
+    mut self,
+    album_artists: Option<Vec<String>>,
+    comment: Option<String>,
+    copyright: Option<String>,
+    license: Option<String>,
+    artist_website: Option<String>,
+    composer: Option<String>,
+  ) -> Self {
+    self.album_artists = album_artists;
+    self.comment = comment;
+    self.copyright = copyright;
+    self.license = license;
+    self.artist_website = artist_website;
+    self.composer = composer;
+    self
+  }
+
+  pub fn test_instance() -> Self {
+    Self::with_basic_fields(
+      Some("Test Song".to_string()),
+      Some(vec!["Test Artist".to_string()]),
+      Some("Test Album".to_string()),
+      Some(2024),
+      Some("Test Genre".to_string()),
+    )
+    .with_track_info(Some(1), Some(10), Some(1), Some(1))
+    .with_additional_info(
+      Some(vec!["Test Album Artist".to_string()]),
+      Some("Test Comment".to_string()),
+      Some("Test Copyright".to_string()),
+      Some("Test License".to_string()),
+      Some("https://test.artist".to_string()),
+      Some("Test Composer".to_string()),
+    )
+  }
+
+  pub fn with_image(mut self, image: Image) -> Self {
+    self.image = Some(image);
+    self
+  }
+
+  pub fn with_all_images(mut self, images: Vec<Image>) -> Self {
+    self.all_images = Some(images);
+    self
+  }
+
+  pub fn empty() -> Self {
+    Self {
+      title: None,
+      artists: None,
+      album: None,
+      year: None,
+      genre: None,
+      track: None,
+      album_artists: None,
+      comment: None,
+      disc: None,
+      copyright: None,
+      license: None,
+      artist_website: None,
+      composer: None,
+      image: None,
+      all_images: None,
+    }
+  }
+
+  pub fn test_instance_with_image() -> Self {
+    Self::test_instance().with_image(Image {
+      data: vec![
+        0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46, 0x00, 0x01, 0x01, 0x00, 0x00,
+        0x01, 0x00, 0x01, 0x00, 0x00, 0xFF, 0xD9,
+      ],
+      pic_type: AudioImageType::CoverFront,
+      mime_type: Some("image/jpeg".to_string()),
+      description: Some("Test cover".to_string()),
+    })
+  }
+
+  pub fn empty_with_defaults() -> Self {
+    Self {
+      title: None,
+      artists: None,
+      album: None,
+      year: None,
+      genre: None,
+      track: None,
+      album_artists: Some(vec![]),
+      comment: None,
+      disc: None,
+      copyright: None,
+      license: None,
+      artist_website: None,
+      composer: None,
+      image: None,
+      all_images: Some(vec![]),
+    }
+  }
+
+  pub fn with_title(mut self, title: String) -> Self {
+    self.title = Some(title);
+    self
+  }
+
+  pub fn with_artists(mut self, artists: Vec<String>) -> Self {
+    self.artists = Some(artists);
+    self
+  }
+
+  pub fn with_album(mut self, album: String) -> Self {
+    self.album = Some(album);
+    self
+  }
+
+  pub fn with_year(mut self, year: u32) -> Self {
+    self.year = Some(year);
+    self
+  }
+
+  pub fn with_genre(mut self, genre: String) -> Self {
+    self.genre = Some(genre);
+    self
+  }
+
+  pub fn with_album_artists(mut self, album_artists: Vec<String>) -> Self {
+    self.album_artists = Some(album_artists);
+    self
+  }
+
+  pub fn with_comment(mut self, comment: String) -> Self {
+    self.comment = Some(comment);
+    self
+  }
+
+  pub fn with_copyright(mut self, copyright: String) -> Self {
+    self.copyright = Some(copyright);
+    self
+  }
+
+  pub fn with_license(mut self, license: String) -> Self {
+    self.license = Some(license);
+    self
+  }
+
+  pub fn with_artist_website(mut self, artist_website: String) -> Self {
+    self.artist_website = Some(artist_website);
+    self
+  }
+
+  pub fn with_composer(mut self, composer: String) -> Self {
+    self.composer = Some(composer);
+    self
+  }
+
   pub fn from_tag(tag: &Tag) -> Self {
     let artists_values = get_values_from_item(tag, &ItemKey::TrackArtists);
     let artist = tag.artist().map(|s| s.to_string());
@@ -210,6 +410,13 @@ impl AudioTags {
         }
       },
     );
+    // lofty id3v2.4 does not mapLicense and map the attribute to CopyrightUrl
+    let license_key = if tag.tag_type() != TagType::Id3v2 {
+      &ItemKey::License
+    } else {
+      &ItemKey::CopyrightUrl
+    };
+    let license = tag.get_string(license_key).map(|s| s.to_string());
     Self {
       title: tag.title().map(|s| s.to_string()),
       artists: if artists_values.is_empty() {
@@ -236,6 +443,12 @@ impl AudioTags {
       } else {
         Some(all_images)
       },
+      copyright: tag
+        .get_string(&ItemKey::CopyrightMessage)
+        .map(|s| s.to_string()),
+      license,
+      artist_website: tag.get_string(&ItemKey::Publisher).map(|s| s.to_string()),
+      composer: tag.get_string(&ItemKey::Composer).map(|s| s.to_string()),
     }
   }
 
@@ -315,6 +528,32 @@ impl AudioTags {
     if let Some(comment) = self.comment.as_ref() {
       primary_tag.remove_key(&ItemKey::Comment);
       primary_tag.insert_text(ItemKey::Comment, comment.clone());
+    }
+
+    if let Some(copyright) = self.copyright.as_ref() {
+      primary_tag.remove_key(&ItemKey::CopyrightMessage);
+      primary_tag.insert_text(ItemKey::CopyrightMessage, copyright.clone());
+    }
+
+    if let Some(license) = self.license.as_ref() {
+      // lofty id3v2.4 does not mapLicense and map the attribute to CopyrightUrl
+      let license_key = if primary_tag.tag_type() != TagType::Id3v2 {
+        ItemKey::License
+      } else {
+        ItemKey::CopyrightUrl
+      };
+      primary_tag.remove_key(&license_key);
+      primary_tag.insert_text(license_key, license.clone());
+    }
+
+    if let Some(artist_website) = self.artist_website.as_ref() {
+      primary_tag.remove_key(&ItemKey::Publisher);
+      primary_tag.insert_text(ItemKey::Publisher, artist_website.clone());
+    }
+
+    if let Some(composer) = self.composer.as_ref() {
+      primary_tag.remove_key(&ItemKey::Composer);
+      primary_tag.insert_text(ItemKey::Composer, composer.clone());
     }
 
     if let Some(all_images) = self.all_images.as_ref() {
@@ -510,6 +749,19 @@ pub async fn write_cover_image_to_buffer(
   image_data: Vec<u8>,
 ) -> Result<Vec<u8>, String> {
   let audio_tags = AudioTags {
+    title: None,
+    artists: None,
+    album: None,
+    year: None,
+    genre: None,
+    track: None,
+    album_artists: None,
+    comment: None,
+    disc: None,
+    copyright: None,
+    license: None,
+    artist_website: None,
+    composer: None,
     image: Some(Image {
       data: image_data,
       pic_type: AudioImageType::CoverFront,
@@ -546,6 +798,65 @@ pub async fn write_cover_image_to_file(
 mod tests {
   use super::*;
   use lofty::{picture::MimeType, tag::TagType};
+
+  #[test]
+  fn test_audio_tags_new_fields() {
+    // Test with all new fields
+    let tags = AudioTags::empty()
+      .with_title("Test Song".to_string())
+      .with_copyright("Test Copyright".to_string())
+      .with_license("Test License".to_string())
+      .with_artist_website("https://test.artist".to_string())
+      .with_composer("Test Composer".to_string());
+
+    // Test that all fields are set correctly
+    assert_eq!(tags.title, Some("Test Song".to_string()));
+    assert_eq!(tags.copyright, Some("Test Copyright".to_string()));
+    assert_eq!(tags.license, Some("Test License".to_string()));
+    assert_eq!(tags.artist_website, Some("https://test.artist".to_string()));
+    assert_eq!(tags.composer, Some("Test Composer".to_string()));
+
+    // Test with empty strings
+    let tags_empty = AudioTags::empty()
+      .with_copyright("".to_string())
+      .with_license("".to_string())
+      .with_artist_website("".to_string())
+      .with_composer("".to_string());
+
+    assert_eq!(tags_empty.copyright, Some("".to_string()));
+    assert_eq!(tags_empty.license, Some("".to_string()));
+    assert_eq!(tags_empty.artist_website, Some("".to_string()));
+    assert_eq!(tags_empty.composer, Some("".to_string()));
+
+    // Test with None values (default)
+    let tags_none = AudioTags::empty();
+
+    assert_eq!(tags_none.copyright, None);
+    assert_eq!(tags_none.license, None);
+    assert_eq!(tags_none.artist_website, None);
+    assert_eq!(tags_none.composer, None);
+
+    // Test with special characters and Unicode
+    let tags_special = AudioTags::empty()
+      .with_copyright("© 2024 Test Artist ™".to_string())
+      .with_license("Creative Commons Attribution-ShareAlike 4.0 ®".to_string())
+      .with_artist_website("https://test.artist/café/über".to_string())
+      .with_composer("Antonín Dvořák".to_string());
+
+    assert_eq!(
+      tags_special.copyright,
+      Some("© 2024 Test Artist ™".to_string())
+    );
+    assert_eq!(
+      tags_special.license,
+      Some("Creative Commons Attribution-ShareAlike 4.0 ®".to_string())
+    );
+    assert_eq!(
+      tags_special.artist_website,
+      Some("https://test.artist/café/über".to_string())
+    );
+    assert_eq!(tags_special.composer, Some("Antonín Dvořák".to_string()));
+  }
 
   // Helper function to create test image data
   fn create_test_image_data() -> Vec<u8> {
@@ -585,6 +896,10 @@ mod tests {
     assert!(tags.comment.is_none());
     assert!(tags.disc.is_none());
     assert!(tags.image.is_none());
+    assert!(tags.copyright.is_none());
+    assert!(tags.license.is_none());
+    assert!(tags.artist_website.is_none());
+    assert!(tags.composer.is_none());
   }
 
   #[test]
@@ -605,6 +920,10 @@ mod tests {
         no: Some(1),
         of: Some(2),
       }),
+      copyright: Some("Test copyright".to_string()),
+      license: Some("Test license".to_string()),
+      artist_website: Some("Test artist website".to_string()),
+      composer: Some("Test composer".to_string()),
       image: None,
       all_images: None,
     };
@@ -635,35 +954,21 @@ mod tests {
       })
     );
     assert!(tags.image.is_none());
+    assert_eq!(tags.copyright, Some("Test copyright".to_string()));
+    assert_eq!(tags.license, Some("Test license".to_string()));
+    assert_eq!(tags.artist_website, Some("Test artist website".to_string()));
+    assert_eq!(tags.composer, Some("Test composer".to_string()));
   }
 
   #[test]
   fn test_audio_tags_with_image() {
     let image_data = create_test_image_data();
-    let tags = AudioTags {
-      title: Some("Test Song".to_string()),
-      artists: Some(vec!["Test Artist".to_string()]),
-      album: Some("Test Album".to_string()),
-      year: Some(2024),
-      genre: Some("Test Genre".to_string()),
-      track: Some(Position {
-        no: Some(1),
-        of: Some(10),
-      }),
-      album_artists: Some(vec!["Test Album Artist".to_string()]),
-      comment: Some("Test comment".to_string()),
-      disc: Some(Position {
-        no: Some(1),
-        of: Some(2),
-      }),
-      image: Some(Image {
-        data: image_data.clone(),
-        pic_type: AudioImageType::CoverFront,
-        mime_type: Some("image/jpeg".to_string()),
-        description: Some("Test cover".to_string()),
-      }),
-      all_images: None,
-    };
+    let tags = AudioTags::test_instance().with_image(Image {
+      data: image_data.clone(),
+      pic_type: AudioImageType::CoverFront,
+      mime_type: Some("image/jpeg".to_string()),
+      description: Some("Test cover".to_string()),
+    });
 
     // Test that the struct with image is created correctly
     assert_eq!(tags.title, Some("Test Song".to_string()));
@@ -676,19 +981,12 @@ mod tests {
 
   #[test]
   fn test_audio_tags_empty_artists() {
-    let tags = AudioTags {
-      title: Some("Test Song".to_string()),
-      artists: Some(vec![]), // Empty artists
-      album: Some("Test Album".to_string()),
-      year: Some(2024),
-      genre: Some("Test Genre".to_string()),
-      track: None,
-      album_artists: None,
-      comment: None,
-      disc: None,
-      image: None,
-      all_images: None,
-    };
+    let tags = AudioTags::empty()
+      .with_title("Test Song".to_string())
+      .with_artists(vec![])
+      .with_album("Test Album".to_string())
+      .with_year(2024)
+      .with_genre("Test Genre".to_string());
 
     // Test that empty artists vector is handled correctly
     assert_eq!(tags.title, Some("Test Song".to_string()));
@@ -700,23 +998,16 @@ mod tests {
 
   #[test]
   fn test_audio_tags_multiple_artists() {
-    let tags = AudioTags {
-      title: Some("Test Song".to_string()),
-      artists: Some(vec![
+    let tags = AudioTags::empty()
+      .with_title("Test Song".to_string())
+      .with_artists(vec![
         "Artist 1".to_string(),
         "Artist 2".to_string(),
         "Artist 3".to_string(),
-      ]),
-      album: Some("Test Album".to_string()),
-      year: Some(2024),
-      genre: Some("Test Genre".to_string()),
-      track: None,
-      album_artists: None,
-      comment: None,
-      disc: None,
-      image: None,
-      all_images: None,
-    };
+      ])
+      .with_album("Test Album".to_string())
+      .with_year(2024)
+      .with_genre("Test Genre".to_string());
 
     // Test that multiple artists are handled correctly
     assert_eq!(tags.title, Some("Test Song".to_string()));
@@ -735,22 +1026,10 @@ mod tests {
 
   #[test]
   fn test_audio_tags_partial_data() {
-    let tags = AudioTags {
-      title: Some("Test Song".to_string()),
-      artists: None, // Not set
-      album: None,   // Not set
-      year: Some(2024),
-      genre: None, // Not set
-      track: Some(Position {
-        no: Some(1),
-        of: None,
-      }), // Only track number
-      album_artists: None,
-      comment: None,
-      disc: None,
-      image: None,
-      all_images: None,
-    };
+    let tags = AudioTags::empty()
+      .with_title("Test Song".to_string())
+      .with_year(2024)
+      .with_track_info(Some(1), None, None, None);
 
     // Test that partial data is handled correctly
     assert_eq!(tags.title, Some("Test Song".to_string()));
@@ -812,30 +1091,21 @@ mod tests {
   #[test]
   fn test_audio_tags_creation_variations() {
     // Test with all fields
-    let full_tags = AudioTags {
-      title: Some("Full Song".to_string()),
-      artists: Some(vec!["Artist 1".to_string(), "Artist 2".to_string()]),
-      album: Some("Full Album".to_string()),
-      year: Some(2023),
-      genre: Some("Rock".to_string()),
-      track: Some(Position {
-        no: Some(5),
-        of: Some(12),
-      }),
-      album_artists: Some(vec!["Album Artist".to_string()]),
-      comment: Some("Great song".to_string()),
-      disc: Some(Position {
-        no: Some(1),
-        of: Some(2),
-      }),
-      image: Some(Image {
+    let full_tags = AudioTags::empty()
+      .with_title("Full Song".to_string())
+      .with_artists(vec!["Artist 1".to_string(), "Artist 2".to_string()])
+      .with_album("Full Album".to_string())
+      .with_year(2023)
+      .with_genre("Rock".to_string())
+      .with_track_info(Some(5), Some(12), Some(1), Some(2))
+      .with_album_artists(vec!["Album Artist".to_string()])
+      .with_comment("Great song".to_string())
+      .with_image(Image {
         data: create_test_image_data(),
         pic_type: AudioImageType::CoverFront,
         mime_type: Some("image/png".to_string()),
         description: Some("Album cover".to_string()),
-      }),
-      all_images: None,
-    };
+      });
 
     assert_eq!(full_tags.title, Some("Full Song".to_string()));
     assert_eq!(
@@ -852,19 +1122,7 @@ mod tests {
     assert!(full_tags.image.is_some());
 
     // Test with minimal fields
-    let minimal_tags = AudioTags {
-      title: Some("Minimal Song".to_string()),
-      artists: None,
-      album: None,
-      year: None,
-      genre: None,
-      track: None,
-      album_artists: None,
-      comment: None,
-      disc: None,
-      image: None,
-      all_images: None,
-    };
+    let minimal_tags = AudioTags::empty().with_title("Minimal Song".to_string());
 
     assert_eq!(minimal_tags.title, Some("Minimal Song".to_string()));
     assert!(minimal_tags.artists.is_none());
@@ -997,19 +1255,18 @@ mod tests {
   #[test]
   fn test_audio_tags_string_edge_cases() {
     // Test with empty strings
-    let tags_empty_strings = AudioTags {
-      title: Some("".to_string()),
-      artists: Some(vec!["".to_string()]),
-      album: Some("".to_string()),
-      year: Some(2024),
-      genre: Some("".to_string()),
-      track: None,
-      album_artists: Some(vec!["".to_string()]),
-      comment: Some("".to_string()),
-      disc: None,
-      image: None,
-      all_images: None,
-    };
+    let tags_empty_strings = AudioTags::empty()
+      .with_title("".to_string())
+      .with_artists(vec!["".to_string()])
+      .with_album("".to_string())
+      .with_year(2024)
+      .with_genre("".to_string())
+      .with_album_artists(vec!["".to_string()])
+      .with_comment("".to_string())
+      .with_copyright("".to_string())
+      .with_license("".to_string())
+      .with_artist_website("".to_string())
+      .with_composer("".to_string());
 
     assert_eq!(tags_empty_strings.title, Some("".to_string()));
     assert_eq!(tags_empty_strings.artists, Some(vec!["".to_string()]));
@@ -1026,6 +1283,10 @@ mod tests {
       album: Some(long_string.clone()),
       year: Some(2024),
       genre: Some(long_string.clone()),
+      copyright: Some(long_string.clone()),
+      license: Some(long_string.clone()),
+      artist_website: Some(long_string.clone()),
+      composer: Some(long_string.clone()),
       track: None,
       album_artists: Some(vec![long_string.clone()]),
       comment: Some(long_string.clone()),
@@ -1052,6 +1313,10 @@ mod tests {
       album: Some(special_chars.to_string()),
       year: Some(2024),
       genre: Some(special_chars.to_string()),
+      copyright: Some(special_chars.to_string()),
+      license: Some(special_chars.to_string()),
+      artist_website: Some(special_chars.to_string()),
+      composer: Some(special_chars.to_string()),
       track: None,
       album_artists: Some(vec![special_chars.to_string()]),
       comment: Some(special_chars.to_string()),
@@ -1078,6 +1343,10 @@ mod tests {
       album: Some(unicode_string.to_string()),
       year: Some(2024),
       genre: Some(unicode_string.to_string()),
+      copyright: Some(unicode_string.to_string()),
+      license: Some(unicode_string.to_string()),
+      artist_website: Some(unicode_string.to_string()),
+      composer: Some(unicode_string.to_string()),
       track: None,
       album_artists: Some(vec![unicode_string.to_string()]),
       comment: Some(unicode_string.to_string()),
@@ -1103,92 +1372,42 @@ mod tests {
     let years = vec![1900, 1950, 2000, 2024, 2030, 9999];
 
     for year in years {
-      let tags = AudioTags {
-        title: Some("Test Song".to_string()),
-        artists: None,
-        album: None,
-        year: Some(year),
-        genre: None,
-        track: None,
-        album_artists: None,
-        comment: None,
-        disc: None,
-        image: None,
-        all_images: None,
-      };
+      let tags = AudioTags::empty()
+        .with_title("Test Song".to_string())
+        .with_year(year);
       assert_eq!(tags.year, Some(year));
     }
 
     // Test with year 0 (edge case)
-    let tags_year_zero = AudioTags {
-      title: Some("Test Song".to_string()),
-      artists: None,
-      album: None,
-      year: Some(0),
-      genre: None,
-      track: None,
-      album_artists: None,
-      comment: None,
-      disc: None,
-      image: None,
-      all_images: None,
-    };
+    let tags_year_zero = AudioTags::empty()
+      .with_title("Test Song".to_string())
+      .with_year(0);
     assert_eq!(tags_year_zero.year, Some(0));
   }
 
   #[test]
   fn test_audio_tags_artists_edge_cases() {
     // Test with single artist
-    let tags_single = AudioTags {
-      title: Some("Test Song".to_string()),
-      artists: Some(vec!["Single Artist".to_string()]),
-      album: None,
-      year: None,
-      genre: None,
-      track: None,
-      album_artists: None,
-      comment: None,
-      disc: None,
-      image: None,
-      all_images: None,
-    };
+    let tags_single = AudioTags::empty()
+      .with_title("Test Song".to_string())
+      .with_artists(vec!["Single Artist".to_string()]);
     assert_eq!(tags_single.artists, Some(vec!["Single Artist".to_string()]));
 
     // Test with many artists
     let many_artists: Vec<String> = (1..=50).map(|i| format!("Artist {}", i)).collect();
-    let tags_many = AudioTags {
-      title: Some("Test Song".to_string()),
-      artists: Some(many_artists.clone()),
-      album: None,
-      year: None,
-      genre: None,
-      track: None,
-      album_artists: None,
-      comment: None,
-      disc: None,
-      image: None,
-      all_images: None,
-    };
+    let tags_many = AudioTags::empty()
+      .with_title("Test Song".to_string())
+      .with_artists(many_artists.clone());
     assert_eq!(tags_many.artists, Some(many_artists));
 
     // Test with duplicate artists
-    let tags_duplicates = AudioTags {
-      title: Some("Test Song".to_string()),
-      artists: Some(vec![
+    let tags_duplicates = AudioTags::empty()
+      .with_title("Test Song".to_string())
+      .with_artists(vec![
         "Same Artist".to_string(),
         "Same Artist".to_string(),
         "Same Artist".to_string(),
-      ]),
-      album: None,
-      year: None,
-      genre: None,
-      track: None,
-      album_artists: None,
-      comment: None,
-      disc: None,
-      image: None,
-      all_images: None,
-    };
+      ]);
     assert_eq!(
       tags_duplicates.artists,
       Some(vec![
@@ -1202,25 +1421,9 @@ mod tests {
   #[test]
   fn test_audio_tags_track_disc_edge_cases() {
     // Test track with zero values
-    let tags_track_zero = AudioTags {
-      title: Some("Test Song".to_string()),
-      artists: None,
-      album: None,
-      year: None,
-      genre: None,
-      track: Some(Position {
-        no: Some(0),
-        of: Some(0),
-      }),
-      album_artists: None,
-      comment: None,
-      disc: Some(Position {
-        no: Some(0),
-        of: Some(0),
-      }),
-      image: None,
-      all_images: None,
-    };
+    let tags_track_zero = AudioTags::empty()
+      .with_title("Test Song".to_string())
+      .with_track_info(Some(0), Some(0), Some(0), Some(0));
     assert_eq!(
       tags_track_zero.track,
       Some(Position {
@@ -1237,25 +1440,9 @@ mod tests {
     );
 
     // Test track with large values
-    let tags_track_large = AudioTags {
-      title: Some("Test Song".to_string()),
-      artists: None,
-      album: None,
-      year: None,
-      genre: None,
-      track: Some(Position {
-        no: Some(999),
-        of: Some(1000),
-      }),
-      album_artists: None,
-      comment: None,
-      disc: Some(Position {
-        no: Some(99),
-        of: Some(100),
-      }),
-      image: None,
-      all_images: None,
-    };
+    let tags_track_large = AudioTags::empty()
+      .with_title("Test Song".to_string())
+      .with_track_info(Some(999), Some(1000), Some(99), Some(100));
     assert_eq!(
       tags_track_large.track,
       Some(Position {
@@ -1272,25 +1459,9 @@ mod tests {
     );
 
     // Test track where no > of (invalid but should be handled)
-    let tags_track_invalid = AudioTags {
-      title: Some("Test Song".to_string()),
-      artists: None,
-      album: None,
-      year: None,
-      genre: None,
-      track: Some(Position {
-        no: Some(10),
-        of: Some(5), // no > of
-      }),
-      album_artists: None,
-      comment: None,
-      disc: Some(Position {
-        no: Some(3),
-        of: Some(1), // no > of
-      }),
-      image: None,
-      all_images: None,
-    };
+    let tags_track_invalid = AudioTags::empty()
+      .with_title("Test Song".to_string())
+      .with_track_info(Some(10), Some(5), Some(3), Some(1));
     assert_eq!(
       tags_track_invalid.track,
       Some(Position {
@@ -1310,30 +1481,25 @@ mod tests {
   #[test]
   fn test_audio_tags_combination_scenarios() {
     // Test realistic music metadata scenarios
-    let classical_tags = AudioTags {
-      title: Some("Symphony No. 9 in D minor, Op. 125".to_string()),
-      artists: Some(vec!["Ludwig van Beethoven".to_string()]),
-      album: Some("Beethoven: Complete Symphonies".to_string()),
-      year: Some(1824),
-      genre: Some("Classical".to_string()),
-      track: Some(Position {
-        no: Some(1),
-        of: Some(4),
-      }),
-      album_artists: Some(vec!["Berlin Philharmonic".to_string()]),
-      comment: Some("Conducted by Herbert von Karajan".to_string()),
-      disc: Some(Position {
-        no: Some(1),
-        of: Some(5),
-      }),
-      image: Some(Image {
+    let classical_tags = AudioTags::empty()
+      .with_title("Symphony No. 9 in D minor, Op. 125".to_string())
+      .with_artists(vec!["Ludwig van Beethoven".to_string()])
+      .with_album("Beethoven: Complete Symphonies".to_string())
+      .with_year(1824)
+      .with_genre("Classical".to_string())
+      .with_track_info(Some(1), Some(4), Some(1), Some(5))
+      .with_album_artists(vec!["Berlin Philharmonic".to_string()])
+      .with_comment("Conducted by Herbert von Karajan".to_string())
+      .with_copyright("© 1824 Deutsche Grammophon".to_string())
+      .with_license("All rights reserved".to_string())
+      .with_artist_website("https://www.berliner-philharmoniker.de".to_string())
+      .with_composer("Ludwig van Beethoven".to_string())
+      .with_image(Image {
         data: create_test_image_data(),
         pic_type: AudioImageType::CoverFront,
         mime_type: Some("image/jpeg".to_string()),
         description: Some("Album cover art".to_string()),
-      }),
-      all_images: None,
-    };
+      });
 
     assert_eq!(
       classical_tags.title,
@@ -1347,22 +1513,19 @@ mod tests {
     assert_eq!(classical_tags.genre, Some("Classical".to_string()));
 
     // Test modern pop song scenario
-    let pop_tags = AudioTags {
-      title: Some("Shape of You".to_string()),
-      artists: Some(vec!["Ed Sheeran".to_string()]),
-      album: Some("÷ (Divide)".to_string()),
-      year: Some(2017),
-      genre: Some("Pop".to_string()),
-      track: Some(Position {
-        no: Some(3),
-        of: Some(16),
-      }),
-      album_artists: Some(vec!["Ed Sheeran".to_string()]),
-      comment: Some("Produced by Steve Mac".to_string()),
-      disc: None,
-      image: None,
-      all_images: None,
-    };
+    let pop_tags = AudioTags::empty()
+      .with_title("Shape of You".to_string())
+      .with_artists(vec!["Ed Sheeran".to_string()])
+      .with_album("÷ (Divide)".to_string())
+      .with_year(2017)
+      .with_genre("Pop".to_string())
+      .with_track_info(Some(3), Some(16), None, None)
+      .with_album_artists(vec!["Ed Sheeran".to_string()])
+      .with_comment("Produced by Steve Mac".to_string())
+      .with_copyright("© 2017 Asylum Records UK".to_string())
+      .with_license("All rights reserved".to_string())
+      .with_artist_website("https://www.edsheeran.com".to_string())
+      .with_composer("Ed Sheeran, Steve Mac, Johnny McDaid".to_string());
 
     assert_eq!(pop_tags.title, Some("Shape of You".to_string()));
     assert_eq!(pop_tags.artists, Some(vec!["Ed Sheeran".to_string()]));
@@ -1370,30 +1533,25 @@ mod tests {
     assert_eq!(pop_tags.genre, Some("Pop".to_string()));
 
     // Test compilation album scenario
-    let compilation_tags = AudioTags {
-      title: Some("Bohemian Rhapsody".to_string()),
-      artists: Some(vec!["Queen".to_string()]),
-      album: Some("Greatest Hits".to_string()),
-      year: Some(1975),
-      genre: Some("Rock".to_string()),
-      track: Some(Position {
-        no: Some(1),
-        of: Some(17),
-      }),
-      album_artists: Some(vec!["Various Artists".to_string()]),
-      comment: Some("From the album 'A Night at the Opera'".to_string()),
-      disc: Some(Position {
-        no: Some(1),
-        of: Some(2),
-      }),
-      image: Some(Image {
+    let compilation_tags = AudioTags::empty()
+      .with_title("Bohemian Rhapsody".to_string())
+      .with_artists(vec!["Queen".to_string()])
+      .with_album("Greatest Hits".to_string())
+      .with_year(1975)
+      .with_genre("Rock".to_string())
+      .with_track_info(Some(1), Some(17), Some(1), Some(2))
+      .with_album_artists(vec!["Various Artists".to_string()])
+      .with_comment("From the album 'A Night at the Opera'".to_string())
+      .with_copyright("© 1975 EMI Records Ltd.".to_string())
+      .with_license("All rights reserved".to_string())
+      .with_artist_website("https://www.queenonline.com".to_string())
+      .with_composer("Freddie Mercury".to_string())
+      .with_image(Image {
         data: create_test_image_data(),
         pic_type: AudioImageType::CoverFront,
         mime_type: Some("image/png".to_string()),
         description: Some("Compilation cover".to_string()),
-      }),
-      all_images: None,
-    };
+      });
 
     assert_eq!(
       compilation_tags.title,
@@ -1444,30 +1602,25 @@ mod tests {
     let original_data = create_test_image_data();
     let original_title = "Original Title".to_string();
 
-    let tags1 = AudioTags {
-      title: Some(original_title.clone()),
-      artists: Some(vec!["Artist 1".to_string(), "Artist 2".to_string()]),
-      album: Some("Album".to_string()),
-      year: Some(2024),
-      genre: Some("Genre".to_string()),
-      track: Some(Position {
-        no: Some(1),
-        of: Some(10),
-      }),
-      album_artists: Some(vec!["Album Artist".to_string()]),
-      comment: Some("Comment".to_string()),
-      disc: Some(Position {
-        no: Some(1),
-        of: Some(2),
-      }),
-      image: Some(Image {
+    let tags1 = AudioTags::empty()
+      .with_title(original_title.clone())
+      .with_artists(vec!["Artist 1".to_string(), "Artist 2".to_string()])
+      .with_album("Album".to_string())
+      .with_year(2024)
+      .with_genre("Genre".to_string())
+      .with_track_info(Some(1), Some(10), Some(1), Some(2))
+      .with_album_artists(vec!["Album Artist".to_string()])
+      .with_comment("Comment".to_string())
+      .with_copyright("Test Copyright".to_string())
+      .with_license("Test License".to_string())
+      .with_artist_website("https://test.artist".to_string())
+      .with_composer("Test Composer".to_string())
+      .with_image(Image {
         data: original_data.clone(),
         pic_type: AudioImageType::CoverFront,
         mime_type: Some("image/jpeg".to_string()),
         description: Some("Description".to_string()),
-      }),
-      all_images: None,
-    };
+      });
 
     // Test cloning
     let tags2 = AudioTags {
@@ -1476,6 +1629,10 @@ mod tests {
       album: tags1.album.clone(),
       year: tags1.year,
       genre: tags1.genre.clone(),
+      copyright: tags1.copyright.clone(),
+      license: tags1.license.clone(),
+      artist_website: tags1.artist_website.clone(),
+      composer: tags1.composer.clone(),
       track: match tags1.track {
         Some(position) => Some(Position {
           no: position.no.clone(),
@@ -1548,6 +1705,10 @@ mod tests {
       album: Some(large_album.clone()),
       year: Some(2024),
       genre: Some(large_genre.clone()),
+      copyright: Some("© 2024 Test Artist".to_string()),
+      license: Some("Creative Commons Attribution 4.0".to_string()),
+      artist_website: Some("https://test.artist".to_string()),
+      composer: Some("Test Composer".to_string()),
       track: Some(Position {
         no: Some(1),
         of: Some(1000),
@@ -1667,6 +1828,10 @@ mod tests {
         album: album.clone(),
         year: *year,
         genre: genre.clone(),
+        copyright: Some("© 2024 Test Artist".to_string()),
+        license: Some("Creative Commons Attribution 4.0".to_string()),
+        artist_website: Some("https://test.artist".to_string()),
+        composer: Some("Test Composer".to_string()),
         track: match track {
           Some(position) => Some(Position {
             no: position.no.clone(),
@@ -1730,6 +1895,10 @@ mod tests {
       album: Some("Consistent Album".to_string()),
       year: Some(2024),
       genre: Some("Consistent Genre".to_string()),
+      copyright: Some("© 2024 Test Artist".to_string()),
+      license: Some("Creative Commons Attribution 4.0".to_string()),
+      artist_website: Some("https://test.artist".to_string()),
+      composer: Some("Test Composer".to_string()),
       track: Some(Position {
         no: Some(5),
         of: Some(12),
@@ -1794,6 +1963,10 @@ mod tests {
         album: None,
         year: Some(year),
         genre: None,
+        copyright: None,
+        license: None,
+        artist_website: None,
+        composer: None,
         track: None,
         album_artists: None,
         comment: None,
@@ -1815,6 +1988,10 @@ mod tests {
           album: None,
           year: None,
           genre: None,
+          copyright: None,
+          license: None,
+          artist_website: None,
+          composer: None,
           track: Some(Position {
             no: Some(*no),
             of: Some(*of),
@@ -1867,6 +2044,10 @@ mod tests {
         album: Some(string.clone()),
         year: Some(2024),
         genre: Some(string.clone()),
+        copyright: Some(string.clone()),
+        license: Some(string.clone()),
+        artist_website: Some(string.clone()),
+        composer: Some(string.clone()),
         track: None,
         album_artists: Some(vec![string.clone()]),
         comment: Some(string.clone()),
@@ -1915,6 +2096,10 @@ mod tests {
         album: None,
         year: Some(2024),
         genre: None,
+        copyright: None,
+        license: None,
+        artist_website: None,
+        composer: None,
         track: None,
         album_artists: Some(vector.clone()),
         comment: None,
@@ -1931,55 +2116,45 @@ mod tests {
   #[test]
   fn test_audio_tags_equality_and_comparison() {
     // Test that identical tags are equal
-    let tags1 = AudioTags {
-      title: Some("Same Title".to_string()),
-      artists: Some(vec!["Same Artist".to_string()]),
-      album: Some("Same Album".to_string()),
-      year: Some(2024),
-      genre: Some("Same Genre".to_string()),
-      track: Some(Position {
-        no: Some(1),
-        of: Some(10),
-      }),
-      album_artists: Some(vec!["Same Album Artist".to_string()]),
-      comment: Some("Same Comment".to_string()),
-      disc: Some(Position {
-        no: Some(1),
-        of: Some(2),
-      }),
-      image: Some(Image {
+    let tags1 = AudioTags::empty()
+      .with_title("Same Title".to_string())
+      .with_artists(vec!["Same Artist".to_string()])
+      .with_album("Same Album".to_string())
+      .with_year(2024)
+      .with_genre("Same Genre".to_string())
+      .with_track_info(Some(1), Some(10), Some(1), Some(2))
+      .with_album_artists(vec!["Same Album Artist".to_string()])
+      .with_comment("Same Comment".to_string())
+      .with_copyright("Same Copyright".to_string())
+      .with_license("Same License".to_string())
+      .with_artist_website("https://same.artist".to_string())
+      .with_composer("Same Composer".to_string())
+      .with_image(Image {
         data: create_test_image_data(),
         pic_type: AudioImageType::CoverFront,
         mime_type: Some("image/jpeg".to_string()),
         description: Some("Same Description".to_string()),
-      }),
-      all_images: None,
-    };
+      });
 
-    let tags2 = AudioTags {
-      title: Some("Same Title".to_string()),
-      artists: Some(vec!["Same Artist".to_string()]),
-      album: Some("Same Album".to_string()),
-      year: Some(2024),
-      genre: Some("Same Genre".to_string()),
-      track: Some(Position {
-        no: Some(1),
-        of: Some(10),
-      }),
-      album_artists: Some(vec!["Same Album Artist".to_string()]),
-      comment: Some("Same Comment".to_string()),
-      disc: Some(Position {
-        no: Some(1),
-        of: Some(2),
-      }),
-      image: Some(Image {
+    let tags2 = AudioTags::empty()
+      .with_title("Same Title".to_string())
+      .with_artists(vec!["Same Artist".to_string()])
+      .with_album("Same Album".to_string())
+      .with_year(2024)
+      .with_genre("Same Genre".to_string())
+      .with_track_info(Some(1), Some(10), Some(1), Some(2))
+      .with_album_artists(vec!["Same Album Artist".to_string()])
+      .with_comment("Same Comment".to_string())
+      .with_copyright("Same Copyright".to_string())
+      .with_license("Same License".to_string())
+      .with_artist_website("https://same.artist".to_string())
+      .with_composer("Same Composer".to_string())
+      .with_image(Image {
         data: create_test_image_data(),
         pic_type: AudioImageType::CoverFront,
         mime_type: Some("image/jpeg".to_string()),
         description: Some("Same Description".to_string()),
-      }),
-      all_images: None,
-    };
+      });
 
     // Test individual field equality
     assert_eq!(tags1.title, tags2.title);
@@ -1994,30 +2169,25 @@ mod tests {
     // assert_eq!(tags1.image, tags2.image);
 
     // Test that different tags are not equal
-    let tags3 = AudioTags {
-      title: Some("Different Title".to_string()),
-      artists: Some(vec!["Different Artist".to_string()]),
-      album: Some("Different Album".to_string()),
-      year: Some(2023),
-      genre: Some("Different Genre".to_string()),
-      track: Some(Position {
-        no: Some(2),
-        of: Some(20),
-      }),
-      album_artists: Some(vec!["Different Album Artist".to_string()]),
-      comment: Some("Different Comment".to_string()),
-      disc: Some(Position {
-        no: Some(2),
-        of: Some(4),
-      }),
-      image: Some(Image {
+    let tags3 = AudioTags::empty()
+      .with_title("Different Title".to_string())
+      .with_artists(vec!["Different Artist".to_string()])
+      .with_album("Different Album".to_string())
+      .with_year(2023)
+      .with_genre("Different Genre".to_string())
+      .with_track_info(Some(2), Some(20), Some(2), Some(4))
+      .with_album_artists(vec!["Different Album Artist".to_string()])
+      .with_comment("Different Comment".to_string())
+      .with_copyright("Different Copyright".to_string())
+      .with_license("Different License".to_string())
+      .with_artist_website("https://different.artist".to_string())
+      .with_composer("Different Composer".to_string())
+      .with_image(Image {
         data: create_test_image_data(),
         pic_type: AudioImageType::CoverFront,
         mime_type: Some("image/png".to_string()),
         description: Some("Different Description".to_string()),
-      }),
-      all_images: None,
-    };
+      });
 
     assert_ne!(tags1.title, tags3.title);
     assert_ne!(tags1.artists, tags3.artists);
@@ -2040,6 +2210,10 @@ mod tests {
       album: Some("Pattern Album".to_string()),
       year: Some(2024),
       genre: Some("Pattern Genre".to_string()),
+      copyright: Some("© 2024 Test Artist".to_string()),
+      license: Some("Creative Commons Attribution 4.0".to_string()),
+      artist_website: Some("https://test.artist".to_string()),
+      composer: Some("Test Composer".to_string()),
       track: Some(Position {
         no: Some(3),
         of: Some(15),
@@ -2114,15 +2288,19 @@ mod tests {
       album: Some("Iteration Album".to_string()),
       year: Some(2024),
       genre: Some("Iteration Genre".to_string()),
+      copyright: Some("© 2024 Test Artist".to_string()),
+      license: Some("Creative Commons Attribution 4.0".to_string()),
+      artist_website: Some("https://test.artist".to_string()),
+      composer: Some("Test Composer".to_string()),
       track: Some(Position {
         no: Some(1),
-        of: Some(3),
+        of: Some(10),
       }),
       album_artists: Some(vec![
         "Album Artist A".to_string(),
         "Album Artist B".to_string(),
       ]),
-      comment: Some("Iteration Comment".to_string()),
+      comment: Some("Test Comment".to_string()),
       disc: Some(Position {
         no: Some(1),
         of: Some(2),
@@ -2131,7 +2309,7 @@ mod tests {
         data: create_test_image_data(),
         pic_type: AudioImageType::CoverFront,
         mime_type: Some("image/jpeg".to_string()),
-        description: Some("Iteration Description".to_string()),
+        description: Some("Test Image".to_string()),
       }),
       all_images: None,
     };
@@ -2194,6 +2372,10 @@ mod tests {
         no: Some(2),
         of: Some(3),
       }),
+      copyright: Some("© 2024 Test Artist".to_string()),
+      license: Some("Creative Commons Attribution 4.0".to_string()),
+      artist_website: Some("https://test.artist".to_string()),
+      composer: Some("Test Composer".to_string()),
       image: Some(Image {
         data: create_test_image_data(),
         pic_type: AudioImageType::CoverFront,
@@ -2294,6 +2476,12 @@ mod tests {
         (None, None) => None,
         (no, of) => Some(Position { no, of }),
       },
+      copyright: tag
+        .get_string(&ItemKey::CopyrightMessage)
+        .map(|s| s.to_string()),
+      license: tag.get_string(&ItemKey::License).map(|s| s.to_string()),
+      artist_website: tag.get_string(&ItemKey::Publisher).map(|s| s.to_string()),
+      composer: tag.get_string(&ItemKey::Composer).map(|s| s.to_string()),
       image: {
         let mut image = None;
         for picture in tag.pictures() {
@@ -2364,6 +2552,10 @@ mod tests {
       album_artists: None,
       comment: None,
       disc: None,
+      copyright: None,
+      license: None,
+      artist_website: None,
+      composer: None,
       image: None,
       all_images: None,
     };
@@ -2392,6 +2584,10 @@ mod tests {
       album_artists: minimal_tag.artist().map(|s| vec![s.to_string()]),
       comment: minimal_tag.comment().map(|s| s.to_string()),
       disc: None,
+      copyright: None,
+      license: None,
+      artist_website: None,
+      composer: None,
       image: None,
       all_images: None,
     };
@@ -2437,6 +2633,10 @@ mod tests {
       album_artists: empty_tag.artist().map(|s| vec![s.to_string()]),
       comment: empty_tag.comment().map(|s| s.to_string()),
       disc: None,
+      copyright: None,
+      license: None,
+      artist_website: None,
+      composer: None,
       image: None,
       all_images: None,
     };
@@ -2489,6 +2689,13 @@ mod tests {
     assert_eq!(converted_audio_tags.genre, audio_tags.genre);
     assert_eq!(converted_audio_tags.comment, audio_tags.comment);
     assert_eq!(converted_audio_tags.disc, audio_tags.disc);
+    assert_eq!(converted_audio_tags.copyright, audio_tags.copyright);
+    assert_eq!(converted_audio_tags.license, audio_tags.license);
+    assert_eq!(
+      converted_audio_tags.artist_website,
+      audio_tags.artist_website
+    );
+    assert_eq!(converted_audio_tags.composer, audio_tags.composer);
     // assert_eq!(converted_audio_tags.image, audio_tags.image);
   }
 
@@ -2503,6 +2710,10 @@ mod tests {
       album: Some("Roundtrip Test Album".to_string()),
       year: Some(2024),
       genre: Some("Test Genre".to_string()),
+      copyright: Some("© 2024 Test Artist".to_string()),
+      license: Some("Creative Commons Attribution 4.0".to_string()),
+      artist_website: Some("https://test.artist".to_string()),
+      composer: Some("Test Composer".to_string()),
       track: Some(Position {
         no: Some(1),
         of: Some(3),
@@ -2520,6 +2731,12 @@ mod tests {
       all_images: None,
     };
 
+    if let Some(license) = audio_tags.license.as_ref() {
+      println!("**************************");
+      println!("License: {}", license.to_string());
+      println!("**************************");
+    }
+
     test_roundtrip_conversion(audio_tags);
   }
 
@@ -2531,6 +2748,10 @@ mod tests {
       album: Some("Album with Image".to_string()),
       year: Some(2023),
       genre: Some("Test Genre".to_string()),
+      copyright: Some("© 2024 Test Artist".to_string()),
+      license: Some("Creative Commons Attribution 4.0".to_string()),
+      artist_website: Some("https://test.artist".to_string()),
+      composer: Some("Test Composer".to_string()),
       track: Some(Position {
         no: Some(2),
         of: Some(5),
@@ -2561,6 +2782,10 @@ mod tests {
       album: None,
       year: Some(2022),
       genre: None,
+      copyright: None,
+      license: None,
+      artist_website: None,
+      composer: None,
       track: None,
       album_artists: None,
       comment: None,
@@ -2635,6 +2860,10 @@ mod tests {
       album: Some("Serialization Album".to_string()),
       year: Some(2024),
       genre: Some("Test Genre".to_string()),
+      copyright: Some("© 2024 Test Artist".to_string()),
+      license: Some("Creative Commons Attribution 4.0".to_string()),
+      artist_website: Some("https://test.artist".to_string()),
+      composer: Some("Test Composer".to_string()),
       track: Some(Position {
         no: Some(3),
         of: Some(8),
@@ -2698,6 +2927,10 @@ mod tests {
         no: Some(1),
         of: Some(10),
       }),
+      copyright: None,
+      license: None,
+      artist_website: None,
+      composer: None,
       image: Some(Image {
         data: create_test_image_data(),
         pic_type: AudioImageType::CoverFront,
@@ -2726,6 +2959,10 @@ mod tests {
       album_artists: None,
       comment: None,
       disc: None,
+      copyright: None,
+      license: None,
+      artist_website: None,
+      composer: None,
       image: None,
       all_images: None,
     };
@@ -2750,6 +2987,10 @@ mod tests {
         no: Some(0),
         of: Some(0),
       }),
+      copyright: None,
+      license: None,
+      artist_website: None,
+      composer: None,
       image: Some(Image {
         data: vec![],
         pic_type: AudioImageType::CoverFront,
@@ -2784,6 +3025,10 @@ mod tests {
         no: Some(1),
         of: Some(2),
       }),
+      copyright: None,
+      license: None,
+      artist_website: None,
+      composer: None,
       image: Some(Image {
         data: create_test_image_data(),
         pic_type: AudioImageType::CoverFront,
@@ -2838,6 +3083,10 @@ mod tests {
         no: Some(1),
         of: Some(1),
       }),
+      copyright: None,
+      license: None,
+      artist_website: None,
+      composer: None,
       image: None,
       all_images: None,
     };
@@ -2880,6 +3129,10 @@ mod tests {
         no: Some(1),
         of: Some(2),
       }),
+      copyright: None,
+      license: None,
+      artist_website: None,
+      composer: None,
       image: Some(Image {
         data: create_test_image_data(),
         pic_type: AudioImageType::CoverFront,
@@ -2906,6 +3159,10 @@ mod tests {
         no: position.no,
         of: position.of,
       }),
+      copyright: None,
+      license: None,
+      artist_website: None,
+      composer: None,
       image: match original_tags.image {
         Some(image) => Some(Image {
           data: image.data.clone(),
@@ -2933,55 +3190,45 @@ mod tests {
   #[test]
   fn test_audio_tags_hash_and_equality() {
     // Test that identical tags produce the same hash and are equal
-    let tags1 = AudioTags {
-      title: Some("Hash Test".to_string()),
-      artists: Some(vec!["Hash Artist".to_string()]),
-      album: Some("Hash Album".to_string()),
-      year: Some(2024),
-      genre: Some("Hash Genre".to_string()),
-      track: Some(Position {
-        no: Some(1),
-        of: Some(3),
-      }),
-      album_artists: Some(vec!["Hash Album Artist".to_string()]),
-      comment: Some("Hash comment".to_string()),
-      disc: Some(Position {
-        no: Some(1),
-        of: Some(2),
-      }),
-      image: Some(Image {
+    let tags1 = AudioTags::empty()
+      .with_title("Hash Test".to_string())
+      .with_artists(vec!["Hash Artist".to_string()])
+      .with_album("Hash Album".to_string())
+      .with_year(2024)
+      .with_genre("Hash Genre".to_string())
+      .with_track_info(Some(1), Some(3), Some(1), Some(2))
+      .with_album_artists(vec!["Hash Album Artist".to_string()])
+      .with_comment("Hash comment".to_string())
+      .with_copyright("Hash Copyright".to_string())
+      .with_license("Hash License".to_string())
+      .with_artist_website("https://hash.artist".to_string())
+      .with_composer("Hash Composer".to_string())
+      .with_image(Image {
         data: create_test_image_data(),
         pic_type: AudioImageType::CoverFront,
         mime_type: Some("image/jpeg".to_string()),
         description: Some("Hash image".to_string()),
-      }),
-      all_images: None,
-    };
+      });
 
-    let tags2 = AudioTags {
-      title: Some("Hash Test".to_string()),
-      artists: Some(vec!["Hash Artist".to_string()]),
-      album: Some("Hash Album".to_string()),
-      year: Some(2024),
-      genre: Some("Hash Genre".to_string()),
-      track: Some(Position {
-        no: Some(1),
-        of: Some(3),
-      }),
-      album_artists: Some(vec!["Hash Album Artist".to_string()]),
-      comment: Some("Hash comment".to_string()),
-      disc: Some(Position {
-        no: Some(1),
-        of: Some(2),
-      }),
-      image: Some(Image {
+    let tags2 = AudioTags::empty()
+      .with_title("Hash Test".to_string())
+      .with_artists(vec!["Hash Artist".to_string()])
+      .with_album("Hash Album".to_string())
+      .with_year(2024)
+      .with_genre("Hash Genre".to_string())
+      .with_track_info(Some(1), Some(3), Some(1), Some(2))
+      .with_album_artists(vec!["Hash Album Artist".to_string()])
+      .with_comment("Hash comment".to_string())
+      .with_copyright("Hash Copyright".to_string())
+      .with_license("Hash License".to_string())
+      .with_artist_website("https://hash.artist".to_string())
+      .with_composer("Hash Composer".to_string())
+      .with_image(Image {
         data: create_test_image_data(),
         pic_type: AudioImageType::CoverFront,
         mime_type: Some("image/jpeg".to_string()),
         description: Some("Hash image".to_string()),
-      }),
-      all_images: None,
-    };
+      });
 
     // Test equality
     assert_eq!(tags1.title, tags2.title);
@@ -3014,6 +3261,10 @@ mod tests {
         no: Some(1),
         of: Some(2),
       }),
+      copyright: None,
+      license: None,
+      artist_website: None,
+      composer: None,
       image: Some(Image {
         data: create_test_image_data(),
         pic_type: AudioImageType::CoverFront,
@@ -3072,6 +3323,10 @@ mod tests {
           no: Some((i % 3) + 1),
           of: Some(3),
         }),
+        copyright: None,
+        license: None,
+        artist_website: None,
+        composer: None,
         image: if i % 10 == 0 {
           Some(Image {
             data: create_test_image_data(),
@@ -3134,6 +3389,10 @@ mod tests {
         no: Some(1),
         of: Some(2),
       }),
+      copyright: None,
+      license: None,
+      artist_website: None,
+      composer: None,
       image: Some(Image {
         data: create_test_image_data(),
         pic_type: AudioImageType::CoverFront,
@@ -3217,6 +3476,10 @@ mod tests {
         album_artists: Some(vec![]),
         comment: Some("".to_string()),
         disc: Some(Position { no: None, of: None }),
+        copyright: None,
+        license: None,
+        artist_website: None,
+        composer: None,
         image: Some(Image {
           data: vec![],
           pic_type: AudioImageType::CoverFront,
@@ -3301,6 +3564,10 @@ mod tests {
         no: Some(1),
         of: Some(3),
       }),
+      copyright: None,
+      license: None,
+      artist_website: None,
+      composer: None,
       image: Some(Image {
         data: create_test_image_data(),
         pic_type: AudioImageType::CoverFront,
@@ -3333,6 +3600,10 @@ mod tests {
         }),
         None => None,
       },
+      copyright: original_tags.copyright,
+      license: original_tags.license,
+      artist_website: original_tags.artist_website,
+      composer: original_tags.composer,
       image: match original_tags.image {
         Some(image) => Some(Image {
           data: image.data.clone(),
@@ -3376,6 +3647,10 @@ mod tests {
         no: Some(1),
         of: Some(2),
       }),
+      copyright: None,
+      license: None,
+      artist_website: None,
+      composer: None,
       image: Some(Image {
         data: create_test_image_data(),
         pic_type: AudioImageType::CoverFront,
@@ -3415,6 +3690,10 @@ mod tests {
         no: Some(1),
         of: Some(1),
       }),
+      copyright: None,
+      license: None,
+      artist_website: None,
+      composer: None,
       image: Some(Image {
         data: create_test_image_data(),
         pic_type: AudioImageType::CoverFront,
@@ -4839,6 +5118,10 @@ mod tests {
         no: Some(1),
         of: Some(2),
       }),
+      copyright: None,
+      license: None,
+      artist_website: None,
+      composer: None,
       image: Some(Image {
         data: create_test_image_data(),
         pic_type: AudioImageType::CoverFront,
@@ -5020,6 +5303,10 @@ mod tests {
       album_artists: None,
       comment: None,
       disc: None,
+      copyright: None,
+      license: None,
+      artist_website: None,
+      composer: None,
       image: None,
       all_images: Some(vec![
         // Artist photo
@@ -5192,6 +5479,10 @@ mod tests {
       album_artists: None,
       comment: None,
       disc: None,
+      copyright: None,
+      license: None,
+      artist_website: None,
+      composer: None,
       image: None, // No main image set
       all_images: Some(all_images),
     };
@@ -5295,6 +5586,10 @@ mod tests {
       album_artists: None,
       comment: None,
       disc: None,
+      copyright: None,
+      license: None,
+      artist_website: None,
+      composer: None,
       image: None, // No main image set
       all_images: Some(all_images),
     };

@@ -151,6 +151,10 @@ pub struct ApiAudioTags {
   pub disc: Option<ApiPosition>,
   pub image: Option<ApiImage>,
   pub all_images: Option<Vec<ApiImage>>,
+  pub copyright: Option<String>,
+  pub license: Option<String>,
+  pub artist_website: Option<String>,
+  pub composer: Option<String>,
 }
 
 impl ApiAudioTags {
@@ -169,6 +173,10 @@ impl ApiAudioTags {
       all_images: audio_tags
         .all_images
         .map(|images| images.into_iter().map(ApiImage::from_image).collect()),
+      copyright: audio_tags.copyright,
+      license: audio_tags.license,
+      artist_website: audio_tags.artist_website,
+      composer: audio_tags.composer,
     }
   }
 
@@ -187,6 +195,10 @@ impl ApiAudioTags {
       all_images: self
         .all_images
         .map(|images| images.into_iter().map(ApiImage::into_image).collect()),
+      copyright: self.copyright,
+      license: self.license,
+      artist_website: self.artist_website,
+      composer: self.composer,
     }
   }
 }

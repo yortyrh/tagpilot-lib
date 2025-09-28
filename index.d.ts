@@ -36,6 +36,10 @@ export interface AudioTags {
   disc?: Position
   image?: Image
   allImages?: Array<Image>
+  copyright?: string
+  license?: string
+  artistWebsite?: string
+  composer?: string
 }
 
 export declare function clearTags(filePath: string): Promise<void>
