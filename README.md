@@ -1,5 +1,7 @@
 # @yortyrh/tagpilot-lib
 
+> 📖 **Case study:** [how and why I built it](https://yorty.info/projects/tagpilot-lib/) · Built by [Yorty Ruiz Hernandez](https://yorty.info)
+
 [![CI](https://github.com/yortyrh/tagpilot-lib/actions/workflows/CI.yml/badge.svg)](https://github.com/yortyrh/tagpilot-lib/actions/workflows/CI.yml)
 [![NPM version](https://img.shields.io/npm/v/@yortyrh/tagpilot-lib.svg)](https://npmjs.org/package/@yortyrh/tagpilot-lib)
 [![npm downloads](http://img.shields.io/npm/dm/@yortyrh/tagpilot-lib.svg)](https://npmcharts.com/compare/@yortyrh/tagpilot-lib?start=600&interval=30)
